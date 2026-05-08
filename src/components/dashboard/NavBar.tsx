@@ -158,9 +158,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#0f172a",
     padding: "0 24px",
     borderBottom: "1px solid #1e293b",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
     gap: 20,
   },
   brand: {

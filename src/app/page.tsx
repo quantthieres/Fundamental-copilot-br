@@ -186,7 +186,7 @@ export default function Home() {
   const [quoteLoading, setQuoteLoading]   = useState(false);
   const [cvmFinancials, setCvmFinancials] = useState<NormalizedFinancials[] | null>(null);
   const [cvmLoading, setCvmLoading]       = useState(false);
-  const [financialSource, setFinancialSource] = useState<"mock" | "cvm">("mock");
+  const [financialSource, setFinancialSource] = useState<"mock" | "cvm">("cvm");
 
   const companyData = useMemo(() => getCompanyData(selectedTicker), [selectedTicker]);
 
@@ -248,9 +248,11 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [selectedTicker]);
 
-  // Fetch CVM financials for cvm_analysis eligible companies.
+  // Fetch CVM financials for all companies that have a b3Entry.
+  // For cvm_analysis companies this is the primary data source; for mock companies
+  // it lets us prefer real CVM data over illustrative data when available.
   useEffect(() => {
-    if (companyData || !b3Entry || !isCvmAnalysisEligible(b3Entry)) {
+    if (!b3Entry) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;
@@ -263,30 +265,40 @@ export default function Home() {
     fetch(`/api/cvm/financials/${encodeURIComponent(selectedTicker)}`)
       .then(res => res.json())
       .then((body: { financials: NormalizedFinancials[] }) => {
-        if (!cancelled) setCvmFinancials(body.financials ?? []);
+        if (!cancelled) {
+          const rows = body.financials ?? [];
+          setCvmFinancials(rows);
+          if (rows.length > 0) {
+            setFinancialSource("cvm");
+          } else {
+            setFinancialSource("mock");
+          }
+        }
       })
-      .catch(() => { if (!cancelled) setCvmFinancials([]); })
+      .catch(() => {
+        if (!cancelled) {
+          setCvmFinancials([]);
+          setFinancialSource("mock");
+        }
+      })
       .finally(() => { if (!cancelled) setCvmLoading(false); });
 
     return () => { cancelled = true; };
-  }, [selectedTicker, companyData, b3Entry]);
+  }, [selectedTicker, b3Entry]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleSelectCompany(ticker: string) {
     setSelected(ticker);
     setActiveTab("Visão Geral");
-    setFinancialSource("mock");
+    setFinancialSource("cvm");
     setCvmFinancials(null);
   }
 
   function handleSourceChange(source: "mock" | "cvm") {
     setFinancialSource(source);
-    if (source === "mock") {
-      setCvmFinancials(null);
-      return;
-    }
-    setCvmFinancials(null);
+    if (source === "mock") return;
+    if (cvmFinancials !== null) return; // already loaded
     setCvmLoading(true);
     fetch(`/api/cvm/financials/${encodeURIComponent(selectedTicker)}`)
       .then(res => res.json())
@@ -331,13 +343,41 @@ export default function Home() {
                 Análise fundamentalista com dados da DFP anual consolidada. Dados em validação — não constitui recomendação de investimento.
               </span>
             </div>
+          ) : financialSource === "cvm" && cvmFinancials && cvmFinancials.length > 0 ? (
+            <div style={{
+              padding: "7px 24px", background: "#eff6ff",
+              borderBottom: "1px solid #bfdbfe",
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+                textTransform: "uppercase" as const,
+                color: "#2563eb", background: "#dbeafe",
+                padding: "2px 7px", borderRadius: 4,
+              }}>
+                Dados CVM
+              </span>
+              <span style={{ fontSize: 12, color: "#1d4ed8" }}>
+                Financeiros extraídos da DFP anual consolidada (CVM Dados Abertos). Não constitui recomendação de investimento.
+              </span>
+            </div>
           ) : (
             <div style={{
-              padding: "5px 24px", background: "#fff",
-              borderBottom: "1px solid #f1f5f9",
-              fontSize: 11, color: "#94a3b8", textAlign: "center" as const,
+              padding: "7px 24px", background: "#fffbeb",
+              borderBottom: "1px solid #fde68a",
+              display: "flex", alignItems: "center", gap: 8,
             }}>
-              Dados ilustrativos para demonstração. Não constitui recomendação de investimento.
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+                textTransform: "uppercase" as const,
+                color: "#b45309", background: "#fef3c7",
+                padding: "2px 7px", borderRadius: 4,
+              }}>
+                Dados Ilustrativos
+              </span>
+              <span style={{ fontSize: 12, color: "#92400e" }}>
+                Dados de demonstração — não auditados, não oficiais. Dados CVM não disponíveis para este ticker.
+              </span>
             </div>
           )}
 

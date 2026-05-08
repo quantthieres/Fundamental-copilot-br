@@ -349,7 +349,34 @@ export default function MetodologiaPage() {
           ]} />
         </MethodologyCard>
 
-        {/* 8. Aviso Legal */}
+        {/* 8. Documentos e Eventos CVM */}
+        <MethodologyCard label="Seção 8" title="Documentos e Eventos CVM">
+          <Prose>
+            A seção <strong>Documentos e Eventos</strong> exibe documentos oficiais publicados
+            pelas companhias diretamente na CVM, sem intermediários. Os dados são buscados em
+            tempo real do sistema ENET da CVM via a API pública de pesquisa de documentos.
+          </Prose>
+          <BulletList items={[
+            "Fonte: CVM ENET (efts.cvm.gov.br) — sistema de pesquisa de documentos da Comissão de Valores Mobiliários.",
+            "Tipos de documento exibidos: DFP (Demonstrações Financeiras Padronizadas), ITR (Informações Trimestrais), FRE (Formulário de Referência), fatos relevantes e comunicados.",
+            "Janela de busca: últimos 18 meses a partir da data atual. Máximo de 20 documentos por consulta.",
+            "Ordenação: data de recebimento pela CVM, decrescente (mais recentes primeiro).",
+            "Links: cada documento com número de sequência disponível é acompanhado de link direto para o visualizador oficial da CVM (rad.cvm.gov.br). Nenhum link é fabricado.",
+            "Cache: respostas da API ENET são mantidas em memória por 1 hora para reduzir latência em consultas repetidas.",
+            "Estado vazio: quando não há mapeamento CVM verificado para um ticker, ou quando a API não retorna documentos, a seção exibe uma mensagem informativa — nenhum item fictício é exibido.",
+          ]} />
+          <div style={{
+            marginTop: 12, background: "#eff6ff", border: "1px solid #bfdbfe",
+            borderRadius: 8, padding: "10px 14px",
+            fontSize: 12, color: "#1d4ed8", lineHeight: 1.6,
+          }}>
+            <strong>Transparência:</strong> nenhum documento é fabricado ou inventado. Se a API
+            ENET não retornar documentos para um ticker, a seção exibe um estado vazio explícito.
+            Os links abrem o visualizador oficial da CVM, não cópias de terceiros.
+          </div>
+        </MethodologyCard>
+
+        {/* 9. Aviso Legal */}
         <div style={{
           background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
           overflow: "hidden",

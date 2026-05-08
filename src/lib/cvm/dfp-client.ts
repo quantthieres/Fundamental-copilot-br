@@ -31,7 +31,7 @@ const rowCache = new Map<string, { rows: RawCvmStatementRow[]; loadedAt: number 
 
 // ─── Zip download ─────────────────────────────────────────────────────────────
 
-async function fetchYearZip(year: number): Promise<Uint8Array | null> {
+export async function fetchYearZip(year: number): Promise<Uint8Array | null> {
   const cached = zipCache.get(year);
   if (cached && Date.now() - cached.loadedAt < ZIP_TTL_MS) return cached.buffer;
 

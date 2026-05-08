@@ -6,7 +6,7 @@ import CompanyHeader from "@/components/dashboard/CompanyHeader";
 import MetricsRow from "@/components/dashboard/MetricsRow";
 import HistoricalChart from "@/components/dashboard/HistoricalChart";
 import MultiplesTable from "@/components/dashboard/MultiplesTable";
-import NewsPanel from "@/components/dashboard/NewsPanel";
+import DocumentsPanel from "@/components/dashboard/DocumentsPanel";
 import CvmFinancialsTable from "@/components/dashboard/CvmFinancialsTable";
 import DataSourceNotice from "@/components/dashboard/DataSourceNotice";
 import FundamentalIndicators from "@/components/dashboard/FundamentalIndicators";
@@ -14,7 +14,7 @@ import FundamentalDiagnosis from "@/components/dashboard/FundamentalDiagnosis";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import { buildCompanyAnalysisDataFromCvm, isCvmAnalysisEligible } from "@/lib/cvm/cvm-analysis-builder";
 import type { NormalizedFinancials } from "@/lib/cvm/types";
-import { getCompanyData, DEFAULT_DATA } from "@/data/companies";
+import { getCompanyData } from "@/data/companies";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import type { MarketDataQuote } from "@/lib/market-data/types";
 import { COVERAGE_BADGE, COVERAGE_DESCRIPTION, type CoverageStatus } from "@/data/coverage-types";
@@ -399,7 +399,7 @@ export default function Home() {
                 </div>
                 <div>
                   <MultiplesTable data={effectiveCompanyData.multiples} />
-                  <NewsPanel news={effectiveCompanyData.news} />
+                  <DocumentsPanel ticker={selectedTicker} />
                 </div>
               </div>
             )}
@@ -508,15 +508,7 @@ export default function Home() {
             {/* ── Notícias e documentos ─────────────────────────────────── */}
             {activeTab === "Notícias e documentos" && (
               <div style={{ maxWidth: 700 }}>
-                <NewsPanel news={effectiveCompanyData.news} />
-                <div style={{
-                  background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
-                  padding: "18px 22px", fontSize: 13, color: "#64748b", lineHeight: 1.7,
-                  marginTop: 14,
-                }}>
-                  Em versões futuras, esta seção poderá integrar notícias e documentos públicos relevantes.
-                  Atualmente, a plataforma prioriza dados financeiros CVM, métricas de mercado e documentos oficiais.
-                </div>
+                <DocumentsPanel ticker={selectedTicker} />
               </div>
             )}
 

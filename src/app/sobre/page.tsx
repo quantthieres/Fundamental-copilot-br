@@ -268,9 +268,9 @@ export default function SobrePage() {
               body: "P/L, EV/EBITDA e EV/Receita de empresas do mesmo setor como referência relativa de precificação.",
             },
             {
-              icon: "📰",
-              title: "Painel de notícias",
-              body: "Notícias recentes e documentos relevantes por empresa. Integração com fontes externas planejada para versões futuras.",
+              icon: "📋",
+              title: "Documentos e Eventos CVM",
+              body: "Documentos oficiais publicados na CVM — DFP, ITR, FRE e fatos relevantes. Exibidos diretamente do sistema ENET da CVM com links para o visualizador oficial.",
             },
             {
               icon: "🔎",
@@ -381,6 +381,7 @@ export default function SobrePage() {
             "Página de metodologia — explica fonte de dados, cálculos de indicadores, diagnóstico e limitações",
             "Página Sobre (esta página)",
             "Página de cobertura — lista todos os ativos com status e filtros",
+            "Documentos e Eventos CVM — integração com o sistema ENET da CVM para exibir DFP, ITR, FRE e fatos relevantes com links para o visualizador oficial",
           ]} />
         </Card>
 
@@ -412,7 +413,7 @@ export default function SobrePage() {
             "Adicionar histórico de preço — séries de cotação para gráficos de desempenho",
             "Relatório exportável — snapshot fundamentalista em PDF com layout estruturado",
             "Ampliar testes automatizados — cobertura do normalizer CVM, indicadores e diagnóstico",
-            "Integração com fontes de notícias — alertas de fatos relevantes e comunicados por ticker",
+            "Ampliar cobertura de documentos CVM — mapear mais tickers ao ENET para exibir DFP, ITR, FRE e fatos relevantes em tempo real",
           ]} />
         </Card>
 

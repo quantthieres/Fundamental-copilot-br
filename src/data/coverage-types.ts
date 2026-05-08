@@ -1,6 +1,6 @@
 export type CoverageStatus =
-  | "valuation_available"
-  | "preliminary_valuation"
+  | "full_analysis"
+  | "cvm_analysis"
   | "cvm_financials"
   | "quote_only"
   | "sector_specific_model_required"
@@ -21,25 +21,25 @@ export interface CoverageBadge {
 }
 
 export const COVERAGE_BADGE: Record<CoverageStatus, CoverageBadge> = {
-  valuation_available:            { label: "Valuation",           bg: "#dcfce7", color: "#15803d" },
-  preliminary_valuation:          { label: "Valuation preliminar", bg: "#ede9fe", color: "#7c3aed" },
-  cvm_financials:                 { label: "CVM",                 bg: "#dbeafe", color: "#1d4ed8" },
-  quote_only:                     { label: "Cotação",             bg: "#f1f5f9", color: "#475569" },
-  sector_specific_model_required: { label: "Modelo específico",   bg: "#fef3c7", color: "#b45309" },
-  unavailable:                    { label: "Em breve",            bg: "#f8fafc", color: "#94a3b8" },
+  full_analysis:                   { label: "Análise completa",   bg: "#dcfce7", color: "#15803d" },
+  cvm_analysis:                    { label: "Análise CVM",        bg: "#ede9fe", color: "#7c3aed" },
+  cvm_financials:                  { label: "Dados CVM",          bg: "#dbeafe", color: "#1d4ed8" },
+  quote_only:                      { label: "Cotação",            bg: "#f1f5f9", color: "#475569" },
+  sector_specific_model_required:  { label: "Modelo específico",  bg: "#fef3c7", color: "#b45309" },
+  unavailable:                     { label: "Em breve",           bg: "#f8fafc", color: "#94a3b8" },
 };
 
 export const COVERAGE_DESCRIPTION: Record<CoverageStatus, string> = {
-  valuation_available:
-    "Dados completos disponíveis. Dashboard com DCF, sensibilidade e múltiplos.",
-  preliminary_valuation:
-    "Valuation preliminar com dados CVM disponível. Os dados serão processados automaticamente a partir da DFP anual consolidada.",
+  full_analysis:
+    "Dashboard completo com dados financeiros, indicadores, diagnóstico e métricas de mercado.",
+  cvm_analysis:
+    "Análise fundamentalista gerada automaticamente com dados CVM suficientes.",
   cvm_financials:
-    "Dados CVM disponíveis. Valuation ainda em validação para este ativo.",
+    "Dados CVM disponíveis, mas ainda sem histórico ou normalização suficiente para análise completa.",
   quote_only:
-    "Cotação disponível. Dados financeiros e valuation ainda não disponíveis para este ativo.",
+    "Cotação disponível; dados financeiros ainda pendentes.",
   sector_specific_model_required:
-    "Este ativo requer uma metodologia específica. O modelo DCF padrão não se aplica a este tipo de ativo.",
+    "Ativo exige metodologia própria, como bancos, seguradoras, FIIs, ETFs ou BDRs.",
   unavailable:
-    "Dados completos ainda não disponíveis para este ativo no MVP.",
+    "Ainda sem cobertura confiável.",
 };

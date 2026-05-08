@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { getCompanyData } from "@/data/companies";
-import { recalculateDcf, sensitivityFairValue } from "@/lib/valuation/dcf";
-import type { ProjectedYear } from "@/lib/valuation/dcf";
-import { buildCvmFundamentalsFromFinancials } from "@/lib/cvm/transformers";
+import { buildFundamentalIndicators } from "@/lib/fundamentals/indicators";
 import type { NormalizedFinancials } from "@/lib/cvm/types";
 import type { MarketDataQuote } from "@/lib/market-data/types";
 import ReportHeader from "@/components/report/ReportHeader";
@@ -17,23 +15,28 @@ const MONO = "'JetBrains Mono', 'Courier New', monospace";
 
 // ─── formatting helpers ───────────────────────────────────────────────────────
 
-function fmtBRL(v: number): string {
+function fmtBRL(v: number | null): string {
+  if (v === null) return "N/D";
   const abs = Math.abs(v);
   return (v < 0 ? "−R$ " : "R$ ") + abs.toFixed(1).replace(".", ",") + "B";
 }
 
-function fmtPct(v: number): string {
+function fmtPct(v: number | null): string {
+  if (v === null) return "N/D";
   return v.toFixed(1).replace(".", ",") + "%";
 }
 
-// ─── inline tables ────────────────────────────────────────────────────────────
+function fmtX(v: number | null): string {
+  if (v === null) return "N/D";
+  return v.toFixed(1).replace(".", ",") + "×";
+}
 
-function DcfTable({ rows, terminalValue, pvTerminalValue }: {
-  rows: ProjectedYear[];
-  terminalValue: number;
-  pvTerminalValue: number;
-}) {
-  const heads = ["Ano", "Receita", "EBIT", "NOPAT", "D&A", "Capex", "ΔCG", "FCF", "VP FCF"];
+// ─── Historical financials table ──────────────────────────────────────────────
+
+function HistoricalTable({ financials }: { financials: NormalizedFinancials[] }) {
+  const rows = [...financials].sort((a, b) => a.fiscalYear - b.fiscalYear);
+  const heads = ["Ano", "Receita", "EBIT", "Lucro Líq.", "CFO", "Capex", "FCL", "Dívida Líq."];
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: MONO }}>
@@ -52,119 +55,30 @@ function DcfTable({ rows, terminalValue, pvTerminalValue }: {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, idx) => {
-            const highlight = idx === rows.length - 1;
+          {rows.map((r, idx) => {
             const bg = idx % 2 === 0 ? "#fff" : "#fafbfc";
-            const tdBase: React.CSSProperties = {
+            const rawNetDebt = r.netDebt ?? ((r.totalDebt ?? 0) - (r.cash ?? 0));
+            const netDebt = rawNetDebt !== 0 ? rawNetDebt : null;
+            const td: React.CSSProperties = {
               padding: "5px 10px", textAlign: "right",
               color: "#374151", borderBottom: "1px solid #f1f5f9",
               whiteSpace: "nowrap",
             };
             return (
-              <tr key={row.year} style={{ background: bg }}>
-                <td style={{ ...tdBase, textAlign: "center", fontWeight: 700, color: "#475569" }}>{row.year}</td>
-                <td style={tdBase}>{fmtBRL(row.revenue)}</td>
-                <td style={tdBase}>{fmtBRL(row.ebit)}</td>
-                <td style={tdBase}>{fmtBRL(row.nopat)}</td>
-                <td style={tdBase}>{fmtBRL(row.da)}</td>
-                <td style={tdBase}>{fmtBRL(row.capex)}</td>
-                <td style={tdBase}>{fmtBRL(row.deltaNwc)}</td>
-                <td style={{ ...tdBase, fontWeight: 700, color: highlight ? "#1d4ed8" : "#0f172a" }}>{fmtBRL(row.fcf)}</td>
-                <td style={{ ...tdBase, fontWeight: 700, color: highlight ? "#1d4ed8" : "#0f172a" }}>{fmtBRL(row.pvFcf)}</td>
+              <tr key={r.fiscalYear} style={{ background: bg }}>
+                <td style={{ ...td, textAlign: "center", fontWeight: 700, color: "#475569" }}>{r.fiscalYear}</td>
+                <td style={td}>{fmtBRL(r.revenue ?? null)}</td>
+                <td style={td}>{fmtBRL(r.ebit ?? null)}</td>
+                <td style={td}>{fmtBRL(r.netIncome ?? null)}</td>
+                <td style={td}>{fmtBRL(r.operatingCashFlow ?? null)}</td>
+                <td style={td}>{fmtBRL(r.capex !== undefined ? -r.capex : null)}</td>
+                <td style={{ ...td, fontWeight: 600 }}>{fmtBRL(r.freeCashFlow ?? null)}</td>
+                <td style={td}>{fmtBRL(netDebt)}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      <div style={{ display: "flex", gap: 24, marginTop: 12, paddingTop: 10, borderTop: "1px solid #e2e8f0" }}>
-        <span style={{ fontSize: 11, color: "#64748b" }}>
-          Valor Terminal:{" "}
-          <strong style={{ color: "#0f172a", fontFamily: MONO }}>{fmtBRL(terminalValue)}</strong>
-        </span>
-        <span style={{ fontSize: 11, color: "#64748b" }}>
-          VP do Valor Terminal:{" "}
-          <strong style={{ color: "#0f172a", fontFamily: MONO }}>{fmtBRL(pvTerminalValue)}</strong>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function SensTable({ waccVals, tgVals, matrix, currentPrice, currentWacc, currentTg }: {
-  waccVals: number[];
-  tgVals: number[];
-  matrix: number[][];
-  currentPrice: number;
-  currentWacc: number;
-  currentTg: number;
-}) {
-  function cellColor(v: number) {
-    const d = (v - currentPrice) / currentPrice;
-    if (d > 0.15)  return { bg: "#dcfce7", text: "#15803d" };
-    if (d > 0.05)  return { bg: "#f0fdf4", text: "#16a34a" };
-    if (d > -0.05) return { bg: "#fff",    text: "#374151" };
-    if (d > -0.15) return { bg: "#fff7ed", text: "#c2410c" };
-    return           { bg: "#fef2f2", text: "#b91c1c" };
-  }
-
-  const cellBase: React.CSSProperties = {
-    padding: "5px 10px", border: "1px solid #e2e8f0",
-    fontFamily: MONO, fontSize: 11, textAlign: "center",
-  };
-
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ borderCollapse: "collapse", fontSize: 11, fontFamily: MONO }}>
-        <thead>
-          <tr>
-            <th style={{ ...cellBase, background: "#f8fafc", fontSize: 9, color: "#94a3b8", textAlign: "left" }}>
-              WACC ↓ / TC →
-            </th>
-            {tgVals.map(tg => (
-              <th key={tg} style={{ ...cellBase, background: "#f8fafc", fontWeight: 600, color: "#374151" }}>
-                {tg.toFixed(1).replace(".", ",")}%
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {waccVals.map((wacc, wi) => (
-            <tr key={wacc}>
-              <td style={{ ...cellBase, background: "#f8fafc", fontWeight: 600, color: "#374151", textAlign: "left" }}>
-                {wacc.toFixed(1).replace(".", ",")}%
-              </td>
-              {tgVals.map((tg, ti) => {
-                const val = matrix[wi][ti];
-                const { bg, text } = cellColor(val);
-                const isBase = Math.abs(wacc - currentWacc) < 0.01 && Math.abs(tg - currentTg) < 0.01;
-                return (
-                  <td key={ti} style={{
-                    ...cellBase, background: bg, color: text,
-                    fontWeight: isBase ? 700 : 500,
-                    outline: isBase ? "1.5px solid #2563eb" : "none",
-                    outlineOffset: "-1px",
-                  }}>
-                    R${val}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{ display: "flex", gap: 14, marginTop: 10, flexWrap: "wrap" }}>
-        {[
-          { bg: "#dcfce7", label: ">15% potencial" },
-          { bg: "#f0fdf4", label: "5–15% potencial" },
-          { bg: "#fff7ed", label: "5–15% desconto" },
-          { bg: "#fef2f2", label: ">15% desconto" },
-        ].map(l => (
-          <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: l.bg, border: "1px solid #e2e8f0" }} />
-            {l.label}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -193,11 +107,11 @@ export default function ReportPageClient({ ticker, source }: Props) {
   const sourceMode = source === "cvm" ? "cvm" : "mock";
   const companyData = useMemo(() => getCompanyData(ticker), [ticker]);
 
-  const [marketQuote, setMarketQuote]   = useState<MarketDataQuote | null>(null);
-  const [cvmFinancials, setCvmFinancials] = useState<NormalizedFinancials[] | null>(null);
+  const [marketQuote, setMarketQuote]       = useState<MarketDataQuote | null>(null);
+  const [cvmFinancials, setCvmFinancials]   = useState<NormalizedFinancials[] | null>(null);
   const [cvmUnavailable, setCvmUnavailable] = useState(false);
-  const [loading, setLoading]             = useState(true);
-  const [generatedAt]                     = useState(() =>
+  const [loading, setLoading]               = useState(true);
+  const [generatedAt]                       = useState(() =>
     new Date().toLocaleString("pt-BR", {
       day: "2-digit", month: "long", year: "numeric",
       hour: "2-digit", minute: "2-digit",
@@ -216,46 +130,26 @@ export default function ReportPageClient({ ticker, source }: Props) {
       );
     }
 
-    if (sourceMode === "cvm") {
-      fetches.push(
-        fetch(`/api/cvm/financials/${encodeURIComponent(ticker)}`)
-          .then(r => r.json())
-          .then((body: { financials: NormalizedFinancials[]; error?: string }) => {
-            if (body.financials?.length > 0) {
-              setCvmFinancials(body.financials);
-            } else {
-              setCvmUnavailable(true);
-            }
-          })
-          .catch(() => setCvmUnavailable(true))
-      );
-    }
+    fetches.push(
+      fetch(`/api/cvm/financials/${encodeURIComponent(ticker)}`)
+        .then(r => r.json())
+        .then((body: { financials: NormalizedFinancials[]; error?: string }) => {
+          if (body.financials?.length > 0) {
+            setCvmFinancials(body.financials);
+          } else {
+            setCvmUnavailable(true);
+          }
+        })
+        .catch(() => setCvmUnavailable(true))
+    );
 
     Promise.all(fetches).finally(() => setLoading(false));
   }, [ticker, sourceMode, companyData]);
 
-  const activeFundamentals = useMemo(() => {
-    if (!companyData) return null;
-    if (sourceMode === "cvm" && cvmFinancials && cvmFinancials.length > 0) {
-      return buildCvmFundamentalsFromFinancials(cvmFinancials, companyData.fundamentals);
-    }
-    return companyData.fundamentals;
-  }, [sourceMode, cvmFinancials, companyData]);
-
-  const dcf = useMemo(() => {
-    if (!companyData || !activeFundamentals) return null;
-    const price = marketQuote?.price ?? companyData.company.price;
-    return recalculateDcf(companyData.defaultAssumptions, activeFundamentals, price);
-  }, [companyData, activeFundamentals, marketQuote]);
-
-  const sensitivityMatrix = useMemo(() => {
-    if (!companyData || !activeFundamentals) return [];
-    return companyData.waccVals.map(w =>
-      companyData.terminalGrowthVals.map(tg =>
-        Math.round(sensitivityFairValue(companyData.defaultAssumptions, w, tg, activeFundamentals))
-      )
-    );
-  }, [companyData, activeFundamentals]);
+  const indicators = useMemo(
+    () => buildFundamentalIndicators(cvmFinancials ?? [], marketQuote),
+    [cvmFinancials, marketQuote]
+  );
 
   // ── early returns (after all hooks) ──────────────────────────────────────────
 
@@ -271,7 +165,7 @@ export default function ReportPageClient({ ticker, source }: Props) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", gap: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: "#0f172a" }}>Ticker não encontrado</div>
-        <div style={{ fontSize: 13, color: "#64748b" }}>Dados completos não disponíveis para {ticker} no MVP.</div>
+        <div style={{ fontSize: 13, color: "#64748b" }}>Dados completos não disponíveis para {ticker}.</div>
         <Link href="/" style={{ fontSize: 12, color: "#2563eb", textDecoration: "none" }}>← Voltar ao dashboard</Link>
       </div>
     );
@@ -279,12 +173,12 @@ export default function ReportPageClient({ ticker, source }: Props) {
 
   // ── derived values ────────────────────────────────────────────────────────────
 
-  const company        = companyData.company;
-  const assumptions    = companyData.defaultAssumptions;
-  const displayPrice   = marketQuote?.price        ?? company.price;
-  const displayChange  = marketQuote?.changePercent ?? company.priceChangePct;
-  const quoteSource    = marketQuote?.source        ?? null;
-  const effectiveSource: "mock" | "cvm" = (sourceMode === "cvm" && !cvmUnavailable) ? "cvm" : "mock";
+  const company       = companyData.company;
+  const displayPrice  = marketQuote?.price        ?? company.price;
+  const displayChange = marketQuote?.changePercent ?? company.priceChangePct;
+  const quoteSource   = marketQuote?.source        ?? null;
+  const hasCvm        = (cvmFinancials?.length ?? 0) > 0;
+  const effectiveSource: "mock" | "cvm" = hasCvm ? "cvm" : "mock";
 
   const snapshotItems = [
     { label: "Preço Atual", value: `R$ ${displayPrice.toFixed(2).replace(".", ",")}`, note: quoteSource === "brapi" ? "brapi" : "ilustrativo" },
@@ -299,31 +193,21 @@ export default function ReportPageClient({ ticker, source }: Props) {
     label: m.label, value: m.value, note: m.suffix,
   }));
 
-  const valuationItems = dcf ? [
-    { label: "Valor Intrínseco / Ação", value: `R$ ${dcf.intrinsicValue.toFixed(2).replace(".", ",")}` },
-    { label: "Preço Atual",             value: `R$ ${dcf.currentPrice.toFixed(2).replace(".", ",")}` },
-    { label: "Potencial de Alta",       value: `${dcf.impliedUpside >= 0 ? "+" : ""}${dcf.impliedUpside.toFixed(1).replace(".", ",")}%` },
-    { label: "Enterprise Value",        value: dcf.enterpriseValue },
-    { label: "Equity Value",            value: dcf.equityValue },
-    { label: "Valor Terminal",          value: fmtBRL(dcf.terminalValue) },
-    { label: "VP Valor Terminal",       value: fmtBRL(dcf.pvTerminalValue) },
-    { label: "Cenário Bear",            value: `R$ ${dcf.bearCase.toFixed(2).replace(".", ",")}` },
-    { label: "Cenário Bull",            value: `R$ ${dcf.bullCase.toFixed(2).replace(".", ",")}` },
+  const indicatorItems = indicators ? [
+    { label: "CAGR Receita",           value: fmtPct(indicators.growth.revenueCAGR) },
+    { label: "Crescimento YoY",        value: fmtPct(indicators.growth.revenueGrowthYoY) },
+    { label: "Margem EBIT",            value: fmtPct(indicators.margins.ebitMargin) },
+    { label: "Margem Líquida",         value: fmtPct(indicators.margins.netMargin) },
+    { label: "Margem FCL",             value: fmtPct(indicators.margins.fcfMargin) },
+    { label: "Conversão CFO/Lucro",    value: fmtX(indicators.cashConversion.cfoOverNetIncome) },
+    { label: "Dívida Líquida / EBIT",  value: fmtX(indicators.debt.netDebtOverEbit) },
+    { label: "P/L",                    value: fmtX(indicators.market.pe) },
+    { label: "EV/EBIT",                value: fmtX(indicators.market.evOverEbit) },
   ] : [];
 
-  const assumptionItems = [
-    { label: "CAGR Receita",         value: fmtPct(assumptions.revenueCAGR) },
-    { label: "Margem EBIT",          value: fmtPct(assumptions.ebitMargin) },
-    { label: "Alíquota IR/CS",       value: fmtPct(assumptions.taxRate) },
-    { label: "WACC",                 value: fmtPct(assumptions.wacc) },
-    { label: "Crescimento Terminal", value: fmtPct(assumptions.terminalGrowth) },
-    { label: "Capex / Receita",      value: fmtPct(assumptions.capexRevenue) },
-    { label: "ΔCG / Receita",        value: fmtPct(assumptions.nwcChange) },
-  ];
-
-  const dataSourceNote = effectiveSource === "cvm"
-    ? "Este relatório usa dados extraídos da DFP anual consolidada da CVM. Alguns campos, como Capex, FCF e dívida líquida, são normalizados ou calculados a partir das demonstrações. EBITDA pode usar EBIT como proxy quando D&A não estiver disponível."
-    : "Este relatório usa dados ilustrativos para demonstração.";
+  const dataSourceNote = hasCvm
+    ? "Este relatório usa dados extraídos da DFP anual consolidada da CVM. Capex, FCL e dívida líquida são normalizados ou calculados a partir das demonstrações. EBITDA pode usar EBIT como proxy quando D&A não estiver disponível."
+    : "Dados CVM não disponíveis para este ticker. Os indicadores de mercado são baseados em dados ilustrativos.";
 
   // ── render ────────────────────────────────────────────────────────────────────
 
@@ -343,7 +227,7 @@ export default function ReportPageClient({ ticker, source }: Props) {
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 11, color: "#94a3b8" }}>
-              {effectiveSource === "cvm" ? "Modo CVM" : "Dados mockados"}
+              {hasCvm ? "Dados CVM" : "Dados ilustrativos"}
             </span>
             <ReportPrintButton />
           </div>
@@ -363,13 +247,13 @@ export default function ReportPageClient({ ticker, source }: Props) {
             generatedAt={generatedAt}
           />
 
-          {/* CVM fallback notice */}
-          {sourceMode === "cvm" && cvmUnavailable && (
+          {/* CVM unavailable notice */}
+          {cvmUnavailable && (
             <div style={{
               background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6,
               padding: "10px 14px", marginBottom: 20, fontSize: 12, color: "#b45309",
             }}>
-              Dados CVM não disponíveis para {ticker}. Este relatório usa dados ilustrativos como fallback.
+              Dados CVM não disponíveis para {ticker}. Os indicadores mostram dados do mercado disponíveis.
             </div>
           )}
 
@@ -381,36 +265,15 @@ export default function ReportPageClient({ ticker, source }: Props) {
             <ReportMetricGrid items={metricItems} columns={3} />
           </ReportSection>
 
-          {dcf && (
-            <ReportSection title="Resumo do Valuation" subtitle="DCF · premissas-padrão">
-              <ReportMetricGrid items={valuationItems} columns={3} />
+          {indicatorItems.length > 0 && (
+            <ReportSection title="Indicadores Fundamentalistas" subtitle="Calculados a partir das demonstrações CVM">
+              <ReportMetricGrid items={indicatorItems} columns={3} />
             </ReportSection>
           )}
 
-          <ReportSection title="Premissas DCF">
-            <ReportMetricGrid items={assumptionItems} columns={4} />
-          </ReportSection>
-
-          {dcf && dcf.valid && dcf.projectedCashFlows.length > 0 && (
-            <ReportSection title="Projeção de Fluxo de Caixa" subtitle="10 anos · valores em R$ bilhões">
-              <DcfTable
-                rows={dcf.projectedCashFlows}
-                terminalValue={dcf.terminalValue}
-                pvTerminalValue={dcf.pvTerminalValue}
-              />
-            </ReportSection>
-          )}
-
-          {sensitivityMatrix.length > 0 && (
-            <ReportSection title="Análise de Sensibilidade" subtitle="Valor justo / ação · WACC vs. Crescimento Terminal">
-              <SensTable
-                waccVals={companyData.waccVals}
-                tgVals={companyData.terminalGrowthVals}
-                matrix={sensitivityMatrix}
-                currentPrice={displayPrice}
-                currentWacc={assumptions.wacc}
-                currentTg={assumptions.terminalGrowth}
-              />
+          {hasCvm && cvmFinancials && cvmFinancials.length > 0 && (
+            <ReportSection title="Histórico Financeiro" subtitle="DFP anual consolidada · valores em R$ bilhões">
+              <HistoricalTable financials={cvmFinancials} />
             </ReportSection>
           )}
 

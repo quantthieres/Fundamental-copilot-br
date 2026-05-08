@@ -16,8 +16,6 @@ const FALLBACK: CompanyFundamentals = {
   currentRevenue:    15,
   sharesOutstanding:  5,
   netDebt:            3,
-  projectionYears:   10,
-  daPercentRevenue:   5,
 };
 
 // ─── cvmFinancialsToDashboardFinancials ───────────────────────────────────────
@@ -114,16 +112,6 @@ describe("buildCvmFundamentalsFromFinancials", () => {
   it("preserves sharesOutstanding from fallback", () => {
     const result = buildCvmFundamentalsFromFinancials(THREE_YEARS, FALLBACK);
     expect(result.sharesOutstanding).toBe(FALLBACK.sharesOutstanding);
-  });
-
-  it("preserves projectionYears from fallback", () => {
-    const result = buildCvmFundamentalsFromFinancials(THREE_YEARS, FALLBACK);
-    expect(result.projectionYears).toBe(FALLBACK.projectionYears);
-  });
-
-  it("preserves daPercentRevenue from fallback", () => {
-    const result = buildCvmFundamentalsFromFinancials(THREE_YEARS, FALLBACK);
-    expect(result.daPercentRevenue).toBe(FALLBACK.daPercentRevenue);
   });
 
   it("returns fallback unchanged when financials array is empty", () => {

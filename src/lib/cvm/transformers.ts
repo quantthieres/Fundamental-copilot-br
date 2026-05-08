@@ -25,7 +25,5 @@ export function buildCvmFundamentalsFromFinancials(
     currentRevenue:    latest.revenue  ?? fallback.currentRevenue,
     sharesOutstanding: fallback.sharesOutstanding,
     netDebt:           latest.netDebt  ?? fallback.netDebt,
-    projectionYears:   fallback.projectionYears,
-    daPercentRevenue:  fallback.daPercentRevenue,
   };
 }

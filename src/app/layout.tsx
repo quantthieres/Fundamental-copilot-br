@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Valuation Copilot · WEGE3",
-  description: "Dashboard de valuation automatizado para o mercado brasileiro",
+  title: "Fundamental Copilot BR",
+  description: "Análise fundamentalista automatizada da B3 com dados CVM, indicadores financeiros e métricas de mercado.",
   icons: {
     icon: "/logo/favicon.svg",
   },

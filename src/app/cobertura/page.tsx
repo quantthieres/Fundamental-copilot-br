@@ -7,8 +7,8 @@ import { COVERAGE_BADGE, COVERAGE_DESCRIPTION, type CoverageStatus } from "@/dat
 // ─── Status counts ────────────────────────────────────────────────────────────
 
 const STATUSES: CoverageStatus[] = [
-  "valuation_available",
-  "preliminary_valuation",
+  "full_analysis",
+  "cvm_analysis",
   "cvm_financials",
   "quote_only",
   "sector_specific_model_required",
@@ -22,16 +22,16 @@ function countByStatus(): Record<CoverageStatus, number> {
 }
 
 const STATUS_DESCRIPTIONS: Record<CoverageStatus, string> = {
-  valuation_available:
-    "Dashboard completo com DCF, análise de sensibilidade e múltiplos de mercado disponíveis.",
-  preliminary_valuation:
-    "Valuation preliminar: DCF gerado automaticamente com dados CVM para empresas não financeiras que passaram nos critérios mínimos de elegibilidade.",
+  full_analysis:
+    "Dashboard completo com dados financeiros, indicadores fundamentalistas, diagnóstico e métricas de mercado.",
+  cvm_analysis:
+    "Análise fundamentalista gerada automaticamente com dados CVM consolidados da DFP anual.",
   cvm_financials:
-    "Dados financeiros anuais extraídos da DFP via CVM Dados Abertos. Dados disponíveis mas valuation ainda não é gerado automaticamente para este ativo.",
+    "Dados CVM disponíveis, mas ainda sem histórico ou normalização suficiente para análise completa.",
   quote_only:
     "Cotação de mercado disponível via brapi. Dados fundamentalistas ainda não processados.",
   sector_specific_model_required:
-    "Ativo pertence a setor que exige metodologia própria (bancos, FIIs, seguradoras). O modelo DCF padrão não se aplica.",
+    "Ativo exige metodologia própria (bancos, FIIs, seguradoras, ETFs). O modelo fundamentalista padrão não se aplica.",
   unavailable:
     "Ativo ainda sem cobertura confiável nesta versão. Será adicionado gradualmente.",
 };
@@ -154,7 +154,7 @@ export default function CoberturaPaged() {
             Cobertura da B3
           </h1>
           <p style={{ margin: "0 0 10px", fontSize: 15, color: "#475569", lineHeight: 1.7, maxWidth: 640 }}>
-            Veja quais ativos já possuem valuation, dados CVM, cotação ou exigem metodologia específica.
+            Veja quais ativos já possuem análise fundamentalista, dados CVM, cotação ou exigem metodologia específica.
           </p>
           <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.7, maxWidth: 640 }}>
             A cobertura é expandida gradualmente. O sistema separa ativos por nível de suporte

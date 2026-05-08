@@ -187,8 +187,8 @@ function DataSourceRow({
 // ─── Coverage status list ─────────────────────────────────────────────────────
 
 const COVERAGE_STATUS_ORDER: CoverageStatus[] = [
-  "valuation_available",
-  "preliminary_valuation",
+  "full_analysis",
+  "cvm_analysis",
   "cvm_financials",
   "quote_only",
   "sector_specific_model_required",
@@ -206,26 +206,27 @@ export default function SobrePage() {
 
         {/* 1. Hero */}
         <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Valuation Copilot BR · Plataforma</SectionLabel>
+          <SectionLabel>Fundamental Copilot BR · Plataforma</SectionLabel>
           <h1 style={{
             margin: "0 0 10px", fontSize: 28, fontWeight: 800, color: "#0f172a",
             letterSpacing: "-0.6px", lineHeight: 1.2,
           }}>
-            Sobre o Valuation Copilot BR
+            Sobre o Fundamental Copilot BR
           </h1>
           <p style={{
             margin: "0 0 16px", fontSize: 15, color: "#64748b", lineHeight: 1.65, maxWidth: 640,
           }}>
-            Uma plataforma experimental para análise financeira e valuation de empresas
+            Uma plataforma experimental para análise fundamentalista automatizada de empresas
             brasileiras listadas na B3.
           </p>
           <p style={{
             margin: 0, fontSize: 14, color: "#374151", lineHeight: 1.75, maxWidth: 680,
           }}>
-            O projeto combina dados de mercado, demonstrações financeiras, modelos de
-            valuation e uma interface de research para reduzir o trabalho manual de análise.
-            O objetivo é oferecer uma experiência parecida com uma ferramenta profissional de
-            equity research — mais simples, acessível e focada em transparência.
+            O projeto combina dados de mercado e demonstrações financeiras da CVM em uma
+            interface de research que automatiza a coleta, normalização e apresentação de
+            indicadores fundamentalistas. O objetivo é oferecer uma experiência próxima a
+            uma ferramenta profissional de equity research — mais acessível, transparente
+            e focada em dados verificáveis.
           </p>
         </div>
 
@@ -249,17 +250,17 @@ export default function SobrePage() {
             {
               icon: "🏛️",
               title: "Dados financeiros CVM / DFP anual",
-              body: "Receita, EBIT, lucro líquido, fluxo de caixa operacional, capex, FCL, caixa, dívida total e dívida líquida — normalizados para BRL bilhões por ano fiscal.",
+              body: "Receita, EBIT, lucro líquido, CFO, capex, FCL, caixa, dívida total e dívida líquida — normalizados para BRL bilhões por ano fiscal.",
             },
             {
               icon: "📊",
-              title: "Valuation por DCF",
-              body: "Motor de DCF com 7 premissas editáveis: CAGR receita, margem EBIT, IR/CS, WACC, crescimento terminal, Capex/Receita e ΔCG/Receita.",
+              title: "Indicadores fundamentalistas",
+              body: "CAGR de receita, margens operacionais, margem FCL, conversão CFO/lucro, dívida líquida/EBIT e múltiplos de mercado calculados automaticamente.",
             },
             {
-              icon: "🎯",
-              title: "Análise de sensibilidade",
-              body: "Matriz que varia WACC e crescimento terminal independentemente, colorida pelo potencial de upside ou downside frente ao preço atual.",
+              icon: "🔬",
+              title: "Diagnóstico baseado em regras",
+              body: "Observações objetivas sobre crescimento, margens, caixa e endividamento. Sem recomendações de compra ou venda.",
             },
             {
               icon: "🔢",
@@ -267,14 +268,14 @@ export default function SobrePage() {
               body: "P/L, EV/EBITDA e EV/Receita de empresas do mesmo setor como referência relativa de precificação.",
             },
             {
-              icon: "📄",
-              title: "Relatório imprimível",
-              body: "Página /relatorio/[ticker] otimizada para impressão e exportação como PDF. Inclui snapshot, DCF, sensibilidade, premissas e aviso legal.",
+              icon: "📰",
+              title: "Painel de notícias",
+              body: "Notícias recentes e documentos relevantes por empresa. Integração com fontes externas planejada para versões futuras.",
             },
             {
               icon: "🔎",
               title: "Transparência de fontes de dados",
-              body: "DataSourceNotice indica claramente quais campos vêm de CVM, quais são calculados e quais são dados mockados — antes de qualquer uso em análise.",
+              body: "DataSourceNotice indica claramente quais campos vêm de CVM, quais são calculados e quais são dados ilustrativos — antes de qualquer uso em análise.",
             },
           ]} />
         </Card>
@@ -291,7 +292,7 @@ export default function SobrePage() {
               labelBg="#dbeafe"
               labelColor="#1d4ed8"
               title="Cotação e dados de mercado"
-              description="Preço atual, variação percentual diária e market cap (quando disponível). Acessado via rota interna do servidor usando BRAPI_TOKEN. Sem token, o app opera normalmente com dados mockados."
+              description="Preço atual, variação percentual diária e market cap (quando disponível). Acessado via rota interna do servidor usando BRAPI_TOKEN. Sem token, o app opera normalmente com dados ilustrativos."
               note="Variável de ambiente: BRAPI_TOKEN. Nunca exposta no cliente."
             />
             <DataSourceRow
@@ -299,7 +300,7 @@ export default function SobrePage() {
               labelBg="#dcfce7"
               labelColor="#15803d"
               title="DFP anual consolidada — demonstrações financeiras oficiais"
-              description="Dados baixados diretamente de dados.cvm.gov.br. Inclui DRE, DFC (método indireto ou direto) e Balanço Patrimonial dos anos 2020–2024. Valores normalizados para BRL bilhões. Disponível para 12 empresas com mapeamento verificado."
+              description="Dados baixados diretamente de dados.cvm.gov.br. Inclui DRE, DFC (método indireto ou direto) e Balanço Patrimonial dos anos 2020–2024. Valores normalizados para BRL bilhões. Disponível para empresas com mapeamento verificado."
               note="Acesso em: /api/cvm/financials/[ticker]. Capex e FCL são calculados a partir de linhas da DFC — podem divergir de relatórios de analistas."
             />
             <DataSourceRow
@@ -307,8 +308,8 @@ export default function SobrePage() {
               labelBg="#f1f5f9"
               labelColor="#475569"
               title="Dados ilustrativos para demonstração e fallback"
-              description="Usados nas empresas com dashboard completo (WEGE3, ABEV3, EGIE3, CPFE3, VIVT3). Valores plausíveis mas não auditados. Servem para demonstrar o layout, o motor DCF e a sensibilidade sem depender de APIs externas."
-              note="O dashboard principal continua usando dados mockados até que a normalização CVM seja validada empresa por empresa."
+              description="Usados nas empresas com análise completa (WEGE3, ABEV3, EGIE3, CPFE3, VIVT3). Valores plausíveis mas não auditados. Servem para demonstrar o layout e os indicadores sem depender de APIs externas."
+              note="O dashboard principal utiliza dados CVM quando disponíveis e elegíveis; caso contrário, exibe dados ilustrativos com fallback explícito."
             />
           </div>
           <div style={{
@@ -316,7 +317,7 @@ export default function SobrePage() {
             borderRadius: 8, padding: "10px 14px",
             fontSize: 12, color: "#92400e", lineHeight: 1.6,
           }}>
-            <strong>Transparência:</strong> o DataSourceNotice exibido na aba Financeiros
+            <strong>Transparência:</strong> o DataSourceNotice exibido no dashboard
             detalha a origem de cada campo — Receita, EBIT, FCL, Dívida líquida e Cotação —
             incluindo o que é calculado versus o que vem diretamente de uma fonte primária.
           </div>
@@ -331,7 +332,7 @@ export default function SobrePage() {
             }}>coverageStatus</code> que
             indica o que a plataforma suporta atualmente para aquele ticker.
             O status aparece como badge colorido no dropdown de busca e define
-            a experiência de empty state quando um ativo sem dashboard completo é selecionado.
+            a experiência de empty state quando um ativo sem análise completa é selecionado.
           </Prose>
           <div>
             {COVERAGE_STATUS_ORDER.map((status, i) => {
@@ -360,8 +361,8 @@ export default function SobrePage() {
             marginTop: 14, background: "#f8fafc", border: "1px solid #e2e8f0",
             borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#64748b", lineHeight: 1.6,
           }}>
-            Cobertura atual aproximada: 5 ativos com Valuation completo · 27 com Valuation preliminar ·
-            3 com dados CVM · ~29 com Modelo específico (bancos, FIIs, ETFs) · 98 com Cotação.
+            Cobertura atual aproximada: 5 ativos com Análise completa · 27 com Análise CVM ·
+            3 com Dados CVM · ~29 com Modelo específico (bancos, FIIs, ETFs) · 98 com Cotação.
           </div>
         </Card>
 
@@ -370,23 +371,23 @@ export default function SobrePage() {
           <CheckList items={[
             "Dashboard em Next.js 15 com App Router — componentizado, tipado com TypeScript",
             "Universo de busca com ~170 ativos da B3 pesquisável por ticker, nome e setor",
-            "Motor DCF real com 7 premissas editáveis e recalculo dinâmico",
-            "Tabela de análise de sensibilidade — WACC × crescimento terminal",
-            "Tabela de projeção de fluxo de caixa livre (10 anos + valor terminal)",
+            "Indicadores fundamentalistas calculados automaticamente (crescimento, margens, endividamento, múltiplos)",
+            "Diagnóstico baseado em regras — sinais objetivos sobre tendências nos dados",
+            "Tabela de múltiplos comparáveis setoriais",
             "Integração com brapi.dev para cotações em tempo real (server-side, token protegido)",
             "Endpoint CVM DFP — download, parsing e normalização de DFP anual (2020–2024)",
-            "Modo opcional Dados CVM na aba Financeiros — alterna entre mock e dados reais",
+            "Modo Dados CVM — análise fundamentalista com dados reais quando disponíveis",
             "DataSourceNotice — identifica a origem de cada campo antes do uso em análise",
-            "Página de metodologia — explica modelo DCF, fórmulas, premissas e limitações",
-            "Relatório imprimível — /relatorio/[ticker] com print CSS A4, 9 seções estruturadas",
-            "Múltiplos comparáveis e painel de notícias",
+            "Página de metodologia — explica fonte de dados, cálculos de indicadores, diagnóstico e limitações",
             "Página Sobre (esta página)",
+            "Página de cobertura — lista todos os ativos com status e filtros",
           ]} />
         </Card>
 
         {/* 6. Limitações atuais */}
         <Card label="Seção 5" title="Limitações atuais">
           <BulletList items={[
+            "Os dados financeiros das empresas com análise completa (WEGE3, ABEV3, EGIE3, CPFE3, VIVT3) são ilustrativos — plausíveis, mas não auditados contra demonstrações reais.",
             "Os dados CVM ainda estão em validação empresa por empresa. Capex e FCL são calculados a partir de linhas da DFC e podem divergir de relatórios de analistas externos.",
             "EBITDA usa EBIT como proxy quando D&A não está disponível como linha separada na DFP.",
             "Dívida total é capturada como 2.01.04 (curto prazo) + 2.02.01 (longo prazo). Debêntures em contas não padronizadas podem não ser capturadas.",
@@ -394,7 +395,7 @@ export default function SobrePage() {
             "O app suporta apenas demonstrações consolidadas (não individuais) e apenas dados anuais (sem ITR trimestral).",
             "Cold start: a primeira requisição por ano fiscal baixa um zip de ~13 MB da CVM (1–3 segundos). Requisições subsequentes são servidas do cache em memória.",
             "O universo de busca tem ~170 ativos; cobertura ampla da B3 ainda está em expansão.",
-            "O modelo não representa recomendação de investimento e não é registrado como serviço de consultoria de valores mobiliários.",
+            "A plataforma não fornece recomendações de investimento e não é registrada como serviço de consultoria de valores mobiliários.",
           ]} />
         </Card>
 
@@ -406,12 +407,12 @@ export default function SobrePage() {
           <RoadmapList items={[
             "Ampliar cobertura CVM — mapear mais tickers ao registro da CVM Dados Abertos",
             "Validar normalização por setor — confirmar receita, EBIT e capex para utilities, varejo, telecom e mineração",
-            "Integrar ITR trimestral — dados de fluxo de caixa e DRE com periodicidade trimestral",
+            "Integrar ITR trimestral — dados de DRE e DFC com periodicidade trimestral",
             "Melhorar modelos setoriais — implementar DDM para bancos e utilidades, NAV para FIIs",
-            "Adicionar histórico de preço — séries de cotação para gráficos de desempenho e análise técnica básica",
-            "Melhorar exportação de relatório — layout PDF aprimorado, logo, capa, table of contents",
-            "Adicionar testes automatizados — cobertura do motor DCF, normalizer CVM e transformers",
-            "Eventualmente: backtesting de premissas históricas, factor models e comparativos setoriais automatizados",
+            "Adicionar histórico de preço — séries de cotação para gráficos de desempenho",
+            "Relatório exportável — snapshot fundamentalista em PDF com layout estruturado",
+            "Ampliar testes automatizados — cobertura do normalizer CVM, indicadores e diagnóstico",
+            "Integração com fontes de notícias — alertas de fatos relevantes e comunicados por ticker",
           ]} />
         </Card>
 

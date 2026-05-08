@@ -12,8 +12,6 @@ const cpfe3: CompanyData = {
     marketCap: "R$ 32,1B",
     enterpriseValue: "R$ 52,8B",
     currency: "BRL",
-    valuationStatus: "Neutro",
-    upside: 3.8,
   },
   metrics: [
     { label: "Receita",              value: "R$ 16,4B", trend: +5.8, suffix: "TTM"       },
@@ -34,17 +32,6 @@ const cpfe3: CompanyData = {
     currentRevenue:    16.4,
     sharesOutstanding: 0.925,
     netDebt:           20.7,
-    projectionYears:   10,
-    daPercentRevenue:  4.8,
-  },
-  defaultAssumptions: {
-    revenueCAGR:    5.5,
-    ebitMargin:     22.0,
-    taxRate:        34.0,
-    wacc:           10.5,
-    terminalGrowth:  3.5,
-    capexRevenue:    7.5,
-    nwcChange:       0.8,
   },
   multiples: [
     { company: "CPFL Energia", ticker: "CPFE3", pe: "12,6x", evEbitda: "8,9x",  evSales: "3,2x", highlight: true  },
@@ -59,8 +46,6 @@ const cpfe3: CompanyData = {
     { source: "CVM / B3",  date: "10 abr. 2026", title: "CPFL paga dividendos de R$ 2,18 por ação, rendimento de 6,4% a/a",                 category: "Proventos"   },
     { source: "Broadcast", date: "03 abr. 2026", title: "Distribuidoras elétricas registram queda de 2% nas perdas técnicas no trimestre",   category: "Macro"       },
   ],
-  waccVals:          [9.5, 10.0, 10.5, 11.0, 11.5],
-  terminalGrowthVals: [2.5, 3.0, 3.5, 4.0],
 };
 
 export default cpfe3;

@@ -1,6 +1,6 @@
 /**
  * Development-only audit script: validates CVM DFP data availability for all
- * tickers with coverageStatus "cvm_financials" or "valuation_available".
+ * tickers with coverageStatus "cvm_financials" or "cvm_analysis".
  *
  * Usage:
  *   npx tsx scripts/check-cvm-financials.ts [options]
@@ -61,16 +61,16 @@ interface ApiFinancialsResponse {
   financials: NormalizedFinancials[];
 }
 
-// ─── Eligibility logic (mirrored from cvm-valuation-builder.ts) ──────────────
+// ─── Eligibility logic (mirrored from cvm-analysis-builder.ts) ───────────────
 
-const PRELIMINARY_STATUSES: CoverageStatus[] = ["cvm_financials", "preliminary_valuation"];
+const ANALYSIS_STATUSES: CoverageStatus[] = ["cvm_financials", "cvm_analysis"];
 const ELIGIBLE_TYPES: AssetType[] = ["stock", "unit"];
 
 function assetEligibilityReason(asset: B3Asset): string | null {
-  if (asset.hasMockData)                                    return "has mock data";
-  if (!PRELIMINARY_STATUSES.includes(asset.coverageStatus)) return `status is ${asset.coverageStatus}`;
-  if (!asset.hasCvmMapping)                                 return "no CVM mapping";
-  if (!ELIGIBLE_TYPES.includes(asset.assetType))            return `assetType is ${asset.assetType}`;
+  if (asset.hasMockData)                                   return "has mock data";
+  if (!ANALYSIS_STATUSES.includes(asset.coverageStatus))  return `status is ${asset.coverageStatus}`;
+  if (!asset.hasCvmMapping)                                return "no CVM mapping";
+  if (!ELIGIBLE_TYPES.includes(asset.assetType))           return `assetType is ${asset.assetType}`;
   return null;
 }
 
@@ -91,7 +91,7 @@ function dataEligibilityReason(financials: NormalizedFinancials[]): string | nul
     return "all latest metrics are zero";
   }
 
-  // At least one income/CF metric must be non-zero for DCF assumptions
+  // At least one income/CF metric must be non-zero for CVM analysis
   const hasUsable =
     (latest.ebit              !== undefined && latest.ebit              !== 0) ||
     (latest.netIncome         !== undefined && latest.netIncome         !== 0) ||
@@ -380,18 +380,16 @@ function printTable(rows: AuditRow[]): void {
   console.log(SEP);
 
   for (const r of rows) {
-    const st   = r.coverageStatus === "cvm_financials"       ? "cvm"
-               : r.coverageStatus === "preliminary_valuation" ? "pre"
-               : "val";
+    const st   = r.coverageStatus === "cvm_financials" ? "cvm"
+               : r.coverageStatus === "cvm_analysis"   ? "ana"
+               : "oth";
     const map  = r.hasCvmMapping ? "Y" : "N";
     const code = r.cvmCode ?? "—";
     const yrs  = r.yearsReturned > 0 ? String(r.yearsReturned) : "—";
     const yr   = r.latestYear    ? String(r.latestYear)    : "—";
 
     let el: string;
-    if (r.coverageStatus === "valuation_available") {
-      el = colored("VA", DIM);
-    } else if (r.fetchError) {
+    if (r.fetchError) {
       el = colored("ERR", YELLOW);
     } else if (r.overallEligible) {
       el = colored("✓", GREEN);
@@ -434,7 +432,7 @@ function buildSummary(rows: AuditRow[]): Summary {
     withAnyData:        rows.filter(r => r.yearsReturned > 0).length,
     withThreePlusYears: rows.filter(r => r.yearsReturned >= 3).length,
     eligible:           rows.filter(r => r.overallEligible).length,
-    notEligible:        rows.filter(r => !r.overallEligible && !r.fetchError && (r.coverageStatus === "cvm_financials" || r.coverageStatus === "preliminary_valuation")).length,
+    notEligible:        rows.filter(r => !r.overallEligible && !r.fetchError && ANALYSIS_STATUSES.includes(r.coverageStatus)).length,
     errors:             rows.filter(r => r.fetchError !== null).length,
   };
 }
@@ -446,7 +444,7 @@ function printSummary(summary: Summary): void {
   console.log(`  With CVM mapping       : ${summary.withCvmMapping}`);
   console.log(`  With any data returned : ${summary.withAnyData}`);
   console.log(`  With ≥ 3 years         : ${summary.withThreePlusYears}`);
-  console.log(`  Eligible for prelim.   : ${colored(String(summary.eligible), GREEN)}`);
+  console.log(`  Eligible for analysis  : ${colored(String(summary.eligible), GREEN)}`);
   console.log(`  Not eligible           : ${colored(String(summary.notEligible), RED)}`);
   console.log(`  Fetch errors           : ${summary.errors > 0 ? colored(String(summary.errors), YELLOW) : "0"}`);
   console.log();
@@ -456,12 +454,11 @@ function printSummary(summary: Summary): void {
 
 function printIneligibleDetail(rows: AuditRow[]): void {
   const ineligible = rows.filter(
-    r => !r.overallEligible && !r.fetchError &&
-      (r.coverageStatus === "cvm_financials" || r.coverageStatus === "preliminary_valuation"),
+    r => !r.overallEligible && !r.fetchError && ANALYSIS_STATUSES.includes(r.coverageStatus),
   );
   if (ineligible.length === 0) return;
 
-  console.log(colored("── Not eligible (cvm_financials / preliminary_valuation) ──", BOLD));
+  console.log(colored("── Not eligible (cvm_financials / cvm_analysis) ───────────", BOLD));
   for (const r of ineligible) {
     const reason = r.eligibleReason ?? "unknown";
     console.log(`  ${padR(r.ticker, 7)}  ${colored(reason, RED)}`);
@@ -513,14 +510,14 @@ async function main(): Promise<void> {
   const { baseUrl, singleTicker, json, timeoutMs, retries, retryDelayMs, debug } = parseArgs();
   const fetchOpts: FetchOpts = { timeoutMs, retries, retryDelayMs, debug };
 
-  const TARGET_STATUSES: CoverageStatus[] = ["cvm_financials", "preliminary_valuation", "valuation_available"];
+  const TARGET_STATUSES: CoverageStatus[] = ["cvm_financials", "cvm_analysis"];
 
   let assets = B3_UNIVERSE.filter(a => TARGET_STATUSES.includes(a.coverageStatus));
 
   if (singleTicker) {
     const found = assets.find(a => a.ticker === singleTicker);
     if (!found) {
-      console.error(`Ticker ${singleTicker} not found or not in cvm_financials/valuation_available.`);
+      console.error(`Ticker ${singleTicker} not found or not in cvm_financials/cvm_analysis.`);
       process.exit(1);
     }
     assets = [found];
@@ -532,10 +529,10 @@ async function main(): Promise<void> {
     console.log(`Base URL   : ${baseUrl}`);
     console.log(`Checking   : ${assets.length} ticker(s)`);
     console.log(`Timeout    : ${timeoutMs}ms  Retries: ${retries}  RetryDelay: ${retryDelayMs}ms`);
-    console.log(`Statuses   : cvm_financials + preliminary_valuation + valuation_available`);
+    console.log(`Statuses   : cvm_financials + cvm_analysis`);
     console.log(
       `Note       : All monetary values in BRL billions (R$B). ` +
-      `Eligibility = preliminary CVM valuation flow.`,
+      `Eligibility = CVM analysis readiness check.`,
     );
   }
 

@@ -12,8 +12,6 @@ const vivt3: CompanyData = {
     marketCap: "R$ 92,6B",
     enterpriseValue: "R$ 105,3B",
     currency: "BRL",
-    valuationStatus: "Descontado",
-    upside: 9.2,
   },
   metrics: [
     { label: "Receita",              value: "R$ 55,4B", trend: +7.2,  suffix: "TTM"       },
@@ -34,17 +32,6 @@ const vivt3: CompanyData = {
     currentRevenue:    55.4,
     sharesOutstanding: 1.752,
     netDebt:           12.7,
-    projectionYears:   10,
-    daPercentRevenue:  6.8,
-  },
-  defaultAssumptions: {
-    revenueCAGR:    6.5,
-    ebitMargin:     38.5,
-    taxRate:        34.0,
-    wacc:           11.0,
-    terminalGrowth:  3.5,
-    capexRevenue:   14.5,
-    nwcChange:       0.8,
   },
   multiples: [
     { company: "Vivo (VIVT3)",          ticker: "VIVT3", pe: "15,2x", evEbitda: "6,4x", evSales: "1,9x", highlight: true  },
@@ -59,8 +46,6 @@ const vivt3: CompanyData = {
     { source: "Anatel",    date: "10 abr. 2026", title: "Anatel publica novo plano de expansão de 5G para municípios acima de 30 mil hab.",      category: "Regulatório" },
     { source: "Broadcast", date: "04 abr. 2026", title: "ARPU de dados móveis cresce 8,2% no trimestre, impulsionado por planos premium",       category: "Macro"       },
   ],
-  waccVals:          [10.0, 10.5, 11.0, 11.5, 12.0],
-  terminalGrowthVals: [2.5, 3.0, 3.5, 4.0],
 };
 
 export default vivt3;

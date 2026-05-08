@@ -1,7 +1,7 @@
 import React from "react";
 
 interface Props {
-  sourceMode: "mock" | "cvm" | "preliminary_cvm";
+  sourceMode: "mock" | "cvm" | "cvm_analysis";
   hasCvmData?: boolean;
   quoteSource?: "brapi" | "mock" | null;
 }
@@ -34,11 +34,11 @@ export default function DataSourceNotice({ sourceMode, hasCvmData, quoteSource }
   const quoteStyle = quoteSource === "brapi" ? BS.brapi : BS.mock;
   const quoteLabel = quoteSource === "brapi" ? "Cotação: brapi" : "Cotação: mock";
 
-  if (sourceMode === "preliminary_cvm") {
+  if (sourceMode === "cvm_analysis") {
     return (
       <div style={card("#ddd6fe")}>
         <Row>
-          <Title color="#5b21b6">Valuation preliminar · Dados CVM</Title>
+          <Title color="#5b21b6">Análise fundamentalista · Dados CVM</Title>
           <Chips>
             <Chip text="Receita: CVM"          s={BS.cvm} />
             <Chip text="EBIT: CVM"             s={BS.cvm} />
@@ -48,10 +48,9 @@ export default function DataSourceNotice({ sourceMode, hasCvmData, quoteSource }
           </Chips>
         </Row>
         <Body>
-          Valuation preliminar com dados CVM. Os dados financeiros são extraídos da DFP
-          anual consolidada e alguns campos são normalizados ou calculados. Premissas de
-          valuation são estimativas conservadoras. Este resultado ainda está em validação
-          e não constitui recomendação de investimento.
+          Dados financeiros extraídos da DFP anual consolidada (CVM Dados Abertos).
+          Alguns campos são normalizados ou calculados a partir das demonstrações.
+          Não constitui recomendação de investimento.
         </Body>
       </div>
     );
@@ -63,12 +62,12 @@ export default function DataSourceNotice({ sourceMode, hasCvmData, quoteSource }
         <Row>
           <Title>Dados ilustrativos</Title>
           <Chips>
-            <Chip text="Financeiros: mock" s={BS.mock} />
+            <Chip text="Financeiros: ilustrativos" s={BS.mock} />
             <Chip text={quoteLabel} s={quoteStyle} />
           </Chips>
         </Row>
         <Body>
-          Este painel está usando dados mockados para demonstração. Use o modo{" "}
+          Este painel está usando dados ilustrativos para demonstração. Use o modo{" "}
           <strong style={{ fontWeight: 600 }}>Dados CVM</strong> para visualizar dados
           oficiais normalizados da DFP anual quando disponíveis.
         </Body>
@@ -82,13 +81,13 @@ export default function DataSourceNotice({ sourceMode, hasCvmData, quoteSource }
         <Row>
           <Title color="#b45309">Modo CVM — dados não disponíveis</Title>
           <Chips>
-            <Chip text="Financeiros: mock (fallback)" s={BS.warn} />
+            <Chip text="Financeiros: ilustrativos (fallback)" s={BS.warn} />
             <Chip text={quoteLabel} s={quoteStyle} />
           </Chips>
         </Row>
         <Body>
           Não há mapeamento CVM confirmado para este ticker. O painel continua usando dados
-          mockados como fallback.
+          ilustrativos como fallback.
         </Body>
       </div>
     );

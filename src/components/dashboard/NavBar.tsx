@@ -64,7 +64,7 @@ export default function NavBar({ onSelectCompany, selectedTicker = "" }: NavBarP
           aria-hidden="true"
           style={styles.brandIcon}
         />
-        <span style={styles.brandText}>Valuation Copilot</span>
+        <span style={styles.brandText}>Fundamental Copilot</span>
         <span style={styles.brandBadge}>BR</span>
       </Link>
 
@@ -158,9 +158,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#0f172a",
     padding: "0 24px",
     borderBottom: "1px solid #1e293b",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
     gap: 20,
   },
   brand: {

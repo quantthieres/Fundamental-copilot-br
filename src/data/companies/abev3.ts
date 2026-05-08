@@ -12,8 +12,6 @@ const abev3: CompanyData = {
     marketCap: "R$ 196,2B",
     enterpriseValue: "R$ 201,4B",
     currency: "BRL",
-    valuationStatus: "Neutro",
-    upside: 6.7,
   },
   metrics: [
     { label: "Receita",              value: "R$ 52,0B", trend: +4.8,  suffix: "TTM"       },
@@ -34,17 +32,6 @@ const abev3: CompanyData = {
     currentRevenue:    52.0,
     sharesOutstanding: 15.72,
     netDebt:           5.2,
-    projectionYears:   10,
-    daPercentRevenue:  3.8,
-  },
-  defaultAssumptions: {
-    revenueCAGR:    5.0,
-    ebitMargin:     28.5,
-    taxRate:        32.0,
-    wacc:           11.5,
-    terminalGrowth:  3.5,
-    capexRevenue:    4.5,
-    nwcChange:       1.0,
   },
   multiples: [
     { company: "Ambev",        ticker: "ABEV3", pe: "16,4x", evEbitda: "12,2x", evSales: "3,9x", highlight: true  },
@@ -59,8 +46,6 @@ const abev3: CompanyData = {
     { source: "Broadcast", date: "12 abr. 2026", title: "Inflação de insumos agrícolas pressiona margens de bebidas no 2T26, alerta analista",    category: "Macro"          },
     { source: "Broadcast", date: "05 abr. 2026", title: "Ambev confirma expansão da capacidade da cervejaria em Camaçari para atender demanda NE", category: "Fato Relevante" },
   ],
-  waccVals:          [10.5, 11.0, 11.5, 12.0, 12.5],
-  terminalGrowthVals: [2.5, 3.0, 3.5, 4.0],
 };
 
 export default abev3;

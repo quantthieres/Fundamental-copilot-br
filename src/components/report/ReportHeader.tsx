@@ -20,9 +20,9 @@ export default function ReportHeader({ company, source, quoteSource, generatedAt
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#2563eb", letterSpacing: "-0.3px", marginBottom: 2 }}>
-            Valuation Copilot BR
+            Fundamental Copilot BR
           </div>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Relatório de Valuation · Uso educacional e demonstrativo</div>
+          <div style={{ fontSize: 11, color: "#94a3b8" }}>Relatório fundamentalista · Uso educacional e demonstrativo</div>
         </div>
         <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.7 }}>
           <div>Gerado em {generatedAt}</div>

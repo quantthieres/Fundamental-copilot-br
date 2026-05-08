@@ -9,8 +9,6 @@ export interface CompanyProfile {
   marketCap: string;
   enterpriseValue: string;
   currency: string;
-  valuationStatus: string;
-  upside: number;
 }
 
 export interface MetricItem {
@@ -31,18 +29,6 @@ export interface CompanyFundamentals {
   currentRevenue: number;
   sharesOutstanding: number;
   netDebt: number;
-  projectionYears: number;
-  daPercentRevenue: number;
-}
-
-export interface Assumptions {
-  revenueCAGR: number;
-  ebitMargin: number;
-  taxRate: number;
-  wacc: number;
-  terminalGrowth: number;
-  capexRevenue: number;
-  nwcChange: number;
 }
 
 export interface MultipleItem {
@@ -66,9 +52,6 @@ export interface CompanyData {
   metrics: MetricItem[];
   financials: FinancialYear[];
   fundamentals: CompanyFundamentals;
-  defaultAssumptions: Assumptions;
   multiples: MultipleItem[];
   news: NewsItem[];
-  waccVals: number[];
-  terminalGrowthVals: number[];
 }

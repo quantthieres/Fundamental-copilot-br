@@ -12,8 +12,6 @@ const wege3: CompanyData = {
     marketCap: "R$ 145,3B",
     enterpriseValue: "R$ 148,1B",
     currency: "BRL",
-    valuationStatus: "Descontado",
-    upside: 11.2,
   },
   metrics: [
     { label: "Receita",              value: "R$ 34,2B", trend: +12.1, suffix: "TTM"       },
@@ -34,17 +32,6 @@ const wege3: CompanyData = {
     currentRevenue:    34.2,
     sharesOutstanding: 3.77,
     netDebt:           2.8,
-    projectionYears:   10,
-    daPercentRevenue:  2.5,
-  },
-  defaultAssumptions: {
-    revenueCAGR:    10.0,
-    ebitMargin:     19.5,
-    taxRate:        25.0,
-    wacc:           12.0,
-    terminalGrowth:  4.0,
-    capexRevenue:    3.8,
-    nwcChange:       1.2,
   },
   multiples: [
     { company: "WEG S.A.",        ticker: "WEGE3", pe: "32,4x", evEbitda: "28,1x", evSales: "4,3x", highlight: true  },
@@ -59,8 +46,6 @@ const wege3: CompanyData = {
     { source: "WEG RI",    date: "15 abr. 2026", title: "Comunicado ao Mercado: Aprovação de JCP e dividendos — R$ 0,18 por ação, pagamento em 20/05",                   category: "Proventos"      },
     { source: "Broadcast", date: "09 abr. 2026", title: "Copom mantém Selic em 13,25%; analistas revisam múltiplos do setor industrial brasileiro",                       category: "Macro"          },
   ],
-  waccVals:          [11.0, 11.5, 12.0, 12.5, 13.0],
-  terminalGrowthVals: [3.0, 3.5, 4.0, 4.5],
 };
 
 export default wege3;

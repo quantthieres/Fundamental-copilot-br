@@ -12,8 +12,6 @@ const egie3: CompanyData = {
     marketCap: "R$ 30,2B",
     enterpriseValue: "R$ 38,5B",
     currency: "BRL",
-    valuationStatus: "Neutro",
-    upside: 5.4,
   },
   metrics: [
     { label: "Receita",              value: "R$ 5,5B",  trend: +8.2,  suffix: "TTM"       },
@@ -34,17 +32,6 @@ const egie3: CompanyData = {
     currentRevenue:    5.5,
     sharesOutstanding: 0.682,
     netDebt:           8.3,
-    projectionYears:   10,
-    daPercentRevenue:  5.2,
-  },
-  defaultAssumptions: {
-    revenueCAGR:    7.5,
-    ebitMargin:     52.0,
-    taxRate:        34.0,
-    wacc:           10.5,
-    terminalGrowth:  3.5,
-    capexRevenue:    8.0,
-    nwcChange:       0.5,
   },
   multiples: [
     { company: "Engie Brasil", ticker: "EGIE3",  pe: "14,8x", evEbitda: "12,1x", evSales: "7,0x", highlight: true  },
@@ -59,8 +46,6 @@ const egie3: CompanyData = {
     { source: "ANEEL",     date: "08 abr. 2026", title: "ANEEL aprova reajuste tarifário para contratos de geração hidrelétrica",                category: "Regulatório" },
     { source: "Broadcast", date: "02 abr. 2026", title: "Energia hidrelétrica responde por 61% da matriz elétrica no 1T26",                     category: "Macro"       },
   ],
-  waccVals:          [9.5, 10.0, 10.5, 11.0, 11.5],
-  terminalGrowthVals: [2.5, 3.0, 3.5, 4.0],
 };
 
 export default egie3;

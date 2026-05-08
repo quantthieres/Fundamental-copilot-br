@@ -11,8 +11,6 @@ interface Company {
   marketCap: string;
   enterpriseValue: string;
   currency: string;
-  valuationStatus: string;
-  upside: number;
 }
 
 interface CompanyHeaderProps {
@@ -49,18 +47,13 @@ export default function CompanyHeader({ company, quote, quoteLoading, exportUrl 
     <div style={styles.wrap}>
       <div style={styles.left}>
         <div style={styles.logoBox}>
-          <div style={styles.wegLogo}>{company.ticker.slice(0, 3)}</div>
+          <div style={styles.tickerLogo}>{company.ticker.slice(0, 3)}</div>
         </div>
         <div>
           <div style={styles.nameRow}>
             <h1 style={styles.name}>{company.name}</h1>
             <span style={styles.exchange}>{company.exchange}: {company.ticker}</span>
             <span style={styles.sector}>{company.sector}</span>
-            <span style={styles.valuationBadge}>
-              <span style={styles.badgeDot}></span>
-              {company.valuationStatus}
-            </span>
-            <span style={styles.upsideBadge}>+{company.upside}% potencial</span>
           </div>
           <div style={styles.metaRow}>
             <span style={styles.metaItem}>Valor de Mercado <strong>{company.marketCap}</strong></span>
@@ -88,13 +81,6 @@ export default function CompanyHeader({ company, quote, quoteLoading, exportUrl 
           <div style={styles.sourceLabel}>{sourceLabel}</div>
         </div>
         <div style={styles.actions}>
-          <button style={styles.btnSecondary}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ marginRight: 5 }}>
-              <path d="M13 8A5 5 0 113 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M3 2v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Atualizar Dados
-          </button>
           {exportUrl ? (
             <a href={exportUrl} style={{ ...styles.btnPrimary, textDecoration: "none" }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ marginRight: 5 }}>
@@ -103,7 +89,7 @@ export default function CompanyHeader({ company, quote, quoteLoading, exportUrl 
               Exportar Relatório
             </a>
           ) : (
-            <button style={styles.btnPrimary}>
+            <button style={{ ...styles.btnPrimary, opacity: 0.5, cursor: "not-allowed" as const }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ marginRight: 5 }}>
                 <path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -124,7 +110,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   left: { display: "flex", alignItems: "center", gap: 14 },
   logoBox: { flexShrink: 0 },
-  wegLogo: {
+  tickerLogo: {
     width: 36, height: 36, borderRadius: 8, background: "#1e40af",
     display: "flex", alignItems: "center", justifyContent: "center",
     color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: "-0.5px",
@@ -139,16 +125,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11, color: "#64748b", background: "#f8fafc",
     border: "1px solid #e2e8f0", padding: "2px 7px", borderRadius: 4,
   },
-  valuationBadge: {
-    display: "flex", alignItems: "center", gap: 4, fontSize: 11,
-    color: "#0369a1", background: "#e0f2fe", padding: "2px 8px", borderRadius: 20,
-    fontWeight: 600,
-  },
-  badgeDot: { width: 5, height: 5, borderRadius: "50%", background: "#0369a1", display: "inline-block" },
-  upsideBadge: {
-    fontSize: 11, color: "#15803d", background: "#dcfce7",
-    padding: "2px 8px", borderRadius: 20, fontWeight: 600,
-  },
   metaRow: { display: "flex", alignItems: "center", gap: 6 },
   metaItem: { fontSize: 12, color: "#64748b" },
   metaDivider: { color: "#cbd5e1", fontSize: 11 },
@@ -159,24 +135,14 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 2,
     display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4,
   },
-  loadingDots: {
-    fontSize: 9, color: "#94a3b8", letterSpacing: "2px",
-  },
+  loadingDots: { fontSize: 9, color: "#94a3b8", letterSpacing: "2px" },
   price: {
     fontSize: 26, fontWeight: 700, color: "#0f172a",
     fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-1px",
   },
   priceChange: { fontSize: 12, fontWeight: 500, fontFamily: "'JetBrains Mono', monospace" },
-  sourceLabel: {
-    fontSize: 10, color: "#94a3b8", marginTop: 5,
-    letterSpacing: "0.1px",
-  },
+  sourceLabel: { fontSize: 10, color: "#94a3b8", marginTop: 5, letterSpacing: "0.1px" },
   actions: { display: "flex", gap: 8 },
-  btnSecondary: {
-    display: "flex", alignItems: "center", fontSize: 12, fontWeight: 500,
-    padding: "6px 12px", borderRadius: 7, border: "1px solid #e2e8f0",
-    background: "#f8fafc", cursor: "pointer", color: "#374151", fontFamily: "inherit",
-  },
   btnPrimary: {
     display: "flex", alignItems: "center", fontSize: 12, fontWeight: 500,
     padding: "6px 12px", borderRadius: 7, border: "none",

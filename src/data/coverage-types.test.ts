@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { COVERAGE_BADGE, COVERAGE_DESCRIPTION, type CoverageStatus } from "./coverage-types";
 
 const ALL_STATUSES: CoverageStatus[] = [
-  "valuation_available",
-  "preliminary_valuation",
+  "full_analysis",
+  "cvm_analysis",
   "cvm_financials",
   "quote_only",
   "sector_specific_model_required",
@@ -46,12 +46,16 @@ describe("COVERAGE_BADGE", () => {
     expect(unique.size).toBe(labels.length);
   });
 
-  it("valuation_available label is 'Valuation'", () => {
-    expect(COVERAGE_BADGE["valuation_available"].label).toBe("Valuation");
+  it("full_analysis label is 'Análise completa'", () => {
+    expect(COVERAGE_BADGE["full_analysis"].label).toBe("Análise completa");
   });
 
-  it("cvm_financials label is 'CVM'", () => {
-    expect(COVERAGE_BADGE["cvm_financials"].label).toBe("CVM");
+  it("cvm_analysis label is 'Análise CVM'", () => {
+    expect(COVERAGE_BADGE["cvm_analysis"].label).toBe("Análise CVM");
+  });
+
+  it("cvm_financials label is 'Dados CVM'", () => {
+    expect(COVERAGE_BADGE["cvm_financials"].label).toBe("Dados CVM");
   });
 
   it("quote_only label is 'Cotação'", () => {
@@ -66,13 +70,13 @@ describe("COVERAGE_BADGE", () => {
     expect(COVERAGE_BADGE["unavailable"].label).toBe("Em breve");
   });
 
-  it("preliminary_valuation label is 'Valuation preliminar'", () => {
-    expect(COVERAGE_BADGE["preliminary_valuation"].label).toBe("Valuation preliminar");
+  it("cvm_analysis badge has violet bg and color", () => {
+    expect(COVERAGE_BADGE["cvm_analysis"].bg).toBe("#ede9fe");
+    expect(COVERAGE_BADGE["cvm_analysis"].color).toBe("#7c3aed");
   });
 
-  it("preliminary_valuation badge has violet bg and color", () => {
-    expect(COVERAGE_BADGE["preliminary_valuation"].bg).toBe("#ede9fe");
-    expect(COVERAGE_BADGE["preliminary_valuation"].color).toBe("#7c3aed");
+  it("full_analysis badge has green bg", () => {
+    expect(COVERAGE_BADGE["full_analysis"].bg).toBe("#dcfce7");
   });
 });
 
@@ -96,5 +100,13 @@ describe("COVERAGE_DESCRIPTION", () => {
     const descs  = ALL_STATUSES.map(s => COVERAGE_DESCRIPTION[s]);
     const unique = new Set(descs);
     expect(unique.size).toBe(descs.length);
+  });
+
+  it("no description mentions valuation or DCF", () => {
+    for (const status of ALL_STATUSES) {
+      const desc = COVERAGE_DESCRIPTION[status].toLowerCase();
+      expect(desc).not.toContain("valuation");
+      expect(desc).not.toContain("dcf");
+    }
   });
 });

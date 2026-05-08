@@ -1,32 +1,25 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import NavBar from "@/components/dashboard/NavBar";
 import CompanyHeader from "@/components/dashboard/CompanyHeader";
 import MetricsRow from "@/components/dashboard/MetricsRow";
 import HistoricalChart from "@/components/dashboard/HistoricalChart";
-import DcfSummary from "@/components/dashboard/DcfSummary";
-import SensitivityTable from "@/components/dashboard/SensitivityTable";
-import AssumptionsPanel from "@/components/dashboard/AssumptionsPanel";
 import MultiplesTable from "@/components/dashboard/MultiplesTable";
 import NewsPanel from "@/components/dashboard/NewsPanel";
-import RecalcToast from "@/components/dashboard/RecalcToast";
-import DcfProjectionTable from "@/components/dashboard/DcfProjectionTable";
 import CvmFinancialsTable from "@/components/dashboard/CvmFinancialsTable";
 import DataSourceNotice from "@/components/dashboard/DataSourceNotice";
-import { cvmFinancialsToDashboardFinancials, buildCvmFundamentalsFromFinancials } from "@/lib/cvm/transformers";
-import { buildPreliminaryCompanyDataFromCvm, isPreliminaryEligible } from "@/lib/cvm/cvm-valuation-builder";
+import FundamentalIndicators from "@/components/dashboard/FundamentalIndicators";
+import FundamentalDiagnosis from "@/components/dashboard/FundamentalDiagnosis";
+import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
+import { buildCompanyAnalysisDataFromCvm, isCvmAnalysisEligible } from "@/lib/cvm/cvm-analysis-builder";
 import type { NormalizedFinancials } from "@/lib/cvm/types";
 import { getCompanyData, DEFAULT_DATA } from "@/data/companies";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import type { MarketDataQuote } from "@/lib/market-data/types";
 import { COVERAGE_BADGE, COVERAGE_DESCRIPTION, type CoverageStatus } from "@/data/coverage-types";
-import {
-  recalculateDcf, sensitivityFairValue,
-  type Assumptions, type DcfResult,
-} from "@/lib/valuation/dcf";
 
-const TABS = ["Visão Geral", "Financeiros", "Valuation", "Notícias", "Premissas"];
+const TABS = ["Visão Geral", "Financeiros", "Indicadores", "Comparáveis", "Notícias e documentos"];
 
 function TabBar({ activeTab, onTabChange }: { activeTab: string; onTabChange: (t: string) => void }) {
   return (
@@ -110,21 +103,21 @@ function EmptyStateView({
           {description}
         </p>
 
-        {status === "preliminary_valuation" && (
+        {status === "cvm_analysis" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Os dados CVM estão sendo buscados. Se o dashboard não aparecer, os dados disponíveis podem não ser suficientes para gerar o valuation preliminar.
+            Os dados CVM estão sendo buscados. Se o dashboard não aparecer, os dados disponíveis podem não ser suficientes para gerar a análise.
           </p>
         )}
 
         {status === "cvm_financials" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Os dados financeiros reais da DFP/CVM já estão integrados. O dashboard completo com DCF será habilitado após validação do modelo.
+            Os dados financeiros reais da DFP/CVM já estão integrados. O dashboard completo será habilitado após normalização adicional.
           </p>
         )}
 
         {status === "sector_specific_model_required" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Bancos, seguradoras, FIIs e holdings requerem modelos baseados em dividendos (DDM), ROE implícito ou NAV, que estão em desenvolvimento.
+            Bancos, seguradoras, FIIs e holdings requerem metodologias específicas que estão em desenvolvimento.
           </p>
         )}
 
@@ -161,7 +154,7 @@ function EmptyStateView({
   );
 }
 
-function PreliminaryLoadingView({ ticker }: { ticker: string }) {
+function CvmLoadingView({ ticker }: { ticker: string }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "center",
@@ -187,28 +180,14 @@ function PreliminaryLoadingView({ ticker }: { ticker: string }) {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab]       = useState("Visão Geral");
-  const [selectedTicker, setSelected]   = useState("WEGE3");
-  const [assumptions, setAssumptions]   = useState<Assumptions>(() => ({ ...DEFAULT_DATA.defaultAssumptions }));
-  const [toastVisible, setToastVisible] = useState(false);
-  const [dcf, setDcf]                   = useState<DcfResult>(() =>
-    recalculateDcf(DEFAULT_DATA.defaultAssumptions, DEFAULT_DATA.fundamentals, DEFAULT_DATA.company.price)
-  );
-  const [marketQuote, setMarketQuote]       = useState<MarketDataQuote | null>(null);
-  const [quoteLoading, setQuoteLoading]     = useState(false);
-  const [financialSource, setFinancialSource] = useState<"mock" | "cvm">("mock");
-  const [cvmFinancials, setCvmFinancials]   = useState<NormalizedFinancials[] | null>(null);
-  const [cvmLoading, setCvmLoading]         = useState(false);
+  const [activeTab, setActiveTab]     = useState("Visão Geral");
+  const [selectedTicker, setSelected] = useState("WEGE3");
+  const [marketQuote, setMarketQuote]     = useState<MarketDataQuote | null>(null);
+  const [quoteLoading, setQuoteLoading]   = useState(false);
+  const [cvmFinancials, setCvmFinancials] = useState<NormalizedFinancials[] | null>(null);
+  const [cvmLoading, setCvmLoading]       = useState(false);
+  const [financialSource, setFinancialSource] = useState<"mock" | "cvm">("cvm");
 
-  // ── Preliminary CVM valuation state (for companies without mock data) ──────
-  const [preliminaryCvmFinancials, setPreliminaryCvmFinancials] =
-    useState<NormalizedFinancials[] | null>(null);
-  const [preliminaryLoading, setPreliminaryLoading] = useState(false);
-  // Tracks the last ticker for which we initialised assumptions from preliminary data.
-  // Prevents re-initialising every time the memo recomputes (e.g. when marketQuote updates).
-  const preliminaryInitRef = useRef<string | null>(null);
-
-  // ── Memos ─────────────────────────────────────────────────────────────────
   const companyData = useMemo(() => getCompanyData(selectedTicker), [selectedTicker]);
 
   const b3Entry = useMemo(
@@ -216,66 +195,43 @@ export default function Home() {
     [selectedTicker],
   );
 
-  // Build preliminary data once CVM financials AND brapi quote are both available.
-  const preliminaryData = useMemo(() => {
-    if (companyData || !preliminaryCvmFinancials) return null;
+  // Build analysis data from CVM for companies without mock data.
+  const cvmAnalysisData = useMemo(() => {
+    if (companyData || !cvmFinancials || cvmFinancials.length === 0) return null;
     if (!b3Entry) return null;
-    return buildPreliminaryCompanyDataFromCvm({
+    return buildCompanyAnalysisDataFromCvm({
       b3Entry,
-      cvmFinancials: preliminaryCvmFinancials,
+      cvmFinancials,
       marketQuote,
     });
-  }, [companyData, preliminaryCvmFinancials, marketQuote, b3Entry]);
+  }, [companyData, cvmFinancials, marketQuote, b3Entry]);
 
-  // Unified data source used by all dashboard components.
-  const effectiveCompanyData = companyData ?? preliminaryData;
-  const isPreliminary = !companyData && preliminaryData !== null;
+  const effectiveCompanyData = companyData ?? cvmAnalysisData;
+  const isCvmAnalysis = !companyData && cvmAnalysisData !== null;
 
-  const activeFundamentals = useMemo(() => {
-    if (financialSource === "cvm" && cvmFinancials && cvmFinancials.length > 0 && companyData) {
-      return buildCvmFundamentalsFromFinancials(cvmFinancials, companyData.fundamentals);
-    }
-    return effectiveCompanyData?.fundamentals ?? DEFAULT_DATA.fundamentals;
-  }, [financialSource, cvmFinancials, companyData, effectiveCompanyData]);
-
+  // Active financials for charts: prefer CVM when available
   const activeFinancials = useMemo(() => {
     if (financialSource === "cvm" && cvmFinancials && cvmFinancials.length > 0) {
       return cvmFinancialsToDashboardFinancials(cvmFinancials);
     }
-    return effectiveCompanyData?.financials ?? [];
-  }, [financialSource, cvmFinancials, effectiveCompanyData]);
-
-  const activeMetrics = useMemo(() => {
-    if (!effectiveCompanyData) return [];
-    // CVM metric override applies only for mock companies with CVM toggle active.
-    if (companyData && financialSource === "cvm" && cvmFinancials && cvmFinancials.length > 0) {
-      const latest = [...cvmFinancials].sort((a, b) => b.fiscalYear - a.fiscalYear)[0];
-      return companyData.metrics.map(m => {
-        if (m.label === "Receita" && latest.revenue !== undefined) {
-          return { ...m, value: `R$ ${latest.revenue.toFixed(1).replace(".", ",")}B` };
-        }
-        if (m.label === "Fluxo de Caixa Livre" && latest.freeCashFlow !== undefined) {
-          return { ...m, value: `R$ ${Math.abs(latest.freeCashFlow).toFixed(1).replace(".", ",")}B` };
-        }
-        return m;
-      });
+    if (isCvmAnalysis && cvmFinancials && cvmFinancials.length > 0) {
+      return cvmFinancialsToDashboardFinancials(cvmFinancials);
     }
-    return effectiveCompanyData.metrics;
-  }, [financialSource, cvmFinancials, companyData, effectiveCompanyData]);
+    return effectiveCompanyData?.financials ?? [];
+  }, [financialSource, cvmFinancials, isCvmAnalysis, effectiveCompanyData]);
 
-  const sensitivityMatrix = useMemo(() => {
-    if (!effectiveCompanyData) return [];
-    return effectiveCompanyData.waccVals.map(w =>
-      effectiveCompanyData.terminalGrowthVals.map(tg => {
-        const fv = sensitivityFairValue(assumptions, w, tg, activeFundamentals);
-        return Math.round(fv);
-      }),
-    );
-  }, [assumptions, effectiveCompanyData, activeFundamentals]);
+  // CVM financials available for indicators/diagnosis
+  const indicatorFinancials: NormalizedFinancials[] = cvmFinancials ?? [];
+
+  // Show loading for cvm_analysis companies while fetching
+  const showCvmLoading =
+    !effectiveCompanyData &&
+    b3Entry !== undefined &&
+    isCvmAnalysisEligible(b3Entry) &&
+    (cvmLoading || quoteLoading);
 
   // ── Effects ───────────────────────────────────────────────────────────────
 
-  // Fetch brapi quote for every selected ticker.
   useEffect(() => {
     let cancelled = false;
     setMarketQuote(null);
@@ -286,92 +242,63 @@ export default function Home() {
       .then((body: { quote: MarketDataQuote | null }) => {
         if (!cancelled) setMarketQuote(body.quote ?? null);
       })
-      .catch(() => { /* keep null */ })
+      .catch(() => {})
       .finally(() => { if (!cancelled) setQuoteLoading(false); });
 
     return () => { cancelled = true; };
   }, [selectedTicker]);
 
-  // Fetch CVM financials for mock-company CVM-mode toggle.
-  // (Preliminary CVM fetch is handled in the effect below.)
+  // Fetch CVM financials for all companies that have a b3Entry.
+  // For cvm_analysis companies this is the primary data source; for mock companies
+  // it lets us prefer real CVM data over illustrative data when available.
   useEffect(() => {
-    if (financialSource !== "cvm" || !companyData || cvmFinancials === null) return;
-    const fundamentals = cvmFinancials.length > 0
-      ? buildCvmFundamentalsFromFinancials(cvmFinancials, companyData.fundamentals)
-      : companyData.fundamentals;
-    setDcf(recalculateDcf(assumptions, fundamentals, companyData.company.price));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cvmFinancials, financialSource]);
-
-  // Fetch CVM financials for eligible tickers that have no mock data.
-  useEffect(() => {
-    if (companyData || !b3Entry || !isPreliminaryEligible(b3Entry)) {
-      setPreliminaryCvmFinancials(null);
-      setPreliminaryLoading(false);
+    if (!b3Entry) {
+      setCvmFinancials(null);
+      setCvmLoading(false);
       return;
     }
 
     let cancelled = false;
-    setPreliminaryCvmFinancials(null);
-    setPreliminaryLoading(true);
+    setCvmFinancials(null);
+    setCvmLoading(true);
 
     fetch(`/api/cvm/financials/${encodeURIComponent(selectedTicker)}`)
       .then(res => res.json())
       .then((body: { financials: NormalizedFinancials[] }) => {
-        if (!cancelled) setPreliminaryCvmFinancials(body.financials ?? []);
+        if (!cancelled) {
+          const rows = body.financials ?? [];
+          setCvmFinancials(rows);
+          if (rows.length > 0) {
+            setFinancialSource("cvm");
+          } else {
+            setFinancialSource("mock");
+          }
+        }
       })
-      .catch(() => { if (!cancelled) setPreliminaryCvmFinancials([]); })
-      .finally(() => { if (!cancelled) setPreliminaryLoading(false); });
+      .catch(() => {
+        if (!cancelled) {
+          setCvmFinancials([]);
+          setFinancialSource("mock");
+        }
+      })
+      .finally(() => { if (!cancelled) setCvmLoading(false); });
 
     return () => { cancelled = true; };
-  }, [selectedTicker, companyData, b3Entry]);
-
-  // Initialise assumptions and DCF once when preliminary data first becomes available.
-  useEffect(() => {
-    if (!preliminaryData || preliminaryInitRef.current === selectedTicker) return;
-    preliminaryInitRef.current = selectedTicker;
-    const p = preliminaryData.company.price;
-    setAssumptions({ ...preliminaryData.defaultAssumptions });
-    setDcf(recalculateDcf(preliminaryData.defaultAssumptions, preliminaryData.fundamentals, p));
-  }, [preliminaryData, selectedTicker]);
+  }, [selectedTicker, b3Entry]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  function handleAssumptionChange(key: keyof Assumptions, val: number) {
-    setAssumptions(prev => ({ ...prev, [key]: val }));
-  }
-
-  function handleRecalculate() {
-    if (!effectiveCompanyData) return;
-    setDcf(recalculateDcf(assumptions, activeFundamentals, effectiveCompanyData.company.price));
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2500);
-  }
-
   function handleSelectCompany(ticker: string) {
-    const data = getCompanyData(ticker);
     setSelected(ticker);
-    setFinancialSource("mock");
+    setActiveTab("Visão Geral");
+    setFinancialSource("cvm");
     setCvmFinancials(null);
-    setPreliminaryCvmFinancials(null);
-    preliminaryInitRef.current = null;
-    if (data) {
-      const newAssumptions = { ...data.defaultAssumptions };
-      setAssumptions(newAssumptions);
-      setDcf(recalculateDcf(newAssumptions, data.fundamentals, data.company.price));
-    }
   }
 
   function handleSourceChange(source: "mock" | "cvm") {
     setFinancialSource(source);
-    if (source === "mock") {
-      setCvmFinancials(null);
-      if (companyData) {
-        setDcf(recalculateDcf(assumptions, companyData.fundamentals, companyData.company.price));
-      }
-      return;
-    }
-    setCvmFinancials(null);
+    if (source === "mock") return;
+    if (cvmFinancials !== null) return; // already loaded
     setCvmLoading(true);
     fetch(`/api/cvm/financials/${encodeURIComponent(selectedTicker)}`)
       .then(res => res.json())
@@ -381,25 +308,6 @@ export default function Home() {
       .catch(() => { setCvmFinancials([]); })
       .finally(() => { setCvmLoading(false); });
   }
-
-  // ── Derived props ─────────────────────────────────────────────────────────
-
-  const sensitivityProps = effectiveCompanyData ? {
-    waccVals:     effectiveCompanyData.waccVals,
-    tgVals:       effectiveCompanyData.terminalGrowthVals,
-    matrix:       sensitivityMatrix,
-    currentPrice: marketQuote?.price ?? effectiveCompanyData.company.price,
-    currentWacc:  assumptions.wacc,
-    currentTg:    assumptions.terminalGrowth,
-  } : null;
-
-  // Show loading spinner while fetching preliminary CVM data or brapi quote
-  // for eligible tickers (prevents flash from empty-state → dashboard).
-  const showPreliminaryLoading =
-    !effectiveCompanyData &&
-    b3Entry !== undefined &&
-    isPreliminaryEligible(b3Entry) &&
-    (preliminaryLoading || quoteLoading);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -413,14 +321,11 @@ export default function Home() {
             company={effectiveCompanyData.company}
             quote={marketQuote}
             quoteLoading={quoteLoading}
-            exportUrl={!isPreliminary
-              ? `/relatorio/${selectedTicker}?source=${financialSource}`
-              : undefined}
+            exportUrl={!isCvmAnalysis ? `/relatorio/${selectedTicker}?source=${financialSource}` : undefined}
           />
-          <MetricsRow metrics={activeMetrics} />
+          <MetricsRow metrics={effectiveCompanyData.metrics} />
 
-          {/* Preliminary banner replaces the mock-data disclaimer */}
-          {isPreliminary ? (
+          {isCvmAnalysis ? (
             <div style={{
               padding: "7px 24px", background: "#faf5ff",
               borderBottom: "1px solid #ddd6fe",
@@ -432,19 +337,47 @@ export default function Home() {
                 color: "#7c3aed", background: "#ede9fe",
                 padding: "2px 7px", borderRadius: 4,
               }}>
-                Preliminar
+                Análise CVM
               </span>
               <span style={{ fontSize: 12, color: "#6d28d9" }}>
-                Valuation preliminar com dados CVM. Os dados vêm da DFP anual consolidada e ainda estão em validação.
+                Análise fundamentalista com dados da DFP anual consolidada. Dados em validação — não constitui recomendação de investimento.
+              </span>
+            </div>
+          ) : financialSource === "cvm" && cvmFinancials && cvmFinancials.length > 0 ? (
+            <div style={{
+              padding: "7px 24px", background: "#eff6ff",
+              borderBottom: "1px solid #bfdbfe",
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+                textTransform: "uppercase" as const,
+                color: "#2563eb", background: "#dbeafe",
+                padding: "2px 7px", borderRadius: 4,
+              }}>
+                Dados CVM
+              </span>
+              <span style={{ fontSize: 12, color: "#1d4ed8" }}>
+                Financeiros extraídos da DFP anual consolidada (CVM Dados Abertos). Não constitui recomendação de investimento.
               </span>
             </div>
           ) : (
             <div style={{
-              padding: "5px 24px", background: "#fff",
-              borderBottom: "1px solid #f1f5f9",
-              fontSize: 11, color: "#94a3b8", textAlign: "center" as const,
+              padding: "7px 24px", background: "#fffbeb",
+              borderBottom: "1px solid #fde68a",
+              display: "flex", alignItems: "center", gap: 8,
             }}>
-              Dados ilustrativos para demonstração. Não constitui recomendação de investimento.
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+                textTransform: "uppercase" as const,
+                color: "#b45309", background: "#fef3c7",
+                padding: "2px 7px", borderRadius: 4,
+              }}>
+                Dados Ilustrativos
+              </span>
+              <span style={{ fontSize: 12, color: "#92400e" }}>
+                Dados de demonstração — não auditados, não oficiais. Dados CVM não disponíveis para este ticker.
+              </span>
             </div>
           )}
 
@@ -460,15 +393,11 @@ export default function Home() {
               >
                 <div>
                   <HistoricalChart data={activeFinancials} />
-                  <DcfSummary dcf={dcf} />
-                  {sensitivityProps && <SensitivityTable {...sensitivityProps} />}
+                  {indicatorFinancials.length > 0 && (
+                    <FundamentalDiagnosis financials={indicatorFinancials} />
+                  )}
                 </div>
                 <div>
-                  <AssumptionsPanel
-                    assumptions={assumptions}
-                    onChange={handleAssumptionChange}
-                    onRecalculate={handleRecalculate}
-                  />
                   <MultiplesTable data={effectiveCompanyData.multiples} />
                   <NewsPanel news={effectiveCompanyData.news} />
                 </div>
@@ -479,7 +408,7 @@ export default function Home() {
             {activeTab === "Financeiros" && (
               <div style={{ maxWidth: 900 }}>
                 {/* Source toggle — only for mock companies */}
-                {!isPreliminary && (
+                {!isCvmAnalysis && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
                       Fonte dos financeiros:
@@ -498,7 +427,7 @@ export default function Home() {
                             transition: "background 0.15s, color 0.15s",
                           }}
                         >
-                          {src === "mock" ? "Dados mockados" : "Dados CVM"}
+                          {src === "mock" ? "Dados ilustrativos" : "Dados CVM"}
                         </button>
                       ))}
                     </div>
@@ -507,15 +436,15 @@ export default function Home() {
                     )}
                     {financialSource === "cvm" && !cvmLoading && cvmFinancials !== null && cvmFinancials.length === 0 && (
                       <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 500 }}>
-                        Dados CVM ainda não disponíveis para este ticker. Usando dados mockados.
+                        Dados CVM ainda não disponíveis para este ticker. Usando dados ilustrativos.
                       </span>
                     )}
                   </div>
                 )}
 
-                {isPreliminary ? (
+                {isCvmAnalysis ? (
                   <DataSourceNotice
-                    sourceMode="preliminary_cvm"
+                    sourceMode="cvm_analysis"
                     quoteSource={marketQuote?.source ?? null}
                   />
                 ) : (
@@ -531,78 +460,70 @@ export default function Home() {
                 <HistoricalChart data={activeFinancials} />
                 <CvmFinancialsTable ticker={selectedTicker} enabled={true} />
 
-                {!isPreliminary && (
+                {!isCvmAnalysis && (
                   <div style={{
                     background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
                     padding: "14px 18px", fontSize: 12, color: "#94a3b8", lineHeight: 1.6,
                   }}>
-                    Os dados CVM exibidos acima vêm da DFP anual consolidada e ainda estão em validação. O dashboard principal continuará usando dados mockados até a normalização ser validada.
+                    Os dados CVM exibidos acima vêm da DFP anual consolidada e ainda estão em validação.
                   </div>
                 )}
               </div>
             )}
 
-            {/* ── Valuation ─────────────────────────────────────────────── */}
-            {activeTab === "Valuation" && sensitivityProps && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 14 }}>
-                <div>
-                  {isPreliminary && (
-                    <div style={{
-                      fontSize: 11, color: "#5b21b6", background: "#faf5ff",
-                      border: "1px solid #ddd6fe", borderRadius: 6,
-                      padding: "5px 10px", marginBottom: 12,
-                    }}>
-                      Valuation preliminar com dados CVM. Premissas são estimativas conservadoras e ainda não foram validadas.
-                    </div>
-                  )}
-                  {!isPreliminary && financialSource === "cvm" && cvmFinancials && cvmFinancials.length > 0 && (
-                    <div style={{
-                      fontSize: 11, color: "#1d4ed8", background: "#eff6ff",
-                      border: "1px solid #bfdbfe", borderRadius: 6,
-                      padding: "5px 10px", marginBottom: 12,
-                    }}>
-                      Valuation usando fundamentos derivados da DFP/CVM.
-                    </div>
-                  )}
-                  <DcfSummary dcf={dcf} />
-                  <SensitivityTable {...sensitivityProps} />
-                  <DcfProjectionTable
-                    projectedCashFlows={dcf.projectedCashFlows}
-                    terminalValue={dcf.terminalValue}
-                    pvTerminalValue={dcf.pvTerminalValue}
-                  />
-                </div>
-                <div>
-                  <AssumptionsPanel
-                    assumptions={assumptions}
-                    onChange={handleAssumptionChange}
-                    onRecalculate={handleRecalculate}
-                  />
-                </div>
+            {/* ── Indicadores ───────────────────────────────────────────── */}
+            {activeTab === "Indicadores" && (
+              <div style={{ maxWidth: 760 }}>
+                <FundamentalIndicators
+                  financials={indicatorFinancials}
+                  marketQuote={marketQuote}
+                />
+                {indicatorFinancials.length === 0 && companyData && (
+                  <div style={{
+                    background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
+                    padding: "18px 22px", fontSize: 13, color: "#64748b", lineHeight: 1.6,
+                  }}>
+                    Indicadores calculados a partir de dados CVM. Selecione &quot;Dados CVM&quot; na aba Financeiros para habilitar, ou busque uma empresa com análise CVM disponível.
+                  </div>
+                )}
               </div>
             )}
 
-            {/* ── Notícias ──────────────────────────────────────────────── */}
-            {activeTab === "Notícias" && (
+            {/* ── Comparáveis ───────────────────────────────────────────── */}
+            {activeTab === "Comparáveis" && (
+              <div style={{ maxWidth: 760 }}>
+                <MultiplesTable data={effectiveCompanyData.multiples} />
+                {effectiveCompanyData.multiples.length === 0 && (
+                  <div style={{
+                    background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
+                    padding: "36px 24px", fontSize: 13, color: "#94a3b8",
+                    textAlign: "center" as const,
+                  }}>
+                    Comparáveis setoriais não disponíveis para este ativo.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Notícias e documentos ─────────────────────────────────── */}
+            {activeTab === "Notícias e documentos" && (
               <div style={{ maxWidth: 700 }}>
                 <NewsPanel news={effectiveCompanyData.news} />
+                <div style={{
+                  background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
+                  padding: "18px 22px", fontSize: 13, color: "#64748b", lineHeight: 1.7,
+                  marginTop: 14,
+                }}>
+                  Em versões futuras, esta seção poderá integrar notícias e documentos públicos relevantes.
+                  Atualmente, a plataforma prioriza dados financeiros CVM, métricas de mercado e documentos oficiais.
+                </div>
               </div>
             )}
 
-            {/* ── Premissas ─────────────────────────────────────────────── */}
-            {activeTab === "Premissas" && (
-              <div style={{ maxWidth: 500 }}>
-                <AssumptionsPanel
-                  assumptions={assumptions}
-                  onChange={handleAssumptionChange}
-                  onRecalculate={handleRecalculate}
-                />
-              </div>
-            )}
           </div>
         </>
-      ) : showPreliminaryLoading ? (
-        <PreliminaryLoadingView ticker={selectedTicker} />
+      ) : showCvmLoading ? (
+        <CvmLoadingView ticker={selectedTicker} />
       ) : (
         <EmptyStateView
           ticker={selectedTicker}
@@ -612,8 +533,6 @@ export default function Home() {
           quoteLoading={quoteLoading}
         />
       )}
-
-      <RecalcToast visible={toastVisible} />
     </div>
   );
 }

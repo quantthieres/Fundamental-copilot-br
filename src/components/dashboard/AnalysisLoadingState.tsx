@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 
 const STEPS = [
-  "Identificando empresa na CVM",
+  "Identificando empresa",
   "Buscando demonstrações financeiras",
   "Normalizando dados contábeis",
   "Calculando indicadores",
-  "Carregando documentos oficiais",
+  "Preparando painel",
 ] as const;
 
 // Thresholds (ms) at which each step becomes active

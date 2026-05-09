@@ -239,33 +239,30 @@ export async function fetchCvmDocuments(
   // filings within the 18-month lookback window.
   const yearsToCheck = [currentYear - 2, currentYear - 1, currentYear];
 
-  const allDocs: CvmDocument[] = [];
+  const docArrays = await Promise.all(
+    yearsToCheck.map(async (year): Promise<CvmDocument[]> => {
+      const zip = await fetchYearZip(year);
+      if (!zip) return [];
 
-  for (const year of yearsToCheck) {
-    const zip = await fetchYearZip(year);
-    if (!zip) continue;
+      const filename = `dfp_cia_aberta_${year}.csv`;
+      let extracted: Record<string, Uint8Array>;
+      try {
+        extracted = unzipSync(zip, { filter: (f) => f.name === filename });
+      } catch {
+        return [];
+      }
 
-    const filename = `dfp_cia_aberta_${year}.csv`;
-    let extracted: Record<string, Uint8Array>;
-    try {
-      extracted = unzipSync(zip, { filter: (f) => f.name === filename });
-    } catch {
-      continue;
-    }
+      const fileBytes = extracted[filename];
+      if (!fileBytes) return [];
 
-    const fileBytes = extracted[filename];
-    if (!fileBytes) continue;
+      const text = new TextDecoder("latin1").decode(fileBytes);
+      return parseCatalogCsv(text, cvmCode)
+        .map(normalizeCatalogRow)
+        .filter((d): d is CvmDocument => d !== null);
+    }),
+  );
 
-    const text = new TextDecoder("latin1").decode(fileBytes);
-    const rows = parseCatalogCsv(text, cvmCode);
-
-    for (const row of rows) {
-      const doc = normalizeCatalogRow(row);
-      if (doc) allDocs.push(doc);
-    }
-  }
-
-  const docs = sortDocumentsDesc(allDocs).slice(0, MAX_RESULTS);
+  const docs = sortDocumentsDesc(docArrays.flat()).slice(0, MAX_RESULTS);
   docCache.set(cvmCode, { docs, loadedAt: Date.now() });
   return docs;
 }

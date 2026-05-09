@@ -135,26 +135,26 @@ export default function DocumentsPanel({ ticker }: Props) {
   const [noMapping, setNoMapping] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    if (!ticker) return;
+    const controller = new AbortController();
+    let active = true;
     setState("loading");
     setData(null);
     setNoMapping(false);
 
-    fetch(`/api/cvm/documents/${encodeURIComponent(ticker)}`)
+    fetch(`/api/cvm/documents/${encodeURIComponent(ticker)}`, { signal: controller.signal })
       .then(res => res.json())
       .then((body: CvmDocumentsResponse) => {
-        if (cancelled) return;
-        if (body.error?.includes("Sem mapeamento")) {
-          setNoMapping(true);
-        }
+        if (!active) return;
+        if (body.error?.includes("Sem mapeamento")) setNoMapping(true);
         setData(body);
         setState("done");
       })
       .catch(() => {
-        if (!cancelled) setState("error");
+        if (active) setState("error");
       });
 
-    return () => { cancelled = true; };
+    return () => { active = false; controller.abort(); };
   }, [ticker]);
 
   const documents = data?.documents ?? [];

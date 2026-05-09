@@ -18,6 +18,3 @@ const COMPANY_REGISTRY: Record<string, CompanyData> = {
 export function getCompanyData(ticker: string): CompanyData | null {
   return COMPANY_REGISTRY[ticker] ?? null;
 }
-
-export const DEFAULT_TICKER = "WEGE3";
-export const DEFAULT_DATA: CompanyData = COMPANY_REGISTRY[DEFAULT_TICKER];

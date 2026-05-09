@@ -255,19 +255,20 @@ export default function DashboardPageClient() {
 
   useEffect(() => {
     if (!selectedTicker) return;
-    let cancelled = false;
+    const controller = new AbortController();
+    let active = true;
     setMarketQuote(null);
     setQuoteLoading(true);
 
-    fetch(`/api/market-data/${encodeURIComponent(selectedTicker)}`)
+    fetch(`/api/market-data/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
       .then(res => res.json())
       .then((body: { quote: MarketDataQuote | null }) => {
-        if (!cancelled) setMarketQuote(body.quote ?? null);
+        if (active) setMarketQuote(body.quote ?? null);
       })
       .catch(() => {})
-      .finally(() => { if (!cancelled) setQuoteLoading(false); });
+      .finally(() => { if (active) setQuoteLoading(false); });
 
-    return () => { cancelled = true; };
+    return () => { active = false; controller.abort(); };
   }, [selectedTicker]);
 
   useEffect(() => {
@@ -277,28 +278,29 @@ export default function DashboardPageClient() {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
+    let active = true;
     setCvmFinancials(null);
     setCvmLoading(true);
 
-    fetch(`/api/cvm/financials/${encodeURIComponent(selectedTicker)}`)
+    fetch(`/api/cvm/financials/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
       .then(res => res.json())
       .then((body: { financials: NormalizedFinancials[] }) => {
-        if (!cancelled) {
+        if (active) {
           const rows = body.financials ?? [];
           setCvmFinancials(rows);
           setFinancialSource(rows.length > 0 ? "cvm" : "mock");
         }
       })
       .catch(() => {
-        if (!cancelled) {
+        if (active) {
           setCvmFinancials([]);
           setFinancialSource("mock");
         }
       })
-      .finally(() => { if (!cancelled) setCvmLoading(false); });
+      .finally(() => { if (active) setCvmLoading(false); });
 
-    return () => { cancelled = true; };
+    return () => { active = false; controller.abort(); };
   }, [selectedTicker, b3Entry]);
 
   function handleSelectCompany(ticker: string) {

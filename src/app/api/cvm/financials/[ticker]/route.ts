@@ -8,6 +8,7 @@ export async function GET(
 ) {
   const { ticker } = await params;
   const upper = ticker.toUpperCase();
+  const t0 = process.env.NODE_ENV === "development" ? Date.now() : 0;
 
   const company = getCvmCompanyByTicker(upper);
 
@@ -23,6 +24,10 @@ export async function GET(
 
   try {
     const financials = await getAnnualDfpFinancials(upper, company.cvmCode);
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[api/cvm/financials] ${upper}: ${financials.length} years, total ${Date.now() - t0}ms`);
+    }
 
     return NextResponse.json({
       ticker: upper,

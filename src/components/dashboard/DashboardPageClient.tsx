@@ -12,6 +12,7 @@ import CvmFinancialsTable from "@/components/dashboard/CvmFinancialsTable";
 import DataSourceNotice from "@/components/dashboard/DataSourceNotice";
 import FundamentalIndicators from "@/components/dashboard/FundamentalIndicators";
 import FundamentalDiagnosis from "@/components/dashboard/FundamentalDiagnosis";
+import AnalysisLoadingState from "@/components/dashboard/AnalysisLoadingState";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import { buildCompanyAnalysisDataFromCvm, isCvmAnalysisEligible } from "@/lib/cvm/cvm-analysis-builder";
 import type { NormalizedFinancials } from "@/lib/cvm/types";
@@ -195,30 +196,6 @@ function EmptyStateView({
   );
 }
 
-function CvmLoadingView({ ticker }: { ticker: string }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "72px 24px",
-    }}>
-      <div style={{
-        background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14,
-        padding: "36px 48px", maxWidth: 400, textAlign: "center",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-      }}>
-        <div style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: "0.7px",
-          textTransform: "uppercase" as const, color: "#94a3b8", marginBottom: 12,
-        }}>
-          Buscando dados CVM
-        </div>
-        <div style={{ fontSize: 14, color: "#374151" }}>
-          Carregando demonstrações financeiras para <strong style={{ fontFamily: "'JetBrains Mono', monospace" }}>{ticker}</strong>...
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardPageClient() {
   const searchParams = useSearchParams();
@@ -541,7 +518,7 @@ export default function DashboardPageClient() {
           </div>
         </>
       ) : showCvmLoading ? (
-        <CvmLoadingView ticker={selectedTicker} />
+        <AnalysisLoadingState ticker={selectedTicker} />
       ) : (
         <EmptyStateView
           ticker={selectedTicker}

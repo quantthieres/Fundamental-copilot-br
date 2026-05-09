@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fundamental Copilot BR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { font-family: 'DM Sans', sans-serif; color: #0f172a; background: #f8fafc; -webkit-font-smoothing: antialiased; }
+  body { font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; }
+  a { color: inherit; text-decoration: none; }
+  button, input { font-family: inherit; }
+  ::selection { background: #2563eb; color: #fff; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .container { max-width: 980px; margin: 0 auto; padding: 0 28px; width: 100%; }
+
+  /* Nav */
+  .nav { background: #0f172a; border-bottom: 1px solid #1e293b; }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 9px; color: #f1f5f9; font-weight: 600; font-size: 14px; letter-spacing: -0.2px; }
+  .brand .pill { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #1e293b; color: #60a5fa; margin-left: 4px; letter-spacing: 0.5px; vertical-align: middle; }
+  .nav-links { display: flex; gap: 2px; }
+  .nav-links a { color: #94a3b8; font-size: 13px; padding: 6px 12px; border-radius: 6px; font-weight: 500; }
+  .nav-links a:hover { color: #f1f5f9; background: #1e293b; }
+  .nav-cta { background: #2563eb; color: #fff; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 7px; border: none; cursor: pointer; }
+  .nav-cta:hover { background: #1d4ed8; }
+  @media (max-width: 640px) { .nav-links { display: none; } }
+
+  /* Hero */
+  main { flex: 1; display: flex; align-items: center; padding: 64px 0 48px; }
+  .hero { text-align: center; width: 100%; }
+  .hero h1 { font-size: 38px; line-height: 1.1; letter-spacing: -1px; font-weight: 700; margin-bottom: 16px; text-wrap: balance; max-width: 720px; margin-left: auto; margin-right: auto; }
+  .hero h1 .accent { color: #2563eb; }
+  .hero .lede { font-size: 16px; color: #475569; max-width: 600px; margin: 0 auto 32px; text-wrap: pretty; }
+  @media (max-width: 640px) { .hero h1 { font-size: 28px; } .hero .lede { font-size: 14px; } main { padding: 40px 0; } }
+
+  /* Search */
+  .search { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; box-shadow: 0 8px 24px -10px rgba(15, 23, 42, 0.1); display: flex; align-items: center; gap: 6px; max-width: 580px; margin: 0 auto; transition: border-color .15s, box-shadow .15s; }
+  .search:focus-within { border-color: #2563eb; box-shadow: 0 8px 28px -8px rgba(37, 99, 235, 0.25), 0 0 0 4px rgba(37, 99, 235, 0.08); }
+  .search svg.s-ic { flex-shrink: 0; margin-left: 10px; color: #94a3b8; }
+  .search input { flex: 1; border: none; outline: none; font-size: 15px; padding: 10px 4px; color: #0f172a; background: none; min-width: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.2px; }
+  .search input::placeholder { color: #94a3b8; font-family: 'DM Sans', sans-serif; letter-spacing: 0; }
+  .search button { background: #0f172a; color: #fff; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; flex-shrink: 0; }
+  .search button:hover { background: #1e293b; }
+
+  /* Quick chips */
+  .chips { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+  .chips .label { font-size: 12px; color: #94a3b8; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #475569; background: #fff; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all .15s; }
+  .chip:hover { border-color: #2563eb; color: #2563eb; }
+
+  /* Feature row */
+  .features { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .feat { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; }
+  .feat h3 { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px; letter-spacing: -0.1px; }
+  .feat p { font-size: 12px; color: #64748b; line-height: 1.5; }
+  @media (max-width: 800px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .features { grid-template-columns: 1fr; } }
+
+  /* Disclaimer */
+  .disclaim { margin-top: 32px; text-align: center; font-size: 12px; color: #94a3b8; max-width: 640px; margin-left: auto; margin-right: auto; line-height: 1.55; }
+
+  /* Footer */
+  footer { background: #0f172a; color: #94a3b8; padding: 24px 0; font-size: 12px; }
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .foot .brand { color: #f1f5f9; }
+  .foot-links { display: flex; gap: 18px; }
+  .foot-links a { color: #94a3b8; }
+  .foot-links a:hover { color: #f1f5f9; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a href="Landing Page.html" class="brand">
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <rect x="2" y="2" width="8" height="8" rx="2" fill="#2563eb"/>
+        <rect x="12" y="2" width="8" height="8" rx="2" fill="#60a5fa"/>
+        <rect x="2" y="12" width="8" height="8" rx="2" fill="#3b82f6" opacity="0.55"/>
+        <rect x="12" y="12" width="8" height="8" rx="2" fill="#2563eb" opacity="0.35"/>
+      </svg>
+      Fundamental Copilot<span class="pill">BR</span>
+    </a>
+    <nav class="nav-links">
+      <a href="Dashboard.html">Painel</a>
+      <a href="#">Metodologia</a>
+      <a href="#">Cobertura</a>
+      <a href="#">Sobre</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="container hero">
+    <h1>Análise fundamentalista da <span class="accent">B3</span> com dados CVM.</h1>
+    <p class="lede">Consulte empresas brasileiras, acompanhe indicadores financeiros, métricas de mercado e documentos oficiais em uma interface simples.</p>
+
+    <form class="search" onsubmit="return goAnalyze(event)">
+      <svg class="s-ic" width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <input id="ticker" type="text" placeholder="Busque por ticker ou empresa — ex: WEGE3, PETR4, VALE3" autocomplete="off" spellcheck="false"/>
+      <button type="submit">Analisar</button>
+    </form>
+
+    <div class="chips">
+      <span class="label">Tente:</span>
+      <button class="chip" onclick="goTicker('WEGE3')">WEGE3</button>
+      <button class="chip" onclick="goTicker('PETR4')">PETR4</button>
+      <button class="chip" onclick="goTicker('VALE3')">VALE3</button>
+      <button class="chip" onclick="goTicker('KLBN11')">KLBN11</button>
+      <button class="chip" onclick="goTicker('LREN3')">LREN3</button>
+    </div>
+
+    <div class="features">
+      <div class="feat">
+        <h3>Dados CVM</h3>
+        <p>Demonstrações financeiras públicas organizadas e padronizadas.</p>
+      </div>
+      <div class="feat">
+        <h3>Indicadores financeiros</h3>
+        <p>Margens, crescimento, caixa, endividamento e múltiplos de mercado.</p>
+      </div>
+      <div class="feat">
+        <h3>Diagnóstico objetivo</h3>
+        <p>Sinais financeiros baseados em regras transparentes.</p>
+      </div>
+      <div class="feat">
+        <h3>Documentos oficiais</h3>
+        <p>Consulta a documentos e eventos públicos quando disponíveis.</p>
+      </div>
+    </div>
+
+    <p class="disclaim">Projeto educacional em desenvolvimento. As informações exibidas não constituem recomendação de investimento.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="container foot">
+    <span class="brand">Fundamental Copilot<span class="pill" style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:#1e293b;color:#60a5fa;margin-left:4px;letter-spacing:.5px;">BR</span></span>
+  </div>
+</footer>
+
+<script>
+  function goTicker(t) {
+    window.location.href = "Dashboard.html?ticker=" + encodeURIComponent(t);
+  }
+  function goAnalyze(e) {
+    e.preventDefault();
+    const v = document.getElementById('ticker').value.trim().toUpperCase();
+    if (!v) { document.getElementById('ticker').focus(); return false; }
+    window.location.href = "Dashboard.html?ticker=" + encodeURIComponent(v);
+    return false;
+  }
+</script>
+</body>
+</html>

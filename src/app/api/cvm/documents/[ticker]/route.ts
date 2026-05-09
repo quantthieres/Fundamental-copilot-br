@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCvmCompanyByTicker } from "@/lib/cvm/company-map";
 import { fetchCvmDocuments } from "@/lib/cvm/documents-client";
+import { getPrecomputedDocuments } from "@/lib/cvm/precomputed-cache";
 import type { CvmDocumentsResponse } from "@/lib/cvm/documents-types";
 
 export async function GET(
@@ -25,6 +26,20 @@ export async function GET(
     return NextResponse.json(body);
   }
 
+  // Cache-first: return precomputed snapshot when available (<1ms).
+  const cached = getPrecomputedDocuments(upper);
+  if (cached !== null) {
+    const body: CvmDocumentsResponse = {
+      ticker: upper,
+      companyName: cached.companyName,
+      source: "CVM",
+      documents: cached.documents,
+      updatedAt,
+    };
+    return NextResponse.json(body);
+  }
+
+  // Fallback: live documents pipeline.
   const documents = await fetchCvmDocuments(upper, company.cvmCode);
 
   const body: CvmDocumentsResponse = {

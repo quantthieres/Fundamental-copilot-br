@@ -383,6 +383,28 @@ export default function DashboardPageClient() {
   // data is still loading for a CVM-eligible ticker that has no mock data.
   const showPreliminaryShell = isEligibleForCvm && !effectiveCompanyData;
 
+  // Dev-mode render decision logging.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || !selectedTicker) return;
+    const branch =
+      effectiveCompanyData  ? "full_dashboard" :
+      showPreliminaryShell  ? "preliminary_shell" :
+      "empty_state";
+    console.group(`[dashboard] ${selectedTicker}`);
+    console.log(`coverageStatus: ${b3Entry?.coverageStatus ?? "—"}`);
+    console.log(`isEligibleForCvm: ${isEligibleForCvm}`);
+    console.log(`cvmLoading: ${cvmLoading}`);
+    if (cvmFinancials !== null) {
+      console.log(`cvmFinancials: ${cvmFinancials.length} years${cvmFinancials.length > 0 ? ` — cvmAnalysisData: ${cvmAnalysisData ? "non-null" : "null"}` : ""}`);
+    } else {
+      console.log(`cvmFinancials: null (loading)`);
+    }
+    console.log(`marketQuote: ${marketQuote ? `price=${marketQuote.price}, marketCap=${marketQuote.marketCap ?? "absent"}` : "null"}`);
+    console.log(`effectiveCompanyData: ${effectiveCompanyData ? "non-null" : "null"}`);
+    console.log(`render branch: ${branch}`);
+    console.groupEnd();
+  }, [selectedTicker, b3Entry, isEligibleForCvm, cvmLoading, cvmFinancials, marketQuote, cvmAnalysisData, effectiveCompanyData, showPreliminaryShell]);
+
   // Strip status for the inline CVM validation indicator.
   const cvmStripStatus: CvmStripStatus =
     cvmError      ? "error" :

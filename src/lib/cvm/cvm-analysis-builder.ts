@@ -79,7 +79,11 @@ function fmtB(v: number): string {
  * - latest revenue is missing or <= 0
  * - all key metrics are zero (malformed data)
  * - no usable income/CF metric exists
- * - marketCap or price are unavailable (cannot estimate sharesOutstanding)
+ *
+ * Market-cap-dependent fields (marketCap, enterpriseValue, P/L, EV/EBIT) are
+ * shown as "—" when the brapi quote does not include a marketCap value. This
+ * allows the full dashboard to render as soon as CVM data arrives, without
+ * waiting for (or being blocked by) a missing market cap.
  */
 export function buildCompanyAnalysisDataFromCvm(
   params: AnalysisBuilderParams,
@@ -93,13 +97,10 @@ export function buildCompanyAnalysisDataFromCvm(
 
   const price        = marketQuote?.price ?? 0;
   const marketCapRaw = marketQuote?.marketCap;
-
-  if (!marketCapRaw || price <= 0) return null;
-
-  const marketCapB = marketCapRaw / 1_000_000_000;
-  const sharesOut  = marketCapB / price;
-  const netDebt    = latest.netDebt ?? 0;
-  const evB        = marketCapB + netDebt;
+  const marketCapB   = marketCapRaw ? marketCapRaw / 1_000_000_000 : null;
+  const sharesOut    = marketCapB !== null && price > 0 ? marketCapB / price : 0;
+  const netDebt      = latest.netDebt ?? 0;
+  const evB          = marketCapB !== null ? marketCapB + netDebt : null;
 
   // ── Company profile ──────────────────────────────────────────────────────────
   const company: CompanyProfile = {
@@ -110,8 +111,8 @@ export function buildCompanyAnalysisDataFromCvm(
     price,
     priceChange:     marketQuote?.change        ?? 0,
     priceChangePct:  marketQuote?.changePercent ?? 0,
-    marketCap:       fmtB(marketCapB),
-    enterpriseValue: fmtB(evB),
+    marketCap:       marketCapB !== null ? fmtB(marketCapB) : "—",
+    enterpriseValue: evB        !== null ? fmtB(evB)        : "—",
     currency:        "BRL",
   };
 
@@ -134,14 +135,17 @@ export function buildCompanyAnalysisDataFromCvm(
   if (latest.netDebt !== undefined) {
     metrics.push({ label: "Dívida Líquida", value: fmtB(latest.netDebt),      trend: 0, suffix: "último ano" });
   }
-  metrics.push({ label: "Valor de Mercado", value: fmtB(marketCapB),          trend: 0, suffix: "brapi"      });
-  if (latest.netIncome && latest.netIncome > 0) {
-    const pe = (marketCapB / latest.netIncome).toFixed(1);
-    metrics.push({ label: "P/L",            value: `${pe}x`,                  trend: 0, suffix: "estimado"   });
-  }
-  if (latest.ebit && latest.ebit > 0) {
-    const evEbit = (evB / latest.ebit).toFixed(1);
-    metrics.push({ label: "EV/EBIT",        value: `${evEbit}x`,              trend: 0, suffix: "estimado"   });
+  // Market-cap-dependent metrics: only included when marketCap is available.
+  if (marketCapB !== null) {
+    metrics.push({ label: "Valor de Mercado", value: fmtB(marketCapB),        trend: 0, suffix: "brapi"      });
+    if (latest.netIncome && latest.netIncome > 0) {
+      const pe = (marketCapB / latest.netIncome).toFixed(1);
+      metrics.push({ label: "P/L",            value: `${pe}x`,                trend: 0, suffix: "estimado"   });
+    }
+    if (evB !== null && latest.ebit && latest.ebit > 0) {
+      const evEbit = (evB / latest.ebit).toFixed(1);
+      metrics.push({ label: "EV/EBIT",        value: `${evEbit}x`,            trend: 0, suffix: "estimado"   });
+    }
   }
 
   // ── Fundamentals ──────────────────────────────────────────────────────────

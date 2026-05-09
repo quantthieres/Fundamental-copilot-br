@@ -221,25 +221,65 @@ describe("buildCompanyAnalysisDataFromCvm — null cases", () => {
     expect(build(noRevenue)).toBeNull();
   });
 
-  it("returns null when marketQuote is null", () => {
-    expect(build(THREE_YEARS, null)).toBeNull();
-  });
-
-  it("returns null when price is 0", () => {
-    expect(build(THREE_YEARS, { ...QUOTE, price: 0 })).toBeNull();
-  });
-
-  it("returns null when marketCap is absent", () => {
-    const { marketCap: _, ...noMktCap } = QUOTE;
-    expect(build(THREE_YEARS, noMktCap as MarketDataQuote)).toBeNull();
-  });
-
   it("returns null when latest revenue is 0", () => {
     expect(build(ALL_ZERO_LATEST)).toBeNull();
   });
 
   it("returns null when all latest metrics are zero despite valid revenue", () => {
     expect(build(ALL_OTHER_FIELDS_ZERO)).toBeNull();
+  });
+});
+
+// ─── buildCompanyAnalysisDataFromCvm — market-cap-optional behavior ───────────
+
+describe("buildCompanyAnalysisDataFromCvm — market cap optional", () => {
+  it("returns non-null when marketQuote is null (CVM data sufficient without quote)", () => {
+    expect(build(THREE_YEARS, null)).not.toBeNull();
+  });
+
+  it("shows '—' for marketCap and enterpriseValue when marketQuote is null", () => {
+    const result = build(THREE_YEARS, null)!;
+    expect(result.company.marketCap).toBe("—");
+    expect(result.company.enterpriseValue).toBe("—");
+  });
+
+  it("sets sharesOutstanding to 0 when marketCap is unavailable", () => {
+    expect(build(THREE_YEARS, null)!.fundamentals.sharesOutstanding).toBe(0);
+  });
+
+  it("omits market-cap-dependent metrics (P/L, EV/EBIT, Valor de Mercado) when marketCap absent", () => {
+    const result = build(THREE_YEARS, null)!;
+    const labels = result.metrics.map(m => m.label);
+    expect(labels).not.toContain("Valor de Mercado");
+    expect(labels).not.toContain("P/L");
+    expect(labels).not.toContain("EV/EBIT");
+  });
+
+  it("still includes CVM-only metrics when marketQuote is null", () => {
+    const result = build(THREE_YEARS, null)!;
+    const labels = result.metrics.map(m => m.label);
+    expect(labels).toContain("Receita");
+    expect(labels).toContain("Margem EBIT");
+    expect(labels).toContain("FCL");
+  });
+
+  it("returns non-null when marketCap field is absent from quote", () => {
+    const { marketCap: _, ...noMktCap } = QUOTE;
+    const result = build(THREE_YEARS, noMktCap as MarketDataQuote);
+    expect(result).not.toBeNull();
+    expect(result!.company.marketCap).toBe("—");
+  });
+
+  it("returns non-null when price is 0 (market metrics still omitted)", () => {
+    expect(build(THREE_YEARS, { ...QUOTE, price: 0 })).not.toBeNull();
+  });
+
+  it("includes market-cap metrics when marketCap IS present", () => {
+    const result = build()!;
+    const labels = result.metrics.map(m => m.label);
+    expect(labels).toContain("Valor de Mercado");
+    expect(labels).toContain("P/L");
+    expect(labels).toContain("EV/EBIT");
   });
 });
 

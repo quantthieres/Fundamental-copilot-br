@@ -133,6 +133,23 @@ Cada ativo possui um status de cobertura (`src/data/b3-universe.ts`):
 
 ---
 
+## Planejado: Forecast Layer
+
+Uma versão futura da plataforma poderá incluir uma camada de **projeções quantitativas de fundamentos empresariais**. O objetivo é estimar receita, EBIT, EBITDA, fluxo de caixa e margens com base em dados históricos da CVM, usando modelos de séries temporais avaliados por backtesting rigoroso.
+
+Características planejadas:
+- projeções de fundamentos, **não** de preço de ação ou valor justo;
+- modelos baseline (naive, seasonal naive, CAGR) comparados contra modelos estatísticos e de fundação;
+- precomputação offline — nenhum modelo roda durante o carregamento do dashboard;
+- bandas de incerteza visíveis e metadados de qualidade do modelo em cada projeção;
+- aviso explícito: as projeções são estimativas quantitativas e não constituem recomendação de investimento.
+
+Para o design técnico detalhado, consulte [`docs/forecast-layer-design.md`](docs/forecast-layer-design.md).
+
+> Esta funcionalidade não está implementada. Nenhum modelo de ML, pacote Python de forecasting ou rota de API foi adicionado.
+
+---
+
 ## Scripts disponíveis
 
 ```bash

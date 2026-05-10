@@ -156,39 +156,39 @@ describe("cvmAnalysisEligibilityReason", () => {
     expect(cvmAnalysisEligibilityReason(THREE_YEARS)).toBeNull();
   });
 
-  it("returns a reason string containing 'year' for fewer than 3 years", () => {
-    expect(cvmAnalysisEligibilityReason([THREE_YEARS[0]])).toContain("year");
-    expect(cvmAnalysisEligibilityReason([THREE_YEARS[0], THREE_YEARS[1]])).toContain("year");
+  it("returns a reason string containing 'ano' for fewer than 3 years", () => {
+    expect(cvmAnalysisEligibilityReason([THREE_YEARS[0]])).toContain("ano");
+    expect(cvmAnalysisEligibilityReason([THREE_YEARS[0], THREE_YEARS[1]])).toContain("ano");
   });
 
-  it("returns 'only 0 year(s) of data' for empty array", () => {
-    expect(cvmAnalysisEligibilityReason([])).toBe("only 0 year(s) of data");
+  it("returns 'apenas 0 ano(s) de dados disponíveis' for empty array", () => {
+    expect(cvmAnalysisEligibilityReason([])).toBe("apenas 0 ano(s) de dados disponíveis");
   });
 
-  it("returns 'latest revenue missing' when revenue is undefined in latest year", () => {
+  it("returns 'receita do último exercício ausente' when revenue is undefined in latest year", () => {
     const noRevenue = THREE_YEARS.map(f =>
       f.fiscalYear === 2023 ? { ...f, revenue: undefined } : f,
     );
-    expect(cvmAnalysisEligibilityReason(noRevenue)).toBe("latest revenue missing");
+    expect(cvmAnalysisEligibilityReason(noRevenue)).toBe("receita do último exercício ausente");
   });
 
-  it("returns 'latest revenue <= 0' when revenue is 0 in latest year", () => {
-    expect(cvmAnalysisEligibilityReason(ALL_ZERO_LATEST)).toBe("latest revenue <= 0");
+  it("returns 'receita do último exercício não positiva' when revenue is 0 in latest year", () => {
+    expect(cvmAnalysisEligibilityReason(ALL_ZERO_LATEST)).toBe("receita do último exercício não positiva");
   });
 
-  it("returns 'latest revenue <= 0' when revenue is explicitly negative", () => {
+  it("returns 'receita do último exercício não positiva' when revenue is explicitly negative", () => {
     const negRevenue = THREE_YEARS.map(f =>
       f.fiscalYear === 2023 ? { ...f, revenue: -1 } : f,
     );
-    expect(cvmAnalysisEligibilityReason(negRevenue)).toBe("latest revenue <= 0");
+    expect(cvmAnalysisEligibilityReason(negRevenue)).toBe("receita do último exercício não positiva");
   });
 
-  it("returns 'all latest metrics are zero' when revenue > 0 but all other fields are zero", () => {
-    expect(cvmAnalysisEligibilityReason(ALL_OTHER_FIELDS_ZERO)).toBe("all latest metrics are zero");
+  it("returns 'todos os indicadores do último exercício são zero' when revenue > 0 but all other fields are zero", () => {
+    expect(cvmAnalysisEligibilityReason(ALL_OTHER_FIELDS_ZERO)).toBe("todos os indicadores do último exercício são zero");
   });
 
-  it("returns 'no usable income/cash-flow metric' when income metrics are absent", () => {
-    expect(cvmAnalysisEligibilityReason(NO_INCOME_METRICS)).toBe("no usable income/cash-flow metric");
+  it("returns 'nenhum indicador de resultado ou fluxo de caixa utilizável' when income metrics are absent", () => {
+    expect(cvmAnalysisEligibilityReason(NO_INCOME_METRICS)).toBe("nenhum indicador de resultado ou fluxo de caixa utilizável");
   });
 
   it("passes when ebit is undefined but netIncome is non-zero", () => {

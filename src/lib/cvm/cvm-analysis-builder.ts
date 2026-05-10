@@ -35,20 +35,20 @@ export function isCvmAnalysisEligible(b3Entry: B3Asset): boolean {
  */
 export function cvmAnalysisEligibilityReason(financials: NormalizedFinancials[]): string | null {
   if (financials.length < 3) {
-    return `only ${financials.length} year(s) of data`;
+    return `apenas ${financials.length} ano(s) de dados disponíveis`;
   }
 
   const latest = [...financials].sort((a, b) => b.fiscalYear - a.fiscalYear)[0];
 
-  if (latest.revenue === undefined) return "latest revenue missing";
-  if (latest.revenue <= 0)          return "latest revenue <= 0";
+  if (latest.revenue === undefined) return "receita do último exercício ausente";
+  if (latest.revenue <= 0)          return "receita do último exercício não positiva";
 
   const otherMetrics = [
     latest.ebit, latest.netIncome, latest.operatingCashFlow,
     latest.capex, latest.freeCashFlow, latest.netDebt,
   ];
   if (otherMetrics.every(v => v === undefined || v === 0)) {
-    return "all latest metrics are zero";
+    return "todos os indicadores do último exercício são zero";
   }
 
   const hasUsable =
@@ -57,7 +57,7 @@ export function cvmAnalysisEligibilityReason(financials: NormalizedFinancials[])
     (latest.operatingCashFlow !== undefined && latest.operatingCashFlow !== 0) ||
     (latest.freeCashFlow      !== undefined && latest.freeCashFlow      !== 0);
 
-  if (!hasUsable) return "no usable income/cash-flow metric";
+  if (!hasUsable) return "nenhum indicador de resultado ou fluxo de caixa utilizável";
 
   return null;
 }

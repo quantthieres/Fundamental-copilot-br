@@ -35,11 +35,11 @@ export const COVERAGE_DESCRIPTION: Record<CoverageStatus, string> = {
   cvm_analysis:
     "Análise fundamentalista gerada automaticamente com dados CVM suficientes.",
   cvm_financials:
-    "Dados CVM disponíveis, mas ainda sem histórico ou normalização suficiente para análise completa.",
+    "Dados financeiros da CVM disponíveis, mas com histórico insuficiente para análise completa.",
   quote_only:
-    "Cotação disponível; dados financeiros ainda pendentes.",
+    "Cotação de mercado disponível. Demonstrações financeiras da CVM ainda não integradas para este ativo.",
   sector_specific_model_required:
-    "Ativo exige metodologia própria, como bancos, seguradoras, FIIs, ETFs ou BDRs.",
+    "Este ativo exige metodologia específica. Bancos, seguradoras, FIIs, ETFs e BDRs utilizam métricas distintas das empresas industriais padrão.",
   unavailable:
-    "Ainda sem cobertura confiável.",
+    "Ativo reconhecido no universo B3, mas ainda sem cobertura de dados financeiros.",
 };

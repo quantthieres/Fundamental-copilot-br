@@ -128,7 +128,9 @@ function EmptyStateView({
   const status = coverageStatus ?? "unavailable";
   const badge = COVERAGE_BADGE[status];
   const description = COVERAGE_DESCRIPTION[status];
-  const showQuote = status === "quote_only" && quote != null && !quoteLoading;
+  const showQuote =
+    (status === "quote_only" || status === "sector_specific_model_required") &&
+    quote != null && !quoteLoading;
   const isUp = (quote?.changePercent ?? 0) >= 0;
 
   return (
@@ -171,17 +173,17 @@ function EmptyStateView({
         </p>
         {status === "cvm_financials" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Os dados financeiros reais da DFP/CVM já estão integrados. O dashboard completo será habilitado após normalização adicional.
+            Os dados da DFP/CVM já estão integrados, mas o histórico disponível ainda é insuficiente para gerar a análise completa.
           </p>
         )}
         {status === "sector_specific_model_required" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Bancos, seguradoras, FIIs e holdings requerem metodologias específicas que estão em desenvolvimento.
+            Bancos e seguradoras são avaliados por P/VPA e ROE bancário. FIIs por NAV, DY e composição de carteira. ETFs e BDRs replicam índices ou ativos estrangeiros. Essas métricas diferem estruturalmente das usadas em empresas industriais.
           </p>
         )}
         {status === "unavailable" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Este ticker já está no universo de busca. A integração de dados financeiros será adicionada nas próximas etapas.
+            Este ticker está no universo B3, mas ainda sem dados financeiros integrados.
           </p>
         )}
         {showQuote && (
@@ -200,7 +202,7 @@ function EmptyStateView({
             </div>
           </div>
         )}
-        {quoteLoading && status === "quote_only" && (
+        {quoteLoading && (status === "quote_only" || status === "sector_specific_model_required") && (
           <div style={{ marginTop: 16, fontSize: 12, color: "#94a3b8" }}>
             Buscando cotação...
           </div>

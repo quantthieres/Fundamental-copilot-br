@@ -1,11 +1,11 @@
 <div align="center">
 
-```text
+<pre align="center">
 █▀▀ █ █ █▄ █ █▀▄ ▄▀█ █▀▄▀█ █▀▀ █▄ █ ▀█▀ ▄▀█ █     █▀▀ █▀█ █▀█ █ █   █▀█ ▀█▀
 █▀  █▄█ █ ▀█ █▄▀ █▀█ █ ▀ █ ██▄ █ ▀█  █  █▀█ █▄▄   █▄▄ █▄█ █▀▀ █ █▄▄ █▄█  █ 
-```
+</pre>
 
-<img src="public/logo/logo-icon.svg" width="80"/>
+<img src="./public/logo/logo-icon.svg" width="80"/>
 
 </div>
 

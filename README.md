@@ -1,8 +1,13 @@
-<h1 align="center">Fundamental Copilot BR</h1>
+<div align="center">
 
-<p align="center">
-  <img src="public/logo/logo-icon.svg" width="80"/>
-</p>
+```text
+█▀▀ █ █ █▄ █ █▀▄ ▄▀█ █▀▄▀█ █▀▀ █▄ █ ▀█▀ ▄▀█ █     █▀▀ █▀█ █▀█ █ █   █▀█ ▀█▀
+█▀  █▄█ █ ▀█ █▄▀ █▀█ █ ▀ █ ██▄ █ ▀█  █  █▀█ █▄▄   █▄▄ █▄█ █▀▀ █ █▄▄ █▄█  █ 
+```
+
+<img src="public/logo/logo-icon.svg" width="80"/>
+
+</div>
 
 <p align="center">
   Plataforma web para análise fundamentalista automatizada de empresas brasileiras listadas na B3.

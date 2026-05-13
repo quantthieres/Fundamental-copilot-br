@@ -80,3 +80,53 @@ export interface NormalizedFinancials {
   /** totalDebt - cash */
   netDebt?: number;
 }
+
+// ─── Quarterly financials ─────────────────────────────────────────────────────
+
+/**
+ * A single quarter's financial data, derived from CVM ITR filings.
+ * Flow metrics (revenue, EBIT, etc.) are true quarterly values after
+ * de-accumulation. Balance sheet items are point-in-time at period end.
+ * All monetary values are in BRL billions.
+ *
+ * null means the value was not present in the source data.
+ * Zero means the source data reported zero.
+ */
+export type QuarterlyFinancialRecord = {
+  ticker: string;
+  fiscalYear: number;
+  quarter: 1 | 2 | 3 | 4;
+  /** e.g. "2024Q1" */
+  period: string;
+  periodEndDate: string;
+
+  revenue: number | null;
+  ebit: number | null;
+  netIncome: number | null;
+  operatingCashFlow: number | null;
+  capex: number | null;
+  freeCashFlow: number | null;
+
+  /** Point-in-time at period end (not differenced). */
+  cash: number | null;
+  /** Point-in-time at period end (not differenced). */
+  totalDebt: number | null;
+  /** totalDebt - cash at period end. */
+  netDebt: number | null;
+
+  source: "cvm_itr" | "cvm_dfp_derived_q4";
+};
+
+export type QuarterlyFinancialsResponse = {
+  ticker: string;
+  source: "cvm_itr_quarterly";
+  sourceDetail: "precomputed_cvm_itr_cache" | "live_cvm_itr_pipeline";
+  company: {
+    ticker: string;
+    companyName: string;
+    cvmCode: string;
+    cnpj: string;
+  };
+  quarterly: QuarterlyFinancialRecord[];
+  updatedAt: string;
+};

@@ -1,10 +1,10 @@
 // Server-side only. Reads precomputed CVM cache files written by
-// scripts/precompute-cvm-cache.ts. Returns null on any failure so callers
-// can fall through to the live CVM pipeline.
+// scripts/precompute-cvm-cache.ts and scripts/precompute-cvm-quarterly-cache.ts.
+// Returns null on any failure so callers can fall through to the live pipeline.
 
 import { readFileSync } from "fs";
 import { join } from "path";
-import type { NormalizedFinancials } from "./types";
+import type { NormalizedFinancials, QuarterlyFinancialRecord } from "./types";
 import type { CvmDocument } from "./documents-types";
 
 const CACHE_ROOT = join(process.cwd(), "src/data/cvm-cache");
@@ -64,4 +64,35 @@ export function getPrecomputedDocuments(ticker: string): { documents: CvmDocumen
   const raw = readCacheFile("documents", ticker);
   if (!raw) return null;
   return parseDocumentsCache(raw);
+}
+
+// ─── Quarterly cache ──────────────────────────────────────────────────────────
+
+export function parseQuarterlyCache(raw: string): QuarterlyFinancialRecord[] | null {
+  if (!raw) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const obj = parsed as Record<string, unknown>;
+  if (!Array.isArray(obj.quarterly)) return null;
+  // Basic shape check on the first element when the array is non-empty.
+  if (obj.quarterly.length > 0) {
+    const first = obj.quarterly[0] as Record<string, unknown>;
+    if (typeof first.ticker      !== "string") return null;
+    if (typeof first.fiscalYear  !== "number") return null;
+    if (typeof first.quarter     !== "number") return null;
+    if (typeof first.period      !== "string") return null;
+    if (typeof first.source      !== "string") return null;
+  }
+  return obj.quarterly as QuarterlyFinancialRecord[];
+}
+
+export function getPrecomputedQuarterlyFinancials(ticker: string): QuarterlyFinancialRecord[] | null {
+  const raw = readCacheFile("quarterly", ticker);
+  if (!raw) return null;
+  return parseQuarterlyCache(raw);
 }

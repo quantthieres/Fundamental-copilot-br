@@ -12,7 +12,8 @@
     "test:coverage": "vitest run --coverage",
     "cvm:audit": "tsx scripts/check-cvm-financials.ts",
     "cvm:audit:json": "tsx scripts/check-cvm-financials.ts --json",
-    "cvm:precompute": "tsx scripts/precompute-cvm-cache.ts"
+    "cvm:precompute": "tsx scripts/precompute-cvm-cache.ts",
+    "cvm:precompute:quarterly": "NODE_OPTIONS='--max-old-space-size=4096' tsx scripts/precompute-cvm-quarterly-cache.ts"
   },
   "dependencies": {
     "fflate": "^0.8.2",

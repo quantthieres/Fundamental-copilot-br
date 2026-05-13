@@ -85,7 +85,7 @@ A camada `src/lib/cvm/` busca, processa e normaliza dados públicos da CVM.
 
 O sistema trabalha com demonstrações financeiras anuais consolidadas extraídas dos arquivos DFP da CVM (dados.cvm.gov.br). Campos normalizados incluem receita, EBIT, lucro líquido, CFO, capex, FCL, caixa, dívida total e dívida líquida.
 
-#### Cache pré-computado
+#### Cache pré-computado anual (DFP)
 
 Para evitar downloads de ZIPs CVM (~13 MB por ano fiscal) a cada requisição, os dados são pré-computados e armazenados como JSON compacto:
 
@@ -95,7 +95,7 @@ src/data/cvm-cache/
   documents/    <TICKER>.json   — CvmDocument[] (documentos mais recentes)
 ```
 
-Para regenerar o cache (cobre todos os 35 tickers com mapeamento CVM verificado):
+Para regenerar o cache anual (cobre todos os 35 tickers com mapeamento CVM verificado):
 
 ```bash
 npm run cvm:precompute
@@ -103,7 +103,26 @@ npm run cvm:precompute
 
 As rotas `/api/cvm/financials/[ticker]` e `/api/cvm/documents/[ticker]` servem o cache pré-computado em < 1 ms quando disponível, e caem no pipeline ao vivo como fallback.
 
-> **Nota:** Os arquivos ZIP brutos da CVM são mantidos apenas em memória pelo servidor e nunca são gravados em disco — somente o JSON normalizado do cache é armazenado no repositório.
+#### Cache pré-computado trimestral (ITR)
+
+O pipeline CVM ITR extrai dados trimestrais dos ZIPs ITR da CVM Dados Abertos e os armazena como JSON normalizado:
+
+```
+src/data/cvm-cache/
+  quarterly/    <TICKER>.json   — QuarterlyFinancialRecord[] por trimestre
+```
+
+Os dados ITR passam por des-acumulação automática (os valores de DRE e DFC na CVM são YTD acumulados; o pipeline extrai os valores trimestrais reais). O Q4 é derivado como `DFP anual − ITR Q3 acumulado` quando os dados anuais estão disponíveis.
+
+Para regenerar o cache trimestral:
+
+```bash
+npm run cvm:precompute:quarterly
+```
+
+A rota `/api/cvm/quarterly/[ticker]` serve o cache pré-computado quando disponível. Esta rota é infraestrutura para o Forecast Layer futuro e **não** é usada no dashboard atual.
+
+> **Nota:** Os arquivos ZIP brutos da CVM são mantidos apenas em memória pelo servidor e nunca são gravados em disco — somente o JSON normalizado do cache é armazenado no repositório. O pipeline ITR é mais pesado que o DFP (~33 MB por ano vs ~13 MB); utilize a flag `CVM_ITR_START_YEAR` para limitar o intervalo de anos se necessário.
 
 ### 2. Dados de mercado
 

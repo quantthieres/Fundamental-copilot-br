@@ -1,11 +1,11 @@
 # Forecast Layer — Technical Design Document
 
 **Project:** Fundamental Copilot BR  
-**Status:** Design only — not implemented  
+**Status:** Phase 1 (ITR quarterly pipeline) implemented on branch `add-cvm-itr-pipeline`. Forecasting models not yet implemented.  
 **Date:** 2026-05-10  
 **Scope:** Quantitative projection of company fundamentals using precomputed offline forecasting
 
-> This document describes a planned future capability. No forecasting code, Python packages, API routes or dashboard components are created by this document. Its purpose is to establish a shared design before implementation begins.
+> **Phase 1 (CVM ITR quarterly data pipeline) is implemented.** This includes `src/lib/cvm/itr-client.ts`, `src/lib/cvm/itr-quarterly.ts`, precomputed quarterly cache at `src/data/cvm-cache/quarterly/`, and API endpoint `/api/cvm/quarterly/[ticker]`. Forecasting models, ForecastPanel, and all phases beyond Phase 1 are not yet implemented.
 
 ---
 
@@ -1068,7 +1068,7 @@ Each phase is a distinct unit of work that can be reviewed and merged independen
 | Phase | Description | Key output | Pre-condition |
 |---|---|---|---|
 | **Phase 0** | This design document | `docs/forecast-layer-design.md` | None |
-| **Phase 1** | CVM ITR quarterly data pipeline | `data_loader.py` ingests ITR ZIPs; normalized quarterly `NormalizedFinancials[]` | Phase 0 |
+| **Phase 1** | CVM ITR quarterly data pipeline | TypeScript pipeline: `itr-parser.ts`, `itr-client.ts`, `itr-quarterly.ts`; precomputed `src/data/cvm-cache/quarterly/<TICKER>.json`; API `/api/cvm/quarterly/[ticker]` | Phase 0 |
 | **Phase 2** | Normalized time-series cache | `series_builder.py` produces `ForecastInputSeries` per ticker per metric; JSON time-series cache | Phase 1 |
 | **Phase 3** | Baseline forecasting models | `naive.py`, `seasonal_naive.py`, `moving_average.py`, `cagr.py`; output writer; first forecast JSON files | Phase 2 |
 | **Phase 4** | Backtesting and model evaluation | `backtest.py`, `metrics.py`, `model_selection.py`; backtest results stored in cache | Phase 3 |

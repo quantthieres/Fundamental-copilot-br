@@ -16,7 +16,7 @@ function padCvmCode(code: string): string {
 }
 
 /**
- * Parses a raw DFP CSV string (Latin-1 decoded) and returns rows for the
+ * Parses a raw DFP/ITR CSV string (Latin-1 decoded) and returns rows for the
  * given company (matched by cvmCode). The `stmtLabel` parameter is the
  * short statement identifier ("DRE", "BPA", "BPP", "DFC_MI", "DFC_MD")
  * used to tag each returned row's `statementType` field.
@@ -136,4 +136,123 @@ export function parseDfpCsv(
       fiscalYear:    new Date(row.dtFim).getFullYear(),
       value:         row.value,
     }));
+}
+
+/**
+ * Parses a raw DFP/ITR CSV string and returns rows grouped by CVM code,
+ * covering all companies in `cvmCodes` in a single pass.
+ *
+ * This is more efficient than calling parseDfpCsv once per company when many
+ * companies are needed from the same large CSV, because the CSV text is split
+ * and iterated only once.
+ */
+export function parseDfpCsvForCompanies(
+  csvText: string,
+  cvmCodes: Set<string>,
+  stmtLabel: string,
+): Map<string, RawCvmStatementRow[]> {
+  const result = new Map<string, RawCvmStatementRow[]>();
+  if (cvmCodes.size === 0) return result;
+
+  // Normalize all target codes to 6-digit padded form.
+  const targetCodes = new Set(Array.from(cvmCodes).map(c => c.trim().padStart(6, "0")));
+
+  const lines = csvText.split(/\r?\n/);
+  if (lines.length < 2) return result;
+
+  const headers = lines[0].split(";");
+  const idx = Object.fromEntries(headers.map((h, i) => [h.trim(), i]));
+
+  const COL = {
+    cnpj:       idx["CNPJ_CIA"],
+    versao:     idx["VERSAO"],
+    denomCia:   idx["DENOM_CIA"],
+    cdCvm:      idx["CD_CVM"],
+    grupoDfp:   idx["GRUPO_DFP"],
+    escala:     idx["ESCALA_MOEDA"],
+    ordemExerc: idx["ORDEM_EXERC"],
+    dtFim:      idx["DT_FIM_EXERC"],
+    cdConta:    idx["CD_CONTA"],
+    dsConta:    idx["DS_CONTA"],
+    vlConta:    idx["VL_CONTA"],
+  };
+
+  const required = ["CD_CVM", "ORDEM_EXERC", "DT_FIM_EXERC", "CD_CONTA", "DS_CONTA", "VL_CONTA", "VERSAO"];
+  for (const col of required) {
+    if (!(col in idx)) return result;
+  }
+
+  // Intermediate per-company accumulator: cvmCode → rows
+  type IntermRow = {
+    versao:        number;
+    dtFim:         string;
+    denomCia:      string;
+    accountCode:   string;
+    accountName:   string;
+    value:         number;
+    statementType: string;
+  };
+  const intermediate = new Map<string, IntermRow[]>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+
+    const cols = line.split(";");
+    if (cols.length < 10) continue;
+
+    const code = (cols[COL.cdCvm] ?? "").trim().padStart(6, "0");
+    if (!targetCodes.has(code)) continue;
+
+    const ordemExerc = cols[COL.ordemExerc]?.trim();
+    if (ordemExerc !== "ÚLTIMO") continue;
+
+    const rawValue = parseFloat(cols[COL.vlConta]?.trim() ?? "0");
+    if (isNaN(rawValue)) continue;
+
+    const escala = cols[COL.escala]?.trim().toUpperCase();
+    const value  = escala === "MIL" ? rawValue * 1_000 : rawValue;
+
+    const grupoRaw    = cols[COL.grupoDfp]?.trim() ?? "";
+    const mappedType  = GRUPO_TO_STMT[grupoRaw];
+    const resolvedType = mappedType ?? stmtLabel;
+
+    if (!intermediate.has(code)) intermediate.set(code, []);
+    intermediate.get(code)!.push({
+      versao:        parseInt(cols[COL.versao]?.trim() ?? "0", 10),
+      dtFim:         cols[COL.dtFim]?.trim() ?? "",
+      denomCia:      cols[COL.denomCia]?.trim() ?? "",
+      accountCode:   cols[COL.cdConta]?.trim() ?? "",
+      accountName:   cols[COL.dsConta]?.trim() ?? "",
+      value,
+      statementType: resolvedType,
+    });
+  }
+
+  // For each company: keep only the highest VERSAO per DT_FIM_EXERC.
+  for (const [code, rows] of intermediate) {
+    const maxVersionByPeriod = new Map<string, number>();
+    for (const row of rows) {
+      const cur = maxVersionByPeriod.get(row.dtFim) ?? 0;
+      maxVersionByPeriod.set(row.dtFim, Math.max(cur, row.versao));
+    }
+
+    result.set(
+      code,
+      rows
+        .filter(row => row.versao === (maxVersionByPeriod.get(row.dtFim) ?? row.versao))
+        .map(row => ({
+          cvmCode:       code,
+          companyName:   row.denomCia,
+          statementType: row.statementType,
+          accountCode:   row.accountCode,
+          accountName:   row.accountName,
+          periodEndDate: row.dtFim,
+          fiscalYear:    new Date(row.dtFim).getFullYear(),
+          value:         row.value,
+        })),
+    );
+  }
+
+  return result;
 }

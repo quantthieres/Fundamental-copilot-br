@@ -51,6 +51,7 @@ export function parseDfpCsv(
     grupoDfp:   idx["GRUPO_DFP"],
     escala:     idx["ESCALA_MOEDA"],
     ordemExerc: idx["ORDEM_EXERC"],
+    dtIni:      idx["DT_INI_EXERC"],   // start date — present in both ITR and DFP
     dtFim:      idx["DT_FIM_EXERC"],
     cdConta:    idx["CD_CONTA"],
     dsConta:    idx["DS_CONTA"],
@@ -65,13 +66,14 @@ export function parseDfpCsv(
 
   // --- Pass 1: collect ÚLTIMO rows for the target company ----------------
   type IntermRow = {
-    versao: number;
-    dtFim: string;
-    cnpj: string;
-    denomCia: string;
-    accountCode: string;
-    accountName: string;
-    value: number;    // in BRL (after scale conversion)
+    versao:        number;
+    dtIni:         string;   // DT_INI_EXERC — used to prefer YTD over quarterly rows
+    dtFim:         string;
+    cnpj:          string;
+    denomCia:      string;
+    accountCode:   string;
+    accountName:   string;
+    value:         number;   // in BRL (after scale conversion)
     statementType: string;
   };
 
@@ -105,6 +107,7 @@ export function parseDfpCsv(
 
     intermediate.push({
       versao:        parseInt(cols[COL.versao]?.trim() ?? "0", 10),
+      dtIni:         cols[COL.dtIni]?.trim() ?? "",
       dtFim:         cols[COL.dtFim]?.trim() ?? "",
       cnpj:          cols[COL.cnpj]?.trim() ?? "",
       denomCia:      cols[COL.denomCia]?.trim() ?? "",
@@ -124,8 +127,37 @@ export function parseDfpCsv(
     maxVersionByPeriod.set(row.dtFim, Math.max(current, row.versao));
   }
 
-  return intermediate
-    .filter(row => row.versao === (maxVersionByPeriod.get(row.dtFim) ?? row.versao))
+  const afterVersionFilter = intermediate.filter(
+    row => row.versao === (maxVersionByPeriod.get(row.dtFim) ?? row.versao),
+  );
+
+  // --- Pass 3: for each (dtFim, accountCode, statementType), keep only the
+  // row with the earliest DT_INI_EXERC (= the YTD-cumulative row).
+  //
+  // CVM ITR filings always include two rows per flow-statement account for Q2
+  // and Q3: one cumulative from the fiscal-year start (DT_INI = Jan 1) and one
+  // for the individual quarter (DT_INI = quarter start). Both carry
+  // ORDEM_EXERC = "ÚLTIMO" and the same VERSAO. Summing them would double-count
+  // the individual quarter's contribution. Selecting the row with the earliest
+  // DT_INI_EXERC always picks the YTD-cumulative row, which is what the
+  // de-accumulation logic in itr-quarterly.ts expects.
+  //
+  // For DFP (annual) and Q1 ITR rows, only one DT_INI_EXERC exists per
+  // (dtFim, accountCode, statementType), so this pass is a no-op for them.
+  const earliestDtIniByKey = new Map<string, string>();
+  for (const row of afterVersionFilter) {
+    const key = `${row.dtFim}\0${row.statementType}\0${row.accountCode}`;
+    const current = earliestDtIniByKey.get(key);
+    if (!current || row.dtIni < current) {
+      earliestDtIniByKey.set(key, row.dtIni);
+    }
+  }
+
+  return afterVersionFilter
+    .filter(row => {
+      const key = `${row.dtFim}\0${row.statementType}\0${row.accountCode}`;
+      return row.dtIni === earliestDtIniByKey.get(key);
+    })
     .map(row => ({
       cvmCode:       targetCode,
       companyName:   row.denomCia,
@@ -171,6 +203,7 @@ export function parseDfpCsvForCompanies(
     grupoDfp:   idx["GRUPO_DFP"],
     escala:     idx["ESCALA_MOEDA"],
     ordemExerc: idx["ORDEM_EXERC"],
+    dtIni:      idx["DT_INI_EXERC"],
     dtFim:      idx["DT_FIM_EXERC"],
     cdConta:    idx["CD_CONTA"],
     dsConta:    idx["DS_CONTA"],
@@ -185,6 +218,7 @@ export function parseDfpCsvForCompanies(
   // Intermediate per-company accumulator: cvmCode → rows
   type IntermRow = {
     versao:        number;
+    dtIni:         string;
     dtFim:         string;
     denomCia:      string;
     accountCode:   string;
@@ -220,6 +254,7 @@ export function parseDfpCsvForCompanies(
     if (!intermediate.has(code)) intermediate.set(code, []);
     intermediate.get(code)!.push({
       versao:        parseInt(cols[COL.versao]?.trim() ?? "0", 10),
+      dtIni:         cols[COL.dtIni]?.trim() ?? "",
       dtFim:         cols[COL.dtFim]?.trim() ?? "",
       denomCia:      cols[COL.denomCia]?.trim() ?? "",
       accountCode:   cols[COL.cdConta]?.trim() ?? "",
@@ -229,7 +264,9 @@ export function parseDfpCsvForCompanies(
     });
   }
 
-  // For each company: keep only the highest VERSAO per DT_FIM_EXERC.
+  // For each company: keep only the highest VERSAO per DT_FIM_EXERC, then
+  // keep only the earliest DT_INI_EXERC per (dtFim, statementType, accountCode).
+  // See parseDfpCsv Pass 2 and Pass 3 comments for the full rationale.
   for (const [code, rows] of intermediate) {
     const maxVersionByPeriod = new Map<string, number>();
     for (const row of rows) {
@@ -237,10 +274,26 @@ export function parseDfpCsvForCompanies(
       maxVersionByPeriod.set(row.dtFim, Math.max(cur, row.versao));
     }
 
+    const afterVersionFilter = rows.filter(
+      row => row.versao === (maxVersionByPeriod.get(row.dtFim) ?? row.versao),
+    );
+
+    const earliestDtIniByKey = new Map<string, string>();
+    for (const row of afterVersionFilter) {
+      const key = `${row.dtFim}\0${row.statementType}\0${row.accountCode}`;
+      const current = earliestDtIniByKey.get(key);
+      if (!current || row.dtIni < current) {
+        earliestDtIniByKey.set(key, row.dtIni);
+      }
+    }
+
     result.set(
       code,
-      rows
-        .filter(row => row.versao === (maxVersionByPeriod.get(row.dtFim) ?? row.versao))
+      afterVersionFilter
+        .filter(row => {
+          const key = `${row.dtFim}\0${row.statementType}\0${row.accountCode}`;
+          return row.dtIni === earliestDtIniByKey.get(key);
+        })
         .map(row => ({
           cvmCode:       code,
           companyName:   row.denomCia,

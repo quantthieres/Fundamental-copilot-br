@@ -1,11 +1,15 @@
 # Forecast Layer — Technical Design Document
 
 **Project:** Fundamental Copilot BR  
-**Status:** Phase 1 (ITR quarterly pipeline) implemented on branch `add-cvm-itr-pipeline`. Forecasting models not yet implemented.  
-**Date:** 2026-05-10  
+**Status:** Phase 2 (normalized time-series cache) implemented. Forecasting models not yet implemented.  
+**Date:** 2026-05-15  
 **Scope:** Quantitative projection of company fundamentals using precomputed offline forecasting
 
-> **Phase 1 (CVM ITR quarterly data pipeline) is implemented.** This includes `src/lib/cvm/itr-client.ts`, `src/lib/cvm/itr-quarterly.ts`, precomputed quarterly cache at `src/data/cvm-cache/quarterly/`, and API endpoint `/api/cvm/quarterly/[ticker]`. Forecasting models, ForecastPanel, and all phases beyond Phase 1 are not yet implemented.
+> **Phase 1 (CVM ITR quarterly data pipeline) is implemented.** This includes `src/lib/cvm/itr-client.ts`, `src/lib/cvm/itr-quarterly.ts`, precomputed quarterly cache at `src/data/cvm-cache/quarterly/`, and API endpoint `/api/cvm/quarterly/[ticker]`.
+>
+> **Phase 2 (normalized time-series cache) is implemented.** This includes `src/lib/forecasting/time-series-types.ts`, `src/lib/forecasting/time-series-builder.ts`, `src/lib/forecasting/time-series-cache.ts`, precomputed time-series cache at `src/data/forecast-cache/time-series/`, precompute script `scripts/precompute-time-series-cache.ts` (`npm run time-series:precompute`), and read-only API endpoint `/api/forecasting/time-series/[ticker]`. The cache contains 15 per-metric time series (raw CVM metrics + derived margins and YoY growth rates) with quality metadata. This is infrastructure for future forecasting models — no models, no forecast outputs.
+>
+> Forecasting models, ForecastPanel, and all phases beyond Phase 2 are not yet implemented.
 
 ---
 
@@ -1068,8 +1072,8 @@ Each phase is a distinct unit of work that can be reviewed and merged independen
 | Phase | Description | Key output | Pre-condition |
 |---|---|---|---|
 | **Phase 0** | This design document | `docs/forecast-layer-design.md` | None |
-| **Phase 1** | CVM ITR quarterly data pipeline | TypeScript pipeline: `itr-parser.ts`, `itr-client.ts`, `itr-quarterly.ts`; precomputed `src/data/cvm-cache/quarterly/<TICKER>.json`; API `/api/cvm/quarterly/[ticker]` | Phase 0 |
-| **Phase 2** | Normalized time-series cache | `series_builder.py` produces `ForecastInputSeries` per ticker per metric; JSON time-series cache | Phase 1 |
+| **Phase 1** | CVM ITR quarterly data pipeline | TypeScript pipeline: `itr-parser.ts`, `itr-client.ts`, `itr-quarterly.ts`; precomputed `src/data/cvm-cache/quarterly/<TICKER>.json`; API `/api/cvm/quarterly/[ticker]` — **IMPLEMENTED** | Phase 0 |
+| **Phase 2** | Normalized time-series cache | `src/lib/forecasting/time-series-builder.ts`, `time-series-types.ts`, `time-series-cache.ts`; precomputed `src/data/forecast-cache/time-series/<TICKER>.json`; API `/api/forecasting/time-series/[ticker]`; script `npm run time-series:precompute` — **IMPLEMENTED** | Phase 1 |
 | **Phase 3** | Baseline forecasting models | `naive.py`, `seasonal_naive.py`, `moving_average.py`, `cagr.py`; output writer; first forecast JSON files | Phase 2 |
 | **Phase 4** | Backtesting and model evaluation | `backtest.py`, `metrics.py`, `model_selection.py`; backtest results stored in cache | Phase 3 |
 | **Phase 5** | Forecast cache and read-only API | `src/lib/forecasts/`, `/api/forecasts/[ticker]/route.ts`; TypeScript types; cache reader | Phase 4 |

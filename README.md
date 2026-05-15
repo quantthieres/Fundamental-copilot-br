@@ -157,31 +157,43 @@ Cada ativo possui um status de cobertura (`src/data/b3-universe.ts`):
 
 ---
 
-## Planejado: Forecast Layer
+## Forecast Layer — infraestrutura de séries temporais
 
-Uma versão futura da plataforma poderá incluir uma camada de **projeções quantitativas de fundamentos empresariais**. O objetivo é estimar receita, EBIT, EBITDA, fluxo de caixa e margens com base em dados históricos da CVM, usando modelos de séries temporais avaliados por backtesting rigoroso.
+A plataforma conta com uma camada de infraestrutura de séries temporais que normaliza os dados trimestrais da CVM para uso futuro em modelos de projeção de fundamentos.
 
-Características planejadas:
-- projeções de fundamentos, **não** de preço de ação ou valor justo;
-- modelos baseline (naive, seasonal naive, CAGR) comparados contra modelos estatísticos e de fundação;
-- precomputação offline — nenhum modelo roda durante o carregamento do dashboard;
-- bandas de incerteza visíveis e metadados de qualidade do modelo em cada projeção;
-- aviso explícito: as projeções são estimativas quantitativas e não constituem recomendação de investimento.
+### Cache de séries temporais normalizadas
 
-Para o design técnico detalhado, consulte [`docs/forecast-layer-design.md`](docs/forecast-layer-design.md).
+O script `time-series:precompute` transforma os registros trimestrais da CVM ITR em séries temporais limpas por métrica:
 
-> Esta funcionalidade não está implementada. Nenhum modelo de ML, pacote Python de forecasting ou rota de API foi adicionado.
+```bash
+npm run time-series:precompute
+```
+
+Gera um arquivo JSON por ticker em `src/data/forecast-cache/time-series/`, contendo:
+
+- Séries para 15 métricas: receita, EBIT, lucro líquido, CFO, capex, FCL, caixa, dívida total, dívida líquida, margens e crescimentos YoY.
+- Pontos ordenados cronologicamente com anotação de fonte (`cvm_itr`, `cvm_dfp_derived_q4`, `derived`).
+- Valores ausentes preservados como `null` (zero significa zero reportado).
+- Metadados de qualidade por série: observações, ausências, outliers, períodos de início/fim.
+
+A rota `/api/forecasting/time-series/[ticker]` serve o cache normalizado (somente leitura, 404 quando indisponível). Esta rota é **infraestrutura para o Forecast Layer futuro** e não está conectada ao dashboard atual.
+
+> **Modelos de forecasting não estão implementados.** Nenhum pacote Python de série temporal, modelo estatístico ou ML foi adicionado. Esta é apenas a camada de normalização histórica.
+
+Para o design técnico completo do Forecast Layer, consulte [`docs/forecast-layer-design.md`](docs/forecast-layer-design.md).
 
 ---
 
 ## Scripts disponíveis
 
 ```bash
-npm run dev             # servidor de desenvolvimento
-npm run build           # build de produção
-npm run test            # testes com Vitest
-npm run cvm:precompute  # regenera cache CVM para todos os tickers cobertos
-npm run cvm:audit       # audita disponibilidade de dados CVM via API local
+npm run dev                       # servidor de desenvolvimento
+npm run build                     # build de produção
+npm run test                      # testes com Vitest
+npm run cvm:precompute            # regenera cache CVM anual (DFP) para todos os tickers
+npm run cvm:precompute:quarterly  # regenera cache CVM trimestral (ITR) para todos os tickers
+npm run time-series:precompute    # gera cache de séries temporais normalizadas a partir do ITR
+npm run cvm:audit                 # audita disponibilidade de dados CVM via API local
 ```
 
 ---

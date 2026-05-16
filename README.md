@@ -157,9 +157,11 @@ Cada ativo possui um status de cobertura (`src/data/b3-universe.ts`):
 
 ---
 
-## Forecast Layer — infraestrutura de séries temporais
+## Forecast Layer — projeção de fundamentos
 
-A plataforma conta com uma camada de infraestrutura de séries temporais que normaliza os dados trimestrais da CVM para uso futuro em modelos de projeção de fundamentos.
+A plataforma conta com uma camada de previsão de fundamentos empresariais baseada em modelos de linha de base auditáveis, implementados inteiramente em TypeScript. Não há Python, não há dependências de ML, não há previsão de preços de ações.
+
+> **As projeções são estimativas quantitativas de fundamentos, não recomendações de investimento.** Nenhum preço-alvo, DCF, valor justo, upside/downside ou sinal de compra/venda é produzido.
 
 ### Cache de séries temporais normalizadas
 
@@ -176,9 +178,26 @@ Gera um arquivo JSON por ticker em `src/data/forecast-cache/time-series/`, conte
 - Valores ausentes preservados como `null` (zero significa zero reportado).
 - Metadados de qualidade por série: observações, ausências, outliers, períodos de início/fim.
 
-A rota `/api/forecasting/time-series/[ticker]` serve o cache normalizado (somente leitura, 404 quando indisponível). Esta rota é **infraestrutura para o Forecast Layer futuro** e não está conectada ao dashboard atual.
+A rota `/api/forecasting/time-series/[ticker]` serve o cache normalizado (somente leitura, 404 quando indisponível).
 
-> **Modelos de forecasting não estão implementados.** Nenhum pacote Python de série temporal, modelo estatístico ou ML foi adicionado. Esta é apenas a camada de normalização histórica.
+### Cache de previsões baseline
+
+O script `forecast:precompute:baseline` gera projeções por ticker usando modelos simples e auditáveis:
+
+```bash
+npm run forecast:precompute:baseline
+```
+
+Gera um arquivo JSON por ticker em `src/data/forecast-cache/baseline-forecasts/`, contendo:
+
+- Projeções para até 8 métricas: receita, EBIT, lucro líquido, CFO, FCL, margens EBIT/líquida/FCL.
+- 4 modelos baseline implementados: `naive`, `seasonal_naive`, `moving_average_4q`, `linear_trend`.
+- Retroteste walk-forward por modelo com MAE, RMSE, MAPE, sMAPE, WAPE.
+- Seleção automática do melhor modelo por menor WAPE (fallback: menor sMAPE).
+- Bandas de incerteza heurísticas (`yhatLower`, `yhatUpper`) baseadas no erro de retroteste.
+- Horizon padrão: 8 trimestres. Configurável via `FORECAST_HORIZON_QUARTERS`.
+
+A rota `/api/forecasting/baseline/[ticker]` serve o cache de previsões (somente leitura, 404 quando indisponível). Esta rota **não está conectada ao dashboard atual** — é infraestrutura para o ForecastPanel futuro.
 
 Para o design técnico completo do Forecast Layer, consulte [`docs/forecast-layer-design.md`](docs/forecast-layer-design.md).
 
@@ -192,8 +211,10 @@ npm run build                     # build de produção
 npm run test                      # testes com Vitest
 npm run cvm:precompute            # regenera cache CVM anual (DFP) para todos os tickers
 npm run cvm:precompute:quarterly  # regenera cache CVM trimestral (ITR) para todos os tickers
-npm run time-series:precompute    # gera cache de séries temporais normalizadas a partir do ITR
-npm run cvm:audit                 # audita disponibilidade de dados CVM via API local
+npm run time-series:precompute         # gera cache de séries temporais normalizadas a partir do ITR
+npm run forecast:precompute:baseline   # gera cache de previsões baseline (local, sem rede)
+npm run cvm:audit                      # audita disponibilidade de dados CVM via API local
+npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e métrica
 ```
 
 ---

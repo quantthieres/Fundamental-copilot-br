@@ -1,0 +1,1033 @@
+{
+  "ticker": "PRIO3",
+  "companyName": "PRIO S.A.",
+  "source": "baseline_forecast_cache",
+  "generatedAt": "2026-05-16T00:37:04.317Z",
+  "inputSource": "normalized_financial_time_series",
+  "horizonQuarters": 8,
+  "forecasts": [
+    {
+      "metric": "revenue",
+      "label": "Receita líquida",
+      "unit": "BRL_BILLION",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.122074125,
+            "rmse": 1.395551255811167,
+            "mape": 0.2539805495856732,
+            "smape": 0.27338370510919885,
+            "wape": 0.2785834125150854
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.9368422500000002,
+            "rmse": 1.2706472868203829,
+            "mape": 0.20773430717233743,
+            "smape": 0.23471296828294233,
+            "wape": 0.23259489295621255
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.8513148749999999,
+            "rmse": 1.2497065009118578,
+            "mape": 0.18040168263050632,
+            "smape": 0.20390497408699576,
+            "wape": 0.21136054893196415
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.8623183890123457,
+            "rmse": 1.1065027188802141,
+            "mape": 0.19431754363217718,
+            "smape": 0.20943348763656375,
+            "wape": 0.21409245087580128
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 4.465407,
+          "yhatLower": 3.521596125275365,
+          "yhatUpper": 5.409217874724635
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 4.4715565,
+          "yhatLower": 3.526445863579708,
+          "yhatUpper": 5.416667136420292
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 4.757498125,
+          "yhatLower": 3.7519507097572093,
+          "yhatUpper": 5.76304554024279
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 5.05610215625,
+          "yhatLower": 3.987441629048912,
+          "yhatUpper": 6.124762683451087
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 4.6876409453125,
+          "yhatLower": 3.696858581915299,
+          "yhatUpper": 5.678423308709702
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 4.743199431640624,
+          "yhatLower": 3.7406741960752816,
+          "yhatUpper": 5.745724667205967
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 4.811110164550781,
+          "yhatLower": 3.7942312791991757,
+          "yhatUpper": 5.827989049902387
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 4.824513174438477,
+          "yhatLower": 3.8048014215596675,
+          "yhatUpper": 5.844224927317286
+        }
+      ],
+      "warnings": [
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "ebit",
+      "label": "EBIT",
+      "unit": "BRL_BILLION",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.81411075,
+            "rmse": 0.9591355015854122,
+            "mape": 2.05860759416139,
+            "smape": 0.7797270627240497,
+            "wape": 0.584409637678526
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.0538527500000001,
+            "rmse": 1.2315317065470748,
+            "mape": 4.4574882307411885,
+            "smape": 0.7090789948498518,
+            "wape": 0.7565085018150397
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.7906005,
+            "rmse": 0.941702735934629,
+            "mape": 2.813502973574549,
+            "smape": 0.6172355459462768,
+            "wape": 0.5675327979067486
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.858957446574885,
+            "rmse": 0.9948070061368537,
+            "mape": 3.610205034073645,
+            "smape": 0.6207626522376245,
+            "wape": 0.6166028518037631
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 1.049731,
+          "yhatLower": 0.4539742285205509,
+          "yhatUpper": 1.645487771479449
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 1.04557425,
+          "yhatLower": 0.4521765704782498,
+          "yhatUpper": 1.6389719295217504
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 1.2875435624999998,
+          "yhatLower": 0.5568203620475523,
+          "yhatUpper": 2.0182667629524476
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 1.458905203125,
+          "yhatLower": 0.6309286513147554,
+          "yhatUpper": 2.2868817549352447
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 1.21043850390625,
+          "yhatLower": 0.523474953090277,
+          "yhatUpper": 1.8974020547222228
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 1.2506153798828126,
+          "yhatLower": 0.5408501342327087,
+          "yhatUpper": 1.9603806255329164
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 1.3018756623535155,
+          "yhatLower": 0.5630185251713233,
+          "yhatUpper": 2.0407327995357076
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 1.3054586873168945,
+          "yhatLower": 0.5645680659522662,
+          "yhatUpper": 2.0463493086815228
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "netIncome",
+      "label": "Lucro líquido",
+      "unit": "BRL_BILLION",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "linear_trend",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 2.0167405,
+            "rmse": 2.904726819183131,
+            "mape": 1.0527876438229,
+            "smape": 0.866498780439106,
+            "wape": 1.0201964307879712
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.1851479999999999,
+            "rmse": 2.002310655381864,
+            "mape": 0.6748248110920224,
+            "smape": 0.607937424099227,
+            "wape": 0.5995237163906324
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.4631855937499996,
+            "rmse": 2.326387411041253,
+            "mape": 1.4748039286878798,
+            "smape": 0.6501352509502635,
+            "wape": 0.7401729277138669
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.3316701351127422,
+            "rmse": 2.174410402452159,
+            "mape": 1.2570902072182917,
+            "smape": 0.6153611159586652,
+            "wape": 0.6736439908004797
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 2.234553898850575,
+          "yhatLower": 0.7292600927701023,
+          "yhatUpper": 3.7398477049310475
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 2.321944535335558,
+          "yhatLower": 0.7577805521347474,
+          "yhatUpper": 3.8861085185363686
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 2.4093351718205414,
+          "yhatLower": 0.7863010114993925,
+          "yhatUpper": 4.03236933214169
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 2.496725808305525,
+          "yhatLower": 0.8148214708640378,
+          "yhatUpper": 4.178630145747012
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 2.584116444790508,
+          "yhatLower": 0.8433419302286829,
+          "yhatUpper": 4.324890959352333
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 2.6715070812754913,
+          "yhatLower": 0.871862389593328,
+          "yhatUpper": 4.471151772957654
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 2.7588977177604748,
+          "yhatLower": 0.9003828489579733,
+          "yhatUpper": 4.617412586562976
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 2.8462883542454582,
+          "yhatLower": 0.9289033083226184,
+          "yhatUpper": 4.763673400168298
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "operatingCashFlow",
+      "label": "Fluxo de caixa operacional",
+      "unit": "BRL_BILLION",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.4077016250000003,
+            "rmse": 1.8080969314287676,
+            "mape": 1.9176341627990996,
+            "smape": 0.7074741346611653,
+            "wape": 0.6698859215620028
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.2549515000000002,
+            "rmse": 1.357223440653841,
+            "mape": 1.20431109084317,
+            "smape": 0.8938053868916309,
+            "wape": 0.5971963995517287
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.9502229687500001,
+            "rmse": 1.1148555181795874,
+            "mape": 1.347230619965086,
+            "smape": 0.489844004133121,
+            "wape": 0.4521845949495696
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.9754054520768142,
+            "rmse": 1.1357220339817413,
+            "mape": 1.4335289087314804,
+            "smape": 0.4938704511023298,
+            "wape": 0.46416823605007806
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 1.78543875,
+          "yhatLower": 0.9780908520239842,
+          "yhatUpper": 2.5927866479760158
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 2.1675956875,
+          "yhatLower": 1.1874423095333788,
+          "yhatUpper": 3.147749065466621
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 1.8690738593749998,
+          "yhatLower": 1.0239074533426868,
+          "yhatUpper": 2.714240265407313
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 1.95358882421875,
+          "yhatLower": 1.0702060530413886,
+          "yhatUpper": 2.836971595396111
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 1.9439242802734373,
+          "yhatLower": 1.0649116669853593,
+          "yhatUpper": 2.8229368935615153
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 1.983545662841797,
+          "yhatLower": 1.0866168707257033,
+          "yhatUpper": 2.8804744549578905
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 1.937533156677246,
+          "yhatLower": 1.0614105110237846,
+          "yhatUpper": 2.8136558023307074
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 1.9546479810028075,
+          "yhatLower": 1.0707862754440591,
+          "yhatUpper": 2.838509686561556
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "freeCashFlow",
+      "label": "Free cash flow",
+      "unit": "BRL_BILLION",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 1.3325565000000001,
+            "rmse": 1.515098711330305,
+            "mape": 9.805183294194567,
+            "smape": 1.3430960243332737,
+            "wape": 1.2708518757383684
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.9327928750000001,
+            "rmse": 1.2091784409343291,
+            "mape": 12.956200654378103,
+            "smape": 1.1725087441134368,
+            "wape": 0.8895994840512469
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.90404659375,
+            "rmse": 1.0693201116263849,
+            "mape": 8.29652686288141,
+            "smape": 0.9295635814904727,
+            "wape": 0.8621843122014489
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.9651269975822098,
+            "rmse": 1.1212821673273732,
+            "mape": 7.85991468929161,
+            "smape": 0.9791636677916569,
+            "wape": 0.9204363606369342
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 0.45444900000000005,
+          "yhatLower": 0.11361225000000003,
+          "yhatUpper": 0.7952857500000001
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 0.632678,
+          "yhatLower": 0.15816949999999996,
+          "yhatUpper": 1.1071865
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 0.33737075000000005,
+          "yhatLower": 0.08434268750000001,
+          "yhatUpper": 0.5903988125000001
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 0.41463543750000004,
+          "yhatLower": 0.10365885937500002,
+          "yhatUpper": 0.7256120156250001
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 0.459783296875,
+          "yhatLower": 0.11494582421874999,
+          "yhatUpper": 0.8046207695312501
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 0.46111687109375,
+          "yhatLower": 0.11527921777343753,
+          "yhatUpper": 0.8069545244140625
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 0.41822658886718755,
+          "yhatLower": 0.10455664721679692,
+          "yhatUpper": 0.7318965305175782
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 0.4384405485839844,
+          "yhatLower": 0.1096101371459961,
+          "yhatUpper": 0.7672709600219727
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "ebitMargin",
+      "label": "Margem EBIT",
+      "unit": "PERCENTAGE",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.1703626036575772,
+            "rmse": 0.18397830950155974,
+            "mape": 1.6205374345649362,
+            "smape": 0.7125314328437687,
+            "wape": 0.4991577634354233
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.20938040773173214,
+            "rmse": 0.2599741557790362,
+            "mape": 3.306008615879651,
+            "smape": 0.5927613444816796,
+            "wape": 0.6134788608927202
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.1616397111893782,
+            "rmse": 0.19710600468861325,
+            "mape": 2.4307673705363144,
+            "smape": 0.53014513704321,
+            "wape": 0.4735999273749608
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.31778002105118547,
+            "rmse": 0.3520207690761721,
+            "mape": 4.09356376992647,
+            "smape": 0.7308449008849373,
+            "wape": 0.9310867594580605
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 0.2020189871242704,
+          "yhatLower": 0.1063428094938528,
+          "yhatUpper": 0.29769516475468805
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 0.19249199194120487,
+          "yhatLower": 0.10132779853758869,
+          "yhatUpper": 0.28365618534482107
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 0.2347780080256049,
+          "yhatLower": 0.12358716047544045,
+          "yhatUpper": 0.34596885557576934
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 0.25122699056318676,
+          "yhatLower": 0.13224590607783154,
+          "yhatUpper": 0.370208075048542
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 0.22012899441356673,
+          "yhatLower": 0.11587591864617837,
+          "yhatUpper": 0.3243820701809551
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 0.2246564962358908,
+          "yhatLower": 0.11825919593425975,
+          "yhatUpper": 0.3310537965375218
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 0.23269762230956229,
+          "yhatLower": 0.12249204528342753,
+          "yhatUpper": 0.342903199335697
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 0.23217752588055163,
+          "yhatLower": 0.12221826648542429,
+          "yhatUpper": 0.342136785275679
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "netMargin",
+      "label": "Margem líquida",
+      "unit": "PERCENTAGE",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.6058759222693343,
+            "rmse": 0.9982084091000575,
+            "mape": 1.1087520985786552,
+            "smape": 0.7900887000697077,
+            "wape": 1.1146935160462257
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.32812681046668773,
+            "rmse": 0.6500319820684007,
+            "mape": 0.5704313934907159,
+            "smape": 0.50849658579909,
+            "wape": 0.6036893275081352
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.5519467356441333,
+            "rmse": 0.8011041545462034,
+            "mape": 1.7863089996373547,
+            "smape": 0.8140397041037527,
+            "wape": 1.01547433197369
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.581366064082247,
+            "rmse": 0.7515493939391821,
+            "mape": 1.9196765656103736,
+            "smape": 0.8983410469163882,
+            "wape": 1.069600157825244
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 0.2845856470135917,
+          "yhatLower": 0.07114641175339792,
+          "yhatUpper": 0.49802488227378544
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 0.2390495466391318,
+          "yhatLower": 0.05976238665978295,
+          "yhatUpper": 0.41833670661848066
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 0.24767634481526646,
+          "yhatLower": 0.061919086203816615,
+          "yhatUpper": 0.43343360342671633
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 0.28512890176154704,
+          "yhatLower": 0.07128222544038676,
+          "yhatUpper": 0.4989755780827073
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 0.2641101100573843,
+          "yhatLower": 0.06602752751434607,
+          "yhatUpper": 0.4621926926004225
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 0.2589912258183324,
+          "yhatLower": 0.06474780645458311,
+          "yhatUpper": 0.4532346451820817
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 0.26397664561313255,
+          "yhatLower": 0.06599416140328312,
+          "yhatUpper": 0.461959129822982
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 0.26805172081259904,
+          "yhatLower": 0.06701293020314975,
+          "yhatUpper": 0.46909051142204833
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    },
+    {
+      "metric": "freeCashFlowMargin",
+      "label": "Margem FCL",
+      "unit": "PERCENTAGE",
+      "frequency": "quarterly",
+      "lastObservedPeriod": "2026Q1",
+      "observations": 30,
+      "modelSelected": "moving_average_4q",
+      "modelSelectionCriterion": "lowest_wape_then_smape",
+      "backtest": [
+        {
+          "model": "naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.3831718893205467,
+            "rmse": 0.4623880627785333,
+            "mape": 10.813003544999873,
+            "smape": 1.270165051836904,
+            "wape": 1.2738633854681922
+          }
+        },
+        {
+          "model": "seasonal_naive",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.306614533081779,
+            "rmse": 0.3677038045293635,
+            "mape": 13.235067791329998,
+            "smape": 1.294684992793301,
+            "wape": 1.0193467684644157
+          }
+        },
+        {
+          "model": "moving_average_4q",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.29856161760155436,
+            "rmse": 0.327764648961367,
+            "mape": 9.760967836162125,
+            "smape": 1.0524110556330888,
+            "wape": 0.9925746735836598
+          }
+        },
+        {
+          "model": "linear_trend",
+          "metrics": {
+            "observations": 30,
+            "trainObservations": 22,
+            "testObservations": 8,
+            "mae": 0.308578387757186,
+            "rmse": 0.32599243153665847,
+            "mape": 8.264763458516699,
+            "smape": 1.1072042204214905,
+            "wape": 1.025875646587019
+          }
+        }
+      ],
+      "forecast": [
+        {
+          "period": "2026Q2",
+          "horizon": 1,
+          "yhat": 0.13266586270045838,
+          "yhatLower": 0.033166465675114595,
+          "yhatUpper": 0.23216525972580215
+        },
+        {
+          "period": "2026Q3",
+          "horizon": 2,
+          "yhat": 0.18038299921054923,
+          "yhatLower": 0.04509574980263731,
+          "yhatUpper": 0.31567024861846116
+        },
+        {
+          "period": "2026Q4",
+          "horizon": 3,
+          "yhat": 0.08920910759951559,
+          "yhatLower": 0.022302276899878903,
+          "yhatUpper": 0.15611593829915227
+        },
+        {
+          "period": "2027Q1",
+          "horizon": 4,
+          "yhat": 0.1095249020103583,
+          "yhatLower": 0.027381225502589576,
+          "yhatUpper": 0.19166857851812702
+        },
+        {
+          "period": "2027Q2",
+          "horizon": 5,
+          "yhat": 0.12794571788022036,
+          "yhatLower": 0.03198642947005509,
+          "yhatUpper": 0.22390500629038562
+        },
+        {
+          "period": "2027Q3",
+          "horizon": 6,
+          "yhat": 0.1267656816751609,
+          "yhatLower": 0.03169142041879022,
+          "yhatUpper": 0.22183994293153156
+        },
+        {
+          "period": "2027Q4",
+          "horizon": 7,
+          "yhat": 0.11336135229131378,
+          "yhatLower": 0.028340338072828444,
+          "yhatUpper": 0.19838236650979912
+        },
+        {
+          "period": "2028Q1",
+          "horizon": 8,
+          "yhat": 0.11939941346426333,
+          "yhatLower": 0.029849853366065826,
+          "yhatUpper": 0.20894897356246084
+        }
+      ],
+      "warnings": [
+        "Série histórica contém valores negativos.",
+        "Série histórica contém potenciais outliers de grande amplitude.",
+        "Ano corrente incompleto: último período observado é 2026Q1.",
+        "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
+      ]
+    }
+  ],
+  "warnings": []
+}

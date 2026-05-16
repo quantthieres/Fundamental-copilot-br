@@ -1,15 +1,17 @@
 # Forecast Layer — Technical Design Document
 
 **Project:** Fundamental Copilot BR  
-**Status:** Phase 2 (normalized time-series cache) implemented. Forecasting models not yet implemented.  
+**Status:** Phase 3 (baseline forecast models) implemented. Statistical models, ForecastPanel, and TimesFM not yet implemented.  
 **Date:** 2026-05-15  
 **Scope:** Quantitative projection of company fundamentals using precomputed offline forecasting
 
 > **Phase 1 (CVM ITR quarterly data pipeline) is implemented.** This includes `src/lib/cvm/itr-client.ts`, `src/lib/cvm/itr-quarterly.ts`, precomputed quarterly cache at `src/data/cvm-cache/quarterly/`, and API endpoint `/api/cvm/quarterly/[ticker]`.
 >
-> **Phase 2 (normalized time-series cache) is implemented.** This includes `src/lib/forecasting/time-series-types.ts`, `src/lib/forecasting/time-series-builder.ts`, `src/lib/forecasting/time-series-cache.ts`, precomputed time-series cache at `src/data/forecast-cache/time-series/`, precompute script `scripts/precompute-time-series-cache.ts` (`npm run time-series:precompute`), and read-only API endpoint `/api/forecasting/time-series/[ticker]`. The cache contains 15 per-metric time series (raw CVM metrics + derived margins and YoY growth rates) with quality metadata. This is infrastructure for future forecasting models — no models, no forecast outputs.
+> **Phase 2 (normalized time-series cache) is implemented.** This includes `src/lib/forecasting/time-series-types.ts`, `src/lib/forecasting/time-series-builder.ts`, `src/lib/forecasting/time-series-cache.ts`, precomputed time-series cache at `src/data/forecast-cache/time-series/`, precompute script `scripts/precompute-time-series-cache.ts` (`npm run time-series:precompute`), and read-only API endpoint `/api/forecasting/time-series/[ticker]`. The cache contains 15 per-metric time series (raw CVM metrics + derived margins and YoY growth rates) with quality metadata.
 >
-> Forecasting models, ForecastPanel, and all phases beyond Phase 2 are not yet implemented.
+> **Phase 3 (baseline forecast models) is implemented.** This includes `src/lib/forecasting/forecast-types.ts`, `src/lib/forecasting/period-utils.ts`, `src/lib/forecasting/baseline-models.ts` (naive, seasonal_naive, moving_average_4q, linear_trend), `src/lib/forecasting/backtest.ts` (walk-forward backtesting, model selection), `src/lib/forecasting/baseline-forecast-builder.ts`, `src/lib/forecasting/baseline-forecast-cache.ts`, precomputed baseline forecast cache at `src/data/forecast-cache/baseline-forecasts/`, precompute script `scripts/precompute-baseline-forecasts.ts` (`npm run forecast:precompute:baseline`), and read-only API endpoint `/api/forecasting/baseline/[ticker]`. Forecasts cover 8 financial metrics with heuristic uncertainty bands and walk-forward backtest metrics. No dashboard UI changes; no stock prices; no valuation outputs.
+>
+> ForecastPanel, ARIMA/SARIMA, Prophet, TimesFM, and statistical models are future work.
 
 ---
 
@@ -1074,14 +1076,12 @@ Each phase is a distinct unit of work that can be reviewed and merged independen
 | **Phase 0** | This design document | `docs/forecast-layer-design.md` | None |
 | **Phase 1** | CVM ITR quarterly data pipeline | TypeScript pipeline: `itr-parser.ts`, `itr-client.ts`, `itr-quarterly.ts`; precomputed `src/data/cvm-cache/quarterly/<TICKER>.json`; API `/api/cvm/quarterly/[ticker]` — **IMPLEMENTED** | Phase 0 |
 | **Phase 2** | Normalized time-series cache | `src/lib/forecasting/time-series-builder.ts`, `time-series-types.ts`, `time-series-cache.ts`; precomputed `src/data/forecast-cache/time-series/<TICKER>.json`; API `/api/forecasting/time-series/[ticker]`; script `npm run time-series:precompute` — **IMPLEMENTED** | Phase 1 |
-| **Phase 3** | Baseline forecasting models | `naive.py`, `seasonal_naive.py`, `moving_average.py`, `cagr.py`; output writer; first forecast JSON files | Phase 2 |
-| **Phase 4** | Backtesting and model evaluation | `backtest.py`, `metrics.py`, `model_selection.py`; backtest results stored in cache | Phase 3 |
-| **Phase 5** | Forecast cache and read-only API | `src/lib/forecasts/`, `/api/forecasts/[ticker]/route.ts`; TypeScript types; cache reader | Phase 4 |
-| **Phase 6** | Dashboard ForecastPanel | `ForecastPanel.tsx`, `ForecastChart.tsx`, `ForecastQualityBadge.tsx`, `ForecastWarnings.tsx`; "Projeções" tab | Phase 5 |
-| **Phase 7** | Prophet / ARIMA / ETS models | `arima.py`, `prophet_model.py`; integrated into model runner and backtesting | Phase 4 |
-| **Phase 8** | TimesFM integration | `timesfm_model.py`; offline precompute only; evaluated against baseline in backtesting | Phase 4, 7 |
-| **Phase 9** | Model comparison and ensemble | `ModelComparison.tsx`; model comparison table in cache and dashboard; ensemble if warranted by backtesting | Phase 7, 8 |
-| **Phase 10** | Sector-specific forecast methodologies | Separate model configs for energy utilities, telecom, agribusiness; exclusion of banks, FIIs, ETFs | Phase 9 |
+| **Phase 3** | Baseline forecasting models | `src/lib/forecasting/forecast-types.ts`, `period-utils.ts`, `baseline-models.ts` (naive, seasonal_naive, moving_average_4q, linear_trend), `backtest.ts`, `baseline-forecast-builder.ts`, `baseline-forecast-cache.ts`; precomputed `src/data/forecast-cache/baseline-forecasts/<TICKER>.json`; API `/api/forecasting/baseline/[ticker]`; script `npm run forecast:precompute:baseline` — **IMPLEMENTED** (TypeScript only, no Python, no ML) | Phase 2 |
+| **Phase 4** | Dashboard ForecastPanel | `ForecastPanel.tsx`, `ForecastChart.tsx`, `ForecastQualityBadge.tsx`, `ForecastWarnings.tsx`; "Projeções" tab in dashboard | Phase 3 |
+| **Phase 5** | Statistical models (ARIMA/SARIMA, ETS, Prophet) | Integrated into model runner and backtesting; TypeScript or offline Python; evaluated against Phase 3 baselines | Phase 3 |
+| **Phase 6** | TimesFM / foundation model integration | Offline precompute only; zero-shot forecasting; evaluated against baseline and statistical models in backtesting | Phase 5 |
+| **Phase 7** | Model comparison and ensemble | Model comparison table in cache and dashboard; ensemble if warranted by backtesting | Phase 5, 6 |
+| **Phase 8** | Sector-specific forecast methodologies | Separate model configs for energy utilities, telecom, agribusiness; exclusion of banks, FIIs, ETFs | Phase 7 |
 
 ---
 

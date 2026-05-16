@@ -2,7 +2,7 @@
   "ticker": "TUPY3",
   "companyName": "Tupy S.A.",
   "source": "baseline_forecast_cache",
-  "generatedAt": "2026-05-16T00:37:04.324Z",
+  "generatedAt": "2026-05-16T02:45:16.956Z",
   "inputSource": "normalized_financial_time_series",
   "horizonQuarters": 8,
   "forecasts": [
@@ -129,7 +129,26 @@
       ],
       "warnings": [
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": false,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "high",
+        "score": 100,
+        "reasons": [],
+        "warnings": [],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.05201703375852582,
+          "smape": 0.05139435266678275,
+          "mae": 0.1352228437500002,
+          "rmse": 0.16527253327139804,
+          "hasNegativeValues": false,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "ebit",
@@ -255,7 +274,31 @@
       "warnings": [
         "Série histórica contém valores negativos.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "low",
+        "score": 45,
+        "reasons": [
+          "WAPE elevado (46.3%): variabilidade significativa nos erros do retroteste."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (53.8%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.46251474921614616,
+          "smape": 0.5377520883341802,
+          "mae": 0.06433412500000002,
+          "rmse": 0.10784821764601339,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "netIncome",
@@ -381,7 +424,31 @@
       "warnings": [
         "Série histórica contém valores negativos.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "low",
+        "score": 35,
+        "reasons": [
+          "WAPE muito elevado (100.7%): erro de retroteste alto indica baixa estabilidade histórica."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (125.8%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 1.0067695744560674,
+          "smape": 1.2584075493046392,
+          "mae": 0.06461409374999998,
+          "rmse": 0.08229209905911189,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "operatingCashFlow",
@@ -508,7 +575,32 @@
         "Série histórica contém valores negativos.",
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 20,
+        "reasons": [
+          "WAPE muito elevado (57.2%): erro de retroteste alto indica baixa estabilidade histórica."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (74.8%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.5719613512534253,
+          "smape": 0.7477229247925496,
+          "mae": 0.16831600000000002,
+          "rmse": 0.19075040295501344,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "freeCashFlow",
@@ -635,7 +727,32 @@
         "Série histórica contém valores negativos.",
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 20,
+        "reasons": [
+          "WAPE muito elevado (90.1%): erro de retroteste alto indica baixa estabilidade histórica."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (109.1%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.900736956551245,
+          "smape": 1.0911548099993524,
+          "mae": 0.15761534375000003,
+          "rmse": 0.1732567405536912,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "ebitMargin",
@@ -762,7 +879,32 @@
         "Série histórica contém valores negativos.",
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 40,
+        "reasons": [
+          "WAPE elevado (41.6%): variabilidade significativa nos erros do retroteste."
+        ],
+        "warnings": [
+          "sMAPE elevado (49.0%): variabilidade relativa moderada nos erros.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.41611145506660724,
+          "smape": 0.49037047029484104,
+          "mae": 0.021820881274590555,
+          "rmse": 0.04032420810646745,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "netMargin",
@@ -888,7 +1030,31 @@
       "warnings": [
         "Série histórica contém valores negativos.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "low",
+        "score": 35,
+        "reasons": [
+          "WAPE muito elevado (99.2%): erro de retroteste alto indica baixa estabilidade histórica."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (125.1%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.9923872094697604,
+          "smape": 1.2513906054284747,
+          "mae": 0.024601360811959332,
+          "rmse": 0.031783264982761086,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "freeCashFlowMargin",
@@ -1015,7 +1181,32 @@
         "Série histórica contém valores negativos.",
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 20,
+        "reasons": [
+          "WAPE muito elevado (91.0%): erro de retroteste alto indica baixa estabilidade histórica."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (110.4%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 29,
+          "wape": 0.9098445769476062,
+          "smape": 1.1042295619317786,
+          "mae": 0.06176407535996777,
+          "rmse": 0.06872873089075461,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": false,
+          "forecastCoverage": 1
+        }
+      }
     }
   ],
   "warnings": []

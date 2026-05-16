@@ -1,3 +1,23 @@
+export type ForecastReliabilityLevel = "high" | "medium" | "low" | "insufficient";
+
+export type ForecastQualityDiagnostic = {
+  level: ForecastReliabilityLevel;
+  score: number;
+  reasons: string[];
+  warnings: string[];
+  inputs: {
+    observations: number;
+    wape: number | null;
+    smape: number | null;
+    mae: number | null;
+    rmse: number | null;
+    hasNegativeValues: boolean;
+    hasLargeOutliers: boolean;
+    hasIncompleteCurrentYear: boolean;
+    forecastCoverage: number;
+  };
+};
+
 export type BaselineModelName =
   | "naive"
   | "seasonal_naive"
@@ -50,6 +70,9 @@ export type MetricForecastResult = {
   backtest: ModelBacktestResult[];
   forecast: ForecastPoint[];
   warnings: string[];
+  hasNegativeValues: boolean;
+  hasLargeOutliers: boolean;
+  quality: ForecastQualityDiagnostic;
 };
 
 export type BaselineForecastCache = {

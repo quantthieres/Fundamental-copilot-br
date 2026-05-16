@@ -2,7 +2,7 @@
   "ticker": "GGBR3",
   "companyName": "Gerdau S.A.",
   "source": "baseline_forecast_cache",
-  "generatedAt": "2026-05-16T00:37:04.308Z",
+  "generatedAt": "2026-05-16T02:45:16.937Z",
   "inputSource": "normalized_financial_time_series",
   "horizonQuarters": 8,
   "forecasts": [
@@ -130,7 +130,28 @@
       "warnings": [
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": false,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "high",
+        "score": 95,
+        "reasons": [
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [],
+        "inputs": {
+          "observations": 30,
+          "wape": 0.03956602255025895,
+          "smape": 0.03985153040116017,
+          "mae": 0.675721124999999,
+          "rmse": 0.7512149637433806,
+          "hasNegativeValues": false,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "ebit",
@@ -256,7 +277,29 @@
       "warnings": [
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": false,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "high",
+        "score": 80,
+        "reasons": [
+          "WAPE moderado (21.3%): alguma imprecisão observada no retroteste.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [],
+        "inputs": {
+          "observations": 30,
+          "wape": 0.2133948237796012,
+          "smape": 0.22316268440887077,
+          "mae": 0.3694704374999999,
+          "rmse": 0.451418955682229,
+          "hasNegativeValues": false,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "netIncome",
@@ -382,7 +425,31 @@
       "warnings": [
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": false,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "low",
+        "score": 55,
+        "reasons": [
+          "WAPE elevado (33.9%): variabilidade significativa nos erros do retroteste.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [
+          "sMAPE elevado (36.5%): variabilidade relativa moderada nos erros."
+        ],
+        "inputs": {
+          "observations": 30,
+          "wape": 0.3386489653914819,
+          "smape": 0.3648381981963464,
+          "mae": 0.3523895625,
+          "rmse": 0.4541455879737074,
+          "hasNegativeValues": false,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "operatingCashFlow",
@@ -510,7 +577,33 @@
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 15,
+        "reasons": [
+          "WAPE muito elevado (61.6%): erro de retroteste alto indica baixa estabilidade histórica.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (58.3%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 30,
+          "wape": 0.615535380828868,
+          "smape": 0.5833177071256109,
+          "mae": 1.36425184375,
+          "rmse": 1.7657876684135339,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "freeCashFlow",
@@ -638,7 +731,33 @@
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 15,
+        "reasons": [
+          "WAPE muito elevado (118.7%): erro de retroteste alto indica baixa estabilidade histórica.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (118.7%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 30,
+          "wape": 1.1865751111281344,
+          "smape": 1.1870110079186469,
+          "mae": 1.3708293125,
+          "rmse": 1.7264469331459293,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "ebitMargin",
@@ -764,7 +883,29 @@
       "warnings": [
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": false,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "high",
+        "score": 80,
+        "reasons": [
+          "WAPE moderado (23.3%): alguma imprecisão observada no retroteste.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [],
+        "inputs": {
+          "observations": 30,
+          "wape": 0.23349230259505369,
+          "smape": 0.23737096235924257,
+          "mae": 0.023783664619683745,
+          "rmse": 0.028871463282439263,
+          "hasNegativeValues": false,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "netMargin",
@@ -890,7 +1031,31 @@
       "warnings": [
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": false,
+      "hasLargeOutliers": false,
+      "quality": {
+        "level": "low",
+        "score": 55,
+        "reasons": [
+          "WAPE elevado (35.8%): variabilidade significativa nos erros do retroteste.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [
+          "sMAPE elevado (37.4%): variabilidade relativa moderada nos erros."
+        ],
+        "inputs": {
+          "observations": 30,
+          "wape": 0.3580468828930083,
+          "smape": 0.3735495857535968,
+          "mae": 0.021940665821918913,
+          "rmse": 0.028231681479328828,
+          "hasNegativeValues": false,
+          "hasLargeOutliers": false,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     },
     {
       "metric": "freeCashFlowMargin",
@@ -1018,7 +1183,33 @@
         "Série histórica contém potenciais outliers de grande amplitude.",
         "Ano corrente incompleto: último período observado é 2026Q1.",
         "Intervalos de incerteza são bandas heurísticas baseadas no erro de retroteste, não intervalos de confiança estatísticos."
-      ]
+      ],
+      "hasNegativeValues": true,
+      "hasLargeOutliers": true,
+      "quality": {
+        "level": "low",
+        "score": 15,
+        "reasons": [
+          "WAPE muito elevado (118.6%): erro de retroteste alto indica baixa estabilidade histórica.",
+          "Último período observado (2026Q1) pertence ao ano corrente ainda incompleto."
+        ],
+        "warnings": [
+          "sMAPE muito elevado (118.2%): alta variabilidade relativa nos erros de previsão.",
+          "Série histórica com valores negativos. Para esta métrica isso pode ser esperado em alguns períodos.",
+          "Outliers de grande amplitude detectados na série histórica: podem distorcer as projeções."
+        ],
+        "inputs": {
+          "observations": 30,
+          "wape": 1.1864435430300446,
+          "smape": 1.1824678106528255,
+          "mae": 0.07930984529684208,
+          "rmse": 0.09892747892020194,
+          "hasNegativeValues": true,
+          "hasLargeOutliers": true,
+          "hasIncompleteCurrentYear": true,
+          "forecastCoverage": 1
+        }
+      }
     }
   ],
   "warnings": []

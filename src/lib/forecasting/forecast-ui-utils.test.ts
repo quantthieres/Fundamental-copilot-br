@@ -20,6 +20,16 @@ function makeResult(
     backtest: [],
     forecast: [],
     warnings: [],
+    hasNegativeValues: false,
+    hasLargeOutliers: false,
+    quality: {
+      level: "medium", score: 75, reasons: [], warnings: [],
+      inputs: {
+        observations: 8, wape: null, smape: null, mae: null, rmse: null,
+        hasNegativeValues: false, hasLargeOutliers: false,
+        hasIncompleteCurrentYear: false, forecastCoverage: 1,
+      },
+    },
   };
 }
 

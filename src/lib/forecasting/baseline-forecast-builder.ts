@@ -19,6 +19,7 @@ import {
 } from "./baseline-models";
 import { backtestModel, selectBestModel } from "./backtest";
 import { generateFuturePeriods } from "./period-utils";
+import { computeForecastQuality } from "./forecast-quality";
 
 // --- Config -------------------------------------------------------------------
 
@@ -122,6 +123,9 @@ function buildMetricForecast(
   const { label, unit } = METRIC_META[metric];
   const meta = METRIC_META[metric];
 
+  const hasNegativeValues = series.quality.hasNegativeValues;
+  const hasLargeOutliers  = series.quality.hasLargeOutliers;
+
   const allPoints = series.points.map(p => ({ period: p.period, value: p.value }));
   const nonNullPoints = allPoints.filter(p => p.value !== null);
   const totalObs = nonNullPoints.length;
@@ -145,19 +149,22 @@ function buildMetricForecast(
 
   // Empty result for no data.
   if (totalObs === 0 || lastObservedPeriod === null) {
-    return {
+    const draft = {
       metric,
       label: meta.label,
       unit: meta.unit,
-      frequency: "quarterly",
+      frequency: "quarterly" as const,
       lastObservedPeriod: null,
       observations: 0,
       modelSelected: null,
-      modelSelectionCriterion: "insufficient_data",
+      modelSelectionCriterion: "insufficient_data" as const,
       backtest: [],
       forecast: [],
       warnings: [...warnings, "Sem observações não-nulas: previsão impossível."],
+      hasNegativeValues,
+      hasLargeOutliers,
     };
+    return { ...draft, quality: computeForecastQuality(draft) };
   }
 
   // Determine eligible models and run backtest for each.
@@ -170,22 +177,25 @@ function buildMetricForecast(
   }
 
   if (backtestResults.length === 0) {
-    return {
+    const draft = {
       metric,
       label: meta.label,
       unit: meta.unit,
-      frequency: "quarterly",
+      frequency: "quarterly" as const,
       lastObservedPeriod,
       observations: totalObs,
       modelSelected: null,
-      modelSelectionCriterion: "insufficient_data",
+      modelSelectionCriterion: "insufficient_data" as const,
       backtest: [],
       forecast: [],
       warnings: [
         ...warnings,
         `Dados insuficientes: nenhum modelo elegível (mínimo ${MODEL_MIN_OBS.naive} observações).`,
       ],
+      hasNegativeValues,
+      hasLargeOutliers,
     };
+    return { ...draft, quality: computeForecastQuality(draft) };
   }
 
   // Pre-run all eligible models and prefer those with full non-null horizon coverage.
@@ -226,11 +236,11 @@ function buildMetricForecast(
     }
   }
 
-  return {
+  const draft = {
     metric,
     label: meta.label,
     unit: meta.unit,
-    frequency: "quarterly",
+    frequency: "quarterly" as const,
     lastObservedPeriod,
     observations: totalObs,
     modelSelected: selectedModel,
@@ -238,7 +248,10 @@ function buildMetricForecast(
     backtest: backtestResults,
     forecast: forecastPoints,
     warnings,
+    hasNegativeValues,
+    hasLargeOutliers,
   };
+  return { ...draft, quality: computeForecastQuality(draft) };
 }
 
 // --- Main builder ------------------------------------------------------------

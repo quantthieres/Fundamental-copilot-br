@@ -3,7 +3,16 @@ import {
   parseBaselineForecastCache,
   getPrecomputedBaselineForecast,
 } from "./baseline-forecast-cache";
-import type { BaselineForecastCache } from "./forecast-types";
+import type { BaselineForecastCache, ForecastQualityDiagnostic } from "./forecast-types";
+
+const STUB_QUALITY: ForecastQualityDiagnostic = {
+  level: "medium", score: 70, reasons: [], warnings: [],
+  inputs: {
+    observations: 12, wape: null, smape: null, mae: null, rmse: null,
+    hasNegativeValues: false, hasLargeOutliers: false,
+    hasIncompleteCurrentYear: false, forecastCoverage: 1,
+  },
+};
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +82,9 @@ describe("parseBaselineForecastCache (I)", () => {
         backtest:                [],
         forecast:                [{ period: "2025Q4", horizon: 1, yhat: 5.0, yhatLower: 4.5, yhatUpper: 5.5 }],
         warnings:                [],
+        hasNegativeValues:       false,
+        hasLargeOutliers:        false,
+        quality:                 STUB_QUALITY,
       }],
     };
     const result = parseBaselineForecastCache(JSON.stringify(withForecasts));

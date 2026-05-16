@@ -73,6 +73,7 @@ A plataforma não produz preço-alvo, recomendação de compra/venda ou estimati
 - Página institucional "Sobre".
 - Relatório imprimível de análise fundamentalista.
 - Painel de projeções de fundamentos (ForecastPanel) com gráfico histórico + projeção, tabela de valores projetados, banda de incerteza heurística e resumo de retroteste walk-forward. As projeções são estimativas quantitativas de fundamentos, não recomendações de investimento. Sem preço-alvo, DCF ou valor justo.
+- Diagnóstico de confiabilidade das projeções: nível (Alta/Média/Baixa/Insuficiente), score 0–100, razões em português e avisos de qualidade. Camada explicativa embutida no cache; não constitui recomendação de investimento.
 - Testes automatizados com Vitest.
 - Build e validação TypeScript.
 

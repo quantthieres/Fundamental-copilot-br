@@ -1,7 +1,7 @@
 # Forecast Layer — Technical Design Document
 
 **Project:** Fundamental Copilot BR  
-**Status:** Phase 4 (ForecastPanel UI) implemented. Statistical models and TimesFM not yet implemented.  
+**Status:** Phase 5 (Forecast quality diagnostics) implemented. Statistical models and TimesFM not yet implemented.  
 **Date:** 2026-05-15  
 **Scope:** Quantitative projection of company fundamentals using precomputed offline forecasting
 
@@ -12,6 +12,8 @@
 > **Phase 3 (baseline forecast models) is implemented.** This includes `src/lib/forecasting/forecast-types.ts`, `src/lib/forecasting/period-utils.ts`, `src/lib/forecasting/baseline-models.ts` (naive, seasonal_naive, moving_average_4q, linear_trend), `src/lib/forecasting/backtest.ts` (walk-forward backtesting, model selection), `src/lib/forecasting/baseline-forecast-builder.ts`, `src/lib/forecasting/baseline-forecast-cache.ts`, precomputed baseline forecast cache at `src/data/forecast-cache/baseline-forecasts/`, precompute script `scripts/precompute-baseline-forecasts.ts` (`npm run forecast:precompute:baseline`), and read-only API endpoint `/api/forecasting/baseline/[ticker]`. Forecasts cover 8 financial metrics with heuristic uncertainty bands and walk-forward backtest metrics. No dashboard UI changes; no stock prices; no valuation outputs.
 >
 > **Phase 4 (ForecastPanel UI) is implemented.** This includes `src/components/dashboard/ForecastPanel.tsx`, `src/lib/forecasting/forecast-ui-utils.ts`, and integration into `DashboardPageClient.tsx` as a new "Projeções" tab. The panel fetches `/api/forecasting/baseline/[ticker]` and `/api/forecasting/time-series/[ticker]`, shows a metric selector, SVG line chart with historical + forecast + uncertainty band, a forecast table, and a backtest summary. No forecasting is computed in the dashboard request. No valuation, price target, DCF, or recommendation language is present.
+>
+> **Phase 5 (Forecast quality diagnostics) is implemented.** This includes `src/lib/forecasting/forecast-quality.ts` with `computeForecastQuality()`, new types `ForecastReliabilityLevel` and `ForecastQualityDiagnostic` in `forecast-types.ts`, and `hasNegativeValues`/`hasLargeOutliers` fields in `MetricForecastResult`. Quality is precomputed and embedded in the baseline forecast cache. The ForecastPanel shows a compact quality card with reliability level (Alta/Média/Baixa/Insuficiente), score (0–100), reasons (Portuguese), and warnings. This is a diagnostic/explainability layer only — no recommendations, price targets, or valuation language.
 >
 > ARIMA/SARIMA, Prophet, TimesFM, and statistical models are future work.
 

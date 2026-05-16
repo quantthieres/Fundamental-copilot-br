@@ -51,6 +51,9 @@ Each `baseline-forecasts/<TICKER>.json` file contains:
 - Best-model selection per metric (lowest WAPE, fallback to sMAPE).
 - Forecast points with heuristic uncertainty bands (yhat, yhatLower, yhatUpper).
 - Per-metric warnings about data quality, partial years, and interval interpretation.
+- `quality: ForecastQualityDiagnostic` embedded per metric: reliability level (high/medium/low/insufficient),
+  score (0–100), Portuguese-language reasons, and quality warnings. This is a diagnostic/explainability
+  layer and does not constitute investment advice.
 
 **These are simple quantitative baselines, not investment recommendations.**
 No price targets, DCF outputs, fair value estimates, or recommendation signals

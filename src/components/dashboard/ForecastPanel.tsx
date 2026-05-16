@@ -7,6 +7,8 @@ import type {
   MetricForecastResult,
   ForecastMetric,
   ForecastPoint,
+  ForecastQualityDiagnostic,
+  ForecastReliabilityLevel,
 } from "@/lib/forecasting/forecast-types";
 import type {
   TickerTimeSeriesCache,
@@ -422,6 +424,73 @@ function WarningList({ warnings }: { warnings: string[] }) {
   );
 }
 
+// ─── Quality badge ────────────────────────────────────────────────────────────
+
+const QUALITY_CONFIG: Record<ForecastReliabilityLevel, { label: string; bg: string; color: string; border: string }> = {
+  high:         { label: "Alta confiabilidade",   bg: "#f0fdf4", color: "#15803d", border: "#bbf7d0" },
+  medium:       { label: "Confiabilidade média",  bg: "#fefce8", color: "#a16207", border: "#fde047" },
+  low:          { label: "Baixa confiabilidade",  bg: "#fff1f2", color: "#be123c", border: "#fecdd3" },
+  insufficient: { label: "Dados insuficientes",   bg: "#f8fafc", color: "#64748b", border: "#e2e8f0" },
+};
+
+function ForecastQualityCard({ quality }: { quality: ForecastQualityDiagnostic }) {
+  const cfg = QUALITY_CONFIG[quality.level];
+  const allReasons = quality.reasons;
+  const allWarnings = quality.warnings;
+
+  return (
+    <div style={{
+      marginTop: 12, padding: "10px 14px",
+      background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: allReasons.length > 0 || allWarnings.length > 0 ? 8 : 0 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+          letterSpacing: "0.2px",
+        }}>
+          {cfg.label}
+        </span>
+        <span style={{
+          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+          color: "#475569", fontWeight: 600,
+        }}>
+          {quality.score}/100
+        </span>
+        <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: "auto" }}>
+          Diagnóstico de confiabilidade
+        </span>
+      </div>
+
+      {allReasons.length > 0 && (
+        <ul style={{ margin: 0, padding: "0 0 0 14px", listStyle: "disc" }}>
+          {allReasons.map((r, i) => (
+            <li key={i} style={{ fontSize: 11, color: "#475569", lineHeight: 1.5, marginBottom: 2 }}>{r}</li>
+          ))}
+        </ul>
+      )}
+
+      {allWarnings.length > 0 && (
+        <div style={{ marginTop: allReasons.length > 0 ? 6 : 0 }}>
+          {allWarnings.map((w, i) => (
+            <div key={i} style={{
+              fontSize: 11, color: "#92400e", padding: "4px 8px",
+              background: "#fffbeb", border: "1px solid #fde68a",
+              borderRadius: 5, marginBottom: 3, lineHeight: 1.4,
+            }}>
+              {w}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 8, fontSize: 10, color: "#94a3b8", lineHeight: 1.4 }}>
+        Este diagnóstico avalia a estabilidade histórica e o erro observado no retroteste. Ele não representa recomendação de investimento.
+      </div>
+    </div>
+  );
+}
+
 // ─── Loading / error / unavailable states ─────────────────────────────────────
 
 function LoadingState() {
@@ -566,12 +635,20 @@ export default function ForecastPanel({ ticker }: { ticker: string }) {
               <ModelInfoStrip forecastResult={activeResult} />
 
               {activeResult.modelSelected === null || activeResult.forecast.length === 0 ? (
-                <NoForecastForMetric />
+                <>
+                  <NoForecastForMetric />
+                  {activeResult.quality && (
+                    <ForecastQualityCard quality={activeResult.quality} />
+                  )}
+                </>
               ) : (
                 <>
                   <ForecastChart historicalSeries={activeSeries} forecastResult={activeResult} />
                   <ForecastTable forecastResult={activeResult} />
                   <BacktestSummary forecastResult={activeResult} />
+                  {activeResult.quality && (
+                    <ForecastQualityCard quality={activeResult.quality} />
+                  )}
                 </>
               )}
 

@@ -14,6 +14,7 @@ import FundamentalIndicators from "@/components/dashboard/FundamentalIndicators"
 import FundamentalDiagnosis from "@/components/dashboard/FundamentalDiagnosis";
 import CvmValidationStrip from "@/components/dashboard/CvmValidationStrip";
 import type { CvmStripStatus } from "@/components/dashboard/CvmValidationStrip";
+import ForecastPanel from "@/components/dashboard/ForecastPanel";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import {
   buildCompanyAnalysisDataFromCvm,
@@ -48,7 +49,7 @@ function buildPreliminaryCompany(b3Entry: B3Asset, quote: MarketDataQuote | null
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
-const TABS = ["Visão Geral", "Financeiros", "Indicadores", "Comparáveis", "Notícias e documentos"];
+const TABS = ["Visão Geral", "Financeiros", "Indicadores", "Projeções", "Comparáveis", "Notícias e documentos"];
 
 function TabBar({ activeTab, onTabChange }: { activeTab: string; onTabChange: (t: string) => void }) {
   return (
@@ -623,6 +624,12 @@ export default function DashboardPageClient() {
               </div>
             )}
 
+            {activeTab === "Projeções" && (
+              <div style={{ maxWidth: 760 }}>
+                <ForecastPanel ticker={selectedTicker} />
+              </div>
+            )}
+
             {activeTab === "Comparáveis" && (
               <div style={{ maxWidth: 760 }}>
                 <MultiplesTable data={effectiveCompanyData.multiples} />
@@ -676,6 +683,10 @@ export default function DashboardPageClient() {
               <div>
                 <DocumentsPanel ticker={selectedTicker} />
               </div>
+            </div>
+
+            <div style={{ maxWidth: 760, marginTop: 4 }}>
+              <ForecastPanel ticker={selectedTicker} />
             </div>
           </div>
         </>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
+import TickerSearchBox from "@/components/search/TickerSearchBox";
+import { useRouter } from "next/navigation";
 
 const QUICK_TICKERS = ["WEGE3", "PETR4", "VALE3", "KLBN11", "LREN3"];
 
@@ -27,14 +27,6 @@ const FEATURES = [
 
 export default function LandingPage() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const ticker = query.trim().toUpperCase();
-    if (!ticker) return;
-    router.push(`/dashboard?ticker=${encodeURIComponent(ticker)}`);
-  }
 
   function goTicker(ticker: string) {
     router.push(`/dashboard?ticker=${encodeURIComponent(ticker)}`);
@@ -68,47 +60,8 @@ export default function LandingPage() {
             de mercado e documentos oficiais em uma interface simples.
           </p>
 
-          {/* Central search */}
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12,
-              padding: 6, boxShadow: "0 8px 24px -10px rgba(15,23,42,0.1)",
-              display: "flex", alignItems: "center", gap: 6,
-              maxWidth: 580, margin: "0 auto",
-            }}
-          >
-            <svg
-              style={{ flexShrink: 0, marginLeft: 10, color: "#94a3b8" }}
-              width="18" height="18" viewBox="0 0 20 20" fill="none"
-            >
-              <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.7" />
-              <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-            <input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              type="text"
-              placeholder="Busque por ticker ou empresa — ex: WEGE3, PETR4, VALE3"
-              autoComplete="off"
-              spellCheck={false}
-              style={{
-                flex: 1, border: "none", outline: "none", fontSize: 15,
-                padding: "10px 4px", color: "#0f172a", background: "none", minWidth: 0,
-                fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.2px",
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                background: "#0f172a", color: "#fff", fontSize: 13, fontWeight: 600,
-                padding: "10px 18px", borderRadius: 8, border: "none", cursor: "pointer",
-                flexShrink: 0, fontFamily: "inherit",
-              }}
-            >
-              Analisar
-            </button>
-          </form>
+          {/* Autocomplete search box */}
+          <TickerSearchBox />
 
           {/* Quick chips */}
           <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 16, flexWrap: "wrap" }}>
@@ -157,12 +110,16 @@ export default function LandingPage() {
         </div>
       </main>
 
-      {/* ── Footer — minimal, no nav links ────────────────────────────────── */}
+      {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer style={{
         background: "#0f172a", borderTop: "1px solid #1e293b",
         padding: "24px 0", fontSize: 12,
       }}>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "0 28px" }}>
+        <div style={{
+          width: "100%",
+          padding: "0 clamp(24px, 3vw, 48px)",
+          textAlign: "left",
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <span style={{ color: "#f8fafc", fontWeight: 700, fontSize: 13, letterSpacing: "-0.2px" }}>
               Fundamental Copilot

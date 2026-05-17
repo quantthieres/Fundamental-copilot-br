@@ -28,6 +28,30 @@ import type { B3Asset } from "@/data/b3-universe";
 import type { MarketDataQuote } from "@/lib/market-data/types";
 import { COVERAGE_BADGE, COVERAGE_DESCRIPTION, type CoverageStatus } from "@/data/coverage-types";
 
+// ─── Sector-specific message helper ─────────────────────────────────────────
+
+function getSectorSpecificDetail(b3Entry: B3Asset | undefined): string | null {
+  if (!b3Entry || b3Entry.coverageStatus !== "sector_specific_model_required") return null;
+
+  if (b3Entry.assetType === "fii") {
+    return "Este ativo exige modelo específico para fundos imobiliários.";
+  }
+  if (b3Entry.assetType === "etf") {
+    return "Este ativo representa um fundo/índice e não utiliza demonstrações financeiras corporativas tradicionais.";
+  }
+  if (b3Entry.assetType === "bdr") {
+    return "Este ativo representa recibo de ativo estrangeiro e exige tratamento específico.";
+  }
+  if (b3Entry.sector === "Bancário" || b3Entry.sector === "Holding Financeira") {
+    return "Este ativo exige modelo específico para instituições financeiras.";
+  }
+  if (b3Entry.sector === "Seguros") {
+    return "Este ativo exige modelo específico para seguradoras.";
+  }
+
+  return null;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildPreliminaryCompany(b3Entry: B3Asset, quote: MarketDataQuote | null) {
@@ -118,13 +142,14 @@ function NoTickerView({ onTicker }: { onTicker: (t: string) => void }) {
 // ─── Empty / coverage state ───────────────────────────────────────────────────
 
 function EmptyStateView({
-  ticker, companyName, coverageStatus, quote, quoteLoading,
+  ticker, companyName, coverageStatus, quote, quoteLoading, sectorDetail,
 }: {
   ticker: string;
   companyName: string;
   coverageStatus?: CoverageStatus;
   quote?: MarketDataQuote | null;
   quoteLoading?: boolean;
+  sectorDetail?: string | null;
 }) {
   const status = coverageStatus ?? "unavailable";
   const badge = COVERAGE_BADGE[status];
@@ -179,7 +204,7 @@ function EmptyStateView({
         )}
         {status === "sector_specific_model_required" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Bancos e seguradoras são avaliados por P/VPA e ROE bancário. FIIs por NAV, DY e composição de carteira. ETFs e BDRs replicam índices ou ativos estrangeiros. Essas métricas diferem estruturalmente das usadas em empresas industriais.
+            {sectorDetail ?? "Bancos e seguradoras são avaliados por P/VPA e ROE bancário. FIIs por NAV, DY e composição de carteira. ETFs e BDRs replicam índices ou ativos estrangeiros. Essas métricas diferem estruturalmente das usadas em empresas industriais."}
           </p>
         )}
         {status === "unavailable" && (
@@ -699,6 +724,7 @@ export default function DashboardPageClient() {
           coverageStatus={b3Entry?.coverageStatus}
           quote={marketQuote}
           quoteLoading={quoteLoading}
+          sectorDetail={getSectorSpecificDetail(b3Entry)}
         />
       )}
     </div>

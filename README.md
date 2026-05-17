@@ -157,6 +157,60 @@ Cada ativo possui um status de cobertura (`src/data/b3-universe.ts`):
 | `sector_specific_model_required` | Modelo específico | Exige metodologia própria (bancos, seguradoras, FIIs, ETFs, BDRs). |
 | `unavailable` | Em breve | Sem cobertura confiável ainda. |
 
+Nem todo ativo B3 recebe o mesmo nível de análise. A plataforma degrada graciosamente em vez de aplicar métricas industriais inadequadas:
+
+- **Bancos e seguradoras** (`sector_specific_model_required`) — utilizam métricas próprias (P/VPA, ROE bancário, índice de sinistralidade) que diferem estruturalmente das empresas industriais. A plataforma exibe mensagem explicativa sem forçar indicadores não aplicáveis.
+- **FIIs** — são avaliados por DY, NAV e composição de carteira, não por EBIT ou FCL corporativo.
+- **ETFs** — replicam índices e não possuem demonstrações financeiras corporativas próprias.
+- **BDRs** — representam ativos estrangeiros e exigem tratamento regulatório específico.
+
+### 7. Camada de cobertura B3 (`src/lib/coverage/`)
+
+A camada de cobertura centraliza a classificação de ativos e a resolução do nível de análise disponível.
+
+#### Tipos de ativo (`AssetType`)
+
+| Tipo | Descrição |
+|---|---|
+| `common_stock` | Ação ordinária (ON) |
+| `preferred_stock` | Ação preferencial (PN, PNA, PNB) |
+| `unit` | Certificado de depósito de ação de empresa operacional |
+| `bank` | Instituição bancária (inclui units de bancos como SANB11) |
+| `insurance` | Seguradora |
+| `financial` | Holding financeira ou infraestrutura de mercado |
+| `fii` | Fundo de Investimento Imobiliário |
+| `etf` | Exchange Traded Fund |
+| `bdr` | Brazilian Depositary Receipt |
+| `fund` | Outro fundo de investimento |
+| `unknown` | Não classificado |
+
+#### Classificador (`asset-classifier.ts`)
+
+- Mapa explícito de tickers conhecidos (bancos, FIIs, ETFs, BDRs, units).
+- Inferência por padrão de sufixo: 3 → `common_stock`, 4–8 → `preferred_stock`, 34 → `bdr`, 11 → `unit` (com refinamento por contexto).
+- KLBN11, ALUP11, TAEE11, SAPR11 são units de empresas operacionais — não são FIIs.
+- SANB11, BPAC11 são units bancárias — são classificados como `bank`, não como `unit`.
+
+#### Resolutor de cobertura (`coverage-resolver.ts`)
+
+Recebe disponibilidade de caches locais e retorna `AssetCoverageProfile` com:
+- Nível de cobertura (`AnalysisCoverageLevel`)
+- Código de razão (`CoverageReasonCode`)
+- Mensagem de exibição em português
+- Flags de elegibilidade (`isIndustrialModelEligible`, `isForecastEligible`)
+
+#### API de cobertura
+
+`GET /api/coverage/[ticker]` — retorna `AssetCoverageProfile` via verificação de existência de arquivos de cache. Somente leitura, não aciona pipelines CVM ao vivo.
+
+#### Auditoria
+
+```bash
+npm run coverage:audit
+```
+
+Imprime resumo de cobertura para todos os tickers do universo B3: totais por tipo de ativo, nível de cobertura e código de razão. Não baixa dados.
+
 ---
 
 ## Forecast Layer — projeção de fundamentos
@@ -217,6 +271,7 @@ npm run time-series:precompute         # gera cache de séries temporais normali
 npm run forecast:precompute:baseline   # gera cache de previsões baseline (local, sem rede)
 npm run cvm:audit                      # audita disponibilidade de dados CVM via API local
 npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e métrica
+npm run coverage:audit                 # audita cobertura B3 por tipo de ativo e nível (offline)
 ```
 
 ---
@@ -241,6 +296,7 @@ npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e
 src/
 ├── app/
 │   ├── api/
+│   │   ├── coverage/[ticker]/  ← perfil de cobertura B3 (somente leitura, offline)
 │   │   ├── cvm/
 │   │   │   ├── company/[ticker]/
 │   │   │   ├── documents/[ticker]/
@@ -267,7 +323,9 @@ src/
 │   └── coverage-types.ts
 │
 ├── lib/
+│   ├── coverage/         ← classificador de ativos e resolutor de cobertura B3
 │   ├── cvm/              ← pipeline CVM, cache, parser, normalizer
+│   ├── forecasting/      ← modelos baseline, backtesting, séries temporais
 │   ├── fundamentals/     ← cálculo de indicadores
 │   ├── market-data/      ← cliente brapi
 │   └── formatters.ts

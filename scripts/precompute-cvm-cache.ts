@@ -27,7 +27,7 @@ import type { CoverageStatus } from "../src/data/coverage-types";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const CONCURRENCY = 4;
+const CONCURRENCY = Number(process.env.CVM_CONCURRENCY ?? 2);
 const CACHE_ROOT = join(process.cwd(), "src/data/cvm-cache");
 
 const ELIGIBLE_STATUSES = new Set<CoverageStatus>([
@@ -114,11 +114,21 @@ async function main(): Promise<void> {
   mkdirSync(join(CACHE_ROOT, "financials"), { recursive: true });
   mkdirSync(join(CACHE_ROOT, "documents"), { recursive: true });
 
-  const tickers = B3_UNIVERSE
+  const skipExisting = process.argv.includes("--skip-existing");
+  const allTickers = B3_UNIVERSE
     .filter(a => a.hasCvmMapping && ELIGIBLE_STATUSES.has(a.coverageStatus))
     .map(a => a.ticker);
+  const tickers = skipExisting
+    ? allTickers.filter(t => {
+        const p = join(CACHE_ROOT, "financials", `${t}.json`);
+        try {
+          const d = JSON.parse(require("fs").readFileSync(p, "utf-8"));
+          return !Array.isArray(d.financials) || d.financials.length === 0;
+        } catch { return true; }
+      })
+    : allTickers;
 
-  console.log(`\nPrecomputing CVM cache for ${tickers.length} tickers (concurrency=${CONCURRENCY})...\n`);
+  console.log(`\nPrecomputing CVM cache for ${tickers.length} tickers (concurrency=${CONCURRENCY})${skipExisting ? " [skip-existing]" : ""}...\n`);
 
   const tasks = tickers.map(ticker => async () => {
     process.stdout.write(`  [${ticker}] fetching...`);

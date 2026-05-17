@@ -1,37 +1,50 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import type { B3Asset } from "@/data/b3-universe";
-import type { CoverageStatus, AssetType } from "@/data/coverage-types";
+import type { CoverageStatus } from "@/data/coverage-types";
 import { COVERAGE_BADGE } from "@/data/coverage-types";
+import {
+  classifyB3Asset,
+  getAssetTypeLabel,
+  getCoverageReason,
+  type RichAssetType,
+} from "@/lib/coverage/cobertura-helpers";
 
-const ASSET_TYPE_LABEL: Record<AssetType, string> = {
-  stock:   "Ação",
-  unit:    "Unit",
-  fii:     "FII",
-  etf:     "ETF",
-  bdr:     "BDR",
-  unknown: "—",
-};
+// ── Filter option types ───────────────────────────────────────────────────────
+
+type TypeFilter = "" | "stock" | "unit" | "bank" | "insurance" | "financial" | "fii" | "etf" | "bdr";
 
 const STATUS_OPTIONS: { value: CoverageStatus | ""; label: string }[] = [
   { value: "",                              label: "Todos os status"        },
   { value: "full_analysis",                label: "Análise completa"       },
   { value: "cvm_analysis",                 label: "Análise CVM"            },
   { value: "cvm_financials",               label: "Dados CVM"              },
-  { value: "quote_only",                   label: "Cotação"                },
+  { value: "quote_only",                   label: "Apenas cotação"         },
   { value: "sector_specific_model_required", label: "Modelo específico"    },
   { value: "unavailable",                  label: "Em breve"               },
 ];
 
-const TYPE_OPTIONS: { value: AssetType | ""; label: string }[] = [
-  { value: "",        label: "Todos os tipos" },
-  { value: "stock",   label: "Ações"          },
-  { value: "unit",    label: "Units"          },
-  { value: "fii",     label: "FIIs"           },
-  { value: "etf",     label: "ETFs"           },
-  { value: "bdr",     label: "BDRs"           },
+const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
+  { value: "",          label: "Todos os tipos" },
+  { value: "stock",     label: "Ações"          },
+  { value: "unit",      label: "Units"          },
+  { value: "bank",      label: "Bancos"         },
+  { value: "insurance", label: "Seguradoras"    },
+  { value: "financial", label: "Financeiro"     },
+  { value: "fii",       label: "FIIs"           },
+  { value: "etf",       label: "ETFs"           },
+  { value: "bdr",       label: "BDRs"           },
 ];
+
+function matchesTypeFilter(richType: RichAssetType, filter: TypeFilter): boolean {
+  if (!filter) return true;
+  if (filter === "stock") return richType === "common_stock" || richType === "preferred_stock";
+  return richType === filter;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   assets: B3Asset[];
@@ -40,22 +53,32 @@ interface Props {
 export default function CoverageTable({ assets }: Props) {
   const [query,        setQuery]        = useState("");
   const [statusFilter, setStatusFilter] = useState<CoverageStatus | "">("");
-  const [typeFilter,   setTypeFilter]   = useState<AssetType | "">("");
+  const [typeFilter,   setTypeFilter]   = useState<TypeFilter>("");
+
+  // Pre-classify every asset once per render cycle.
+  const classified = useMemo(
+    () => assets.map(a => ({
+      asset:    a,
+      richType: classifyB3Asset(a),
+      reason:   getCoverageReason(a),
+    })),
+    [assets],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return assets.filter(a => {
-      if (statusFilter && a.coverageStatus !== statusFilter) return false;
-      if (typeFilter   && a.assetType      !== typeFilter)   return false;
+    return classified.filter(({ asset, richType }) => {
+      if (statusFilter && asset.coverageStatus !== statusFilter) return false;
+      if (!matchesTypeFilter(richType, typeFilter))               return false;
       if (!q) return true;
       return (
-        a.ticker.toLowerCase().includes(q)      ||
-        a.companyName.toLowerCase().includes(q) ||
-        a.tradingName.toLowerCase().includes(q) ||
-        a.sector.toLowerCase().includes(q)
+        asset.ticker.toLowerCase().includes(q)      ||
+        asset.companyName.toLowerCase().includes(q) ||
+        asset.tradingName.toLowerCase().includes(q) ||
+        asset.sector.toLowerCase().includes(q)
       );
     });
-  }, [assets, query, statusFilter, typeFilter]);
+  }, [classified, query, statusFilter, typeFilter]);
 
   return (
     <div>
@@ -89,7 +112,7 @@ export default function CoverageTable({ assets }: Props) {
 
         <select
           value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value as AssetType | "")}
+          onChange={e => setTypeFilter(e.target.value as TypeFilter)}
           style={S.select}
         >
           {TYPE_OPTIONS.map(o => (
@@ -105,12 +128,12 @@ export default function CoverageTable({ assets }: Props) {
         <table style={S.table}>
           <thead>
             <tr style={S.headerRow}>
-              <th style={{ ...S.th, width: 72 }}>Ticker</th>
+              <th style={{ ...S.th, width: 80 }}>Ticker</th>
               <th style={S.th}>Empresa</th>
-              <th style={S.th}>Setor</th>
-              <th style={{ ...S.th, display: "none" as const }}>Subsetor</th>
               <th style={{ ...S.th, width: 68 }}>Tipo</th>
-              <th style={{ ...S.th, width: 120 }}>Status</th>
+              <th style={{ ...S.th, width: 128 }}>Status</th>
+              <th style={S.th}>Motivo / observação</th>
+              <th style={{ ...S.th, width: 52 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -119,25 +142,52 @@ export default function CoverageTable({ assets }: Props) {
                 <td colSpan={6} style={S.emptyCell}>Nenhum ativo encontrado.</td>
               </tr>
             ) : (
-              filtered.map(a => {
-                const badge = COVERAGE_BADGE[a.coverageStatus];
+              filtered.map(({ asset, richType, reason }) => {
+                const badge = COVERAGE_BADGE[asset.coverageStatus];
+                const isDashboardLinked = asset.coverageStatus === "full_analysis" ||
+                  asset.coverageStatus === "cvm_analysis" ||
+                  asset.coverageStatus === "cvm_financials";
                 return (
-                  <tr key={a.ticker} style={S.row}>
-                    <td style={S.tickerCell}>{a.ticker}</td>
-                    <td style={S.nameCell}>
-                      <span style={S.tradingName}>{a.tradingName}</span>
-                      {a.companyName !== a.tradingName && (
-                        <span style={S.companyName}>{a.companyName}</span>
+                  <tr key={asset.ticker} style={S.row}>
+                    <td style={S.tickerCell}>
+                      {isDashboardLinked ? (
+                        <Link
+                          href={`/dashboard?ticker=${encodeURIComponent(asset.ticker)}`}
+                          style={S.tickerLink}
+                        >
+                          {asset.ticker}
+                        </Link>
+                      ) : (
+                        asset.ticker
                       )}
                     </td>
-                    <td style={S.sectorCell}>{a.sector}</td>
+                    <td style={S.nameCell}>
+                      <span style={S.tradingName}>{asset.tradingName}</span>
+                      {asset.companyName !== asset.tradingName && (
+                        <span style={S.companyName}>{asset.companyName}</span>
+                      )}
+                    </td>
                     <td style={S.badgeCell}>
-                      <span style={S.typeBadge}>{ASSET_TYPE_LABEL[a.assetType]}</span>
+                      <span style={S.typeBadge}>{getAssetTypeLabel(richType)}</span>
                     </td>
                     <td style={S.badgeCell}>
                       <span style={{ ...S.statusBadge, background: badge.bg, color: badge.color }}>
                         {badge.label}
                       </span>
+                    </td>
+                    <td style={S.reasonCell}>
+                      {reason}
+                    </td>
+                    <td style={S.actionCell}>
+                      {isDashboardLinked && (
+                        <Link
+                          href={`/dashboard?ticker=${encodeURIComponent(asset.ticker)}`}
+                          style={S.dashLink}
+                          title={`Abrir dashboard — ${asset.ticker}`}
+                        >
+                          →
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 );
@@ -150,7 +200,7 @@ export default function CoverageTable({ assets }: Props) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const S: Record<string, React.CSSProperties> = {
   filterRow: {
@@ -248,9 +298,15 @@ const S: Record<string, React.CSSProperties> = {
     color: "#0f172a",
     whiteSpace: "nowrap",
   },
+  tickerLink: {
+    color: "#2563eb",
+    textDecoration: "none",
+    fontFamily: "inherit",
+    fontWeight: 700,
+  },
   nameCell: {
     padding: "9px 14px",
-    minWidth: 180,
+    minWidth: 160,
   },
   tradingName: {
     display: "block",
@@ -263,12 +319,6 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: "#94a3b8",
     marginTop: 1,
-  },
-  sectorCell: {
-    padding: "9px 14px",
-    color: "#475569",
-    fontSize: 12,
-    whiteSpace: "nowrap",
   },
   badgeCell: {
     padding: "9px 14px",
@@ -291,6 +341,28 @@ const S: Record<string, React.CSSProperties> = {
     padding: "2px 8px",
     borderRadius: 4,
     letterSpacing: "0.2px",
+  },
+  reasonCell: {
+    padding: "9px 14px",
+    fontSize: 12,
+    color: "#64748b",
+    maxWidth: 340,
+    lineHeight: 1.45,
+  },
+  actionCell: {
+    padding: "9px 10px",
+    textAlign: "center",
+    whiteSpace: "nowrap",
+  },
+  dashLink: {
+    display: "inline-block",
+    fontSize: 13,
+    color: "#2563eb",
+    textDecoration: "none",
+    fontWeight: 600,
+    padding: "1px 6px",
+    borderRadius: 4,
+    lineHeight: 1,
   },
   emptyCell: {
     padding: "32px 14px",

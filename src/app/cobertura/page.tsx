@@ -1,48 +1,32 @@
 import React from "react";
-import NavBar from "@/components/dashboard/NavBar";
+import AppHeader from "@/components/layout/AppHeader";
 import CoverageTable from "@/components/coverage/CoverageTable";
 import { B3_UNIVERSE } from "@/data/b3-universe";
-import { COVERAGE_BADGE, COVERAGE_DESCRIPTION, type CoverageStatus } from "@/data/coverage-types";
+import { COVERAGE_BADGE, type CoverageStatus } from "@/data/coverage-types";
 
-// ─── Status counts ────────────────────────────────────────────────────────────
-
-const STATUSES: CoverageStatus[] = [
-  "full_analysis",
-  "cvm_analysis",
-  "cvm_financials",
-  "quote_only",
-  "sector_specific_model_required",
-  "unavailable",
-];
+// ── Counts ────────────────────────────────────────────────────────────────────
 
 function countByStatus(): Record<CoverageStatus, number> {
-  const counts = Object.fromEntries(STATUSES.map(s => [s, 0])) as Record<CoverageStatus, number>;
-  for (const asset of B3_UNIVERSE) counts[asset.coverageStatus]++;
+  const zero = () => 0;
+  const counts: Record<CoverageStatus, number> = {
+    full_analysis:                  zero(),
+    cvm_analysis:                   zero(),
+    cvm_financials:                 zero(),
+    quote_only:                     zero(),
+    sector_specific_model_required: zero(),
+    unavailable:                    zero(),
+  };
+  for (const a of B3_UNIVERSE) counts[a.coverageStatus]++;
   return counts;
 }
 
-const STATUS_DESCRIPTIONS: Record<CoverageStatus, string> = {
-  full_analysis:
-    "Dashboard completo com dados financeiros, indicadores fundamentalistas, diagnóstico e métricas de mercado.",
-  cvm_analysis:
-    "Análise fundamentalista gerada automaticamente com dados CVM consolidados da DFP anual.",
-  cvm_financials:
-    "Dados CVM disponíveis, mas ainda sem histórico ou normalização suficiente para análise completa.",
-  quote_only:
-    "Cotação de mercado disponível via brapi. Dados fundamentalistas ainda não processados.",
-  sector_specific_model_required:
-    "Ativo exige metodologia própria (bancos, FIIs, seguradoras, ETFs). O modelo fundamentalista padrão não se aplica.",
-  unavailable:
-    "Ativo ainda sem cobertura confiável nesta versão. Será adicionado gradualmente.",
-};
-
-// ─── Layout primitives ────────────────────────────────────────────────────────
+// ── Layout primitives ─────────────────────────────────────────────────────────
 
 function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <div style={{ marginBottom: 32, ...style }}>{children}</div>;
+  return <div style={{ marginBottom: 36, ...style }}>{children}</div>;
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Label({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontSize: 10, fontWeight: 700, letterSpacing: "0.8px",
@@ -64,45 +48,68 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   );
 }
 
-function Prose({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ margin: "0 0 10px", fontSize: 14, color: "#374151", lineHeight: 1.75 }}>
-      {children}
-    </p>
-  );
+// ── Summary card ──────────────────────────────────────────────────────────────
+
+interface SummaryItem {
+  badge: { label: string; bg: string; color: string };
+  count: number;
+  desc: string;
 }
 
-// ─── Summary card ─────────────────────────────────────────────────────────────
-
-function SummaryCard({ status, count }: { status: CoverageStatus; count: number }) {
-  const badge = COVERAGE_BADGE[status];
+function SummaryCard({ badge, count, desc }: SummaryItem) {
   return (
     <div style={{
       background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
-      padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8,
+      padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10,
     }}>
       <span style={{
-        display: "inline-block",
+        display: "inline-block", alignSelf: "flex-start",
         fontSize: 10, fontWeight: 700, padding: "2px 8px",
         borderRadius: 4, letterSpacing: "0.3px",
         background: badge.bg, color: badge.color,
-        alignSelf: "flex-start",
       }}>
         {badge.label}
       </span>
-      <div style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
+      <div style={{ fontSize: 30, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
         {count}
       </div>
-      <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5 }}>
-        {COVERAGE_DESCRIPTION[status]}
+      <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+        {desc}
       </div>
     </div>
   );
 }
 
-// ─── Status explanation row ───────────────────────────────────────────────────
+// ── Status explanation row ────────────────────────────────────────────────────
 
-function StatusRow({ status }: { status: CoverageStatus }) {
+const STATUS_EXPLANATIONS: { status: CoverageStatus; desc: string }[] = [
+  {
+    status: "full_analysis",
+    desc:   "Dashboard completo com dados financeiros históricos, indicadores fundamentalistas, diagnóstico e métricas de mercado.",
+  },
+  {
+    status: "cvm_analysis",
+    desc:   "Análise fundamentalista gerada automaticamente a partir dos dados CVM da DFP anual. Cobertura sólida para a maioria dos indicadores.",
+  },
+  {
+    status: "cvm_financials",
+    desc:   "Dados financeiros da CVM disponíveis, mas histórico ainda insuficiente para análise completa. Em expansão.",
+  },
+  {
+    status: "quote_only",
+    desc:   "Cotação de mercado disponível. Demonstrações financeiras CVM ainda não integradas para este ativo.",
+  },
+  {
+    status: "sector_specific_model_required",
+    desc:   "Bancos, seguradoras, FIIs, ETFs e BDRs exigem metodologia específica. O modelo fundamentalista industrial padrão não se aplica.",
+  },
+  {
+    status: "unavailable",
+    desc:   "Ativo reconhecido no universo B3, mas ainda sem cobertura de dados financeiros nesta versão.",
+  },
+];
+
+function StatusRow({ status, desc }: { status: CoverageStatus; desc: string }) {
   const badge = COVERAGE_BADGE[status];
   return (
     <div style={{
@@ -114,28 +121,51 @@ function StatusRow({ status }: { status: CoverageStatus }) {
         fontSize: 10, fontWeight: 700, padding: "3px 9px",
         borderRadius: 4, letterSpacing: "0.3px",
         background: badge.bg, color: badge.color, marginTop: 2,
-        minWidth: 90, textAlign: "center",
+        minWidth: 96, textAlign: "center",
       }}>
         {badge.label}
       </span>
       <p style={{ margin: 0, fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
-        {STATUS_DESCRIPTIONS[status]}
+        {desc}
       </p>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ── Page ─────────────────────────────────────────────────────────────────────
 
-export default function CoberturaPaged() {
+export default function CoberturaPage() {
   const counts = countByStatus();
   const total  = B3_UNIVERSE.length;
 
+  const summaryCards: SummaryItem[] = [
+    {
+      badge: COVERAGE_BADGE.full_analysis,
+      count: counts.full_analysis,
+      desc:  "Dashboard completo com indicadores financeiros e diagnóstico fundamentalista.",
+    },
+    {
+      badge: { label: "Dados CVM", bg: "#ede9fe", color: "#7c3aed" },
+      count: counts.cvm_analysis + counts.cvm_financials,
+      desc:  "Dados CVM disponíveis, com profundidade variável de análise fundamentalista.",
+    },
+    {
+      badge: COVERAGE_BADGE.quote_only,
+      count: counts.quote_only,
+      desc:  "Apenas dados de mercado disponíveis. Financeiros CVM ainda não processados.",
+    },
+    {
+      badge: COVERAGE_BADGE.sector_specific_model_required,
+      count: counts.sector_specific_model_required,
+      desc:  "Bancos, seguradoras, FIIs, ETFs e BDRs com metodologia analítica própria.",
+    },
+  ];
+
   return (
     <div style={{ background: "#f8fafc", minHeight: "100vh", fontFamily: "inherit" }}>
-      <NavBar />
+      <AppHeader />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <main style={{ maxWidth: 1160, margin: "0 auto", padding: "36px 24px 72px" }}>
 
         {/* ── Hero ── */}
         <Section>
@@ -148,37 +178,40 @@ export default function CoberturaPaged() {
             </span>
           </div>
           <h1 style={{
-            margin: "0 0 10px", fontSize: 26, fontWeight: 800,
+            margin: "0 0 14px", fontSize: 26, fontWeight: 800,
             color: "#0f172a", letterSpacing: "-0.5px", lineHeight: 1.2,
           }}>
-            Cobertura da B3
+            Cobertura de ativos
           </h1>
-          <p style={{ margin: "0 0 10px", fontSize: 15, color: "#475569", lineHeight: 1.7, maxWidth: 640 }}>
-            Veja quais ativos já possuem análise fundamentalista, dados CVM, cotação ou exigem metodologia específica.
+          <p style={{ margin: "0 0 10px", fontSize: 15, color: "#475569", lineHeight: 1.7, maxWidth: 680 }}>
+            A plataforma suporta diferentes profundidades de análise conforme o tipo de ativo
+            e a disponibilidade de dados CVM. Empresas operacionais com dados CVM consolidados
+            podem receber análise fundamentalista completa.
           </p>
-          <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.7, maxWidth: 640 }}>
-            A cobertura é expandida gradualmente. O sistema separa ativos por nível de suporte
-            para evitar aplicar modelos inadequados a setores que requerem metodologia própria.
+          <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.7, maxWidth: 680 }}>
+            Bancos, seguradoras, FIIs, ETFs e BDRs requerem modelos específicos e não são
+            enquadrados no modelo industrial padrão, que foi projetado para empresas operacionais.
+            A cobertura é expandida gradualmente conforme os dados CVM são processados.
           </p>
         </Section>
 
         {/* ── Summary cards ── */}
         <Section>
-          <SectionLabel>Resumo · {total} ativos</SectionLabel>
+          <Label>Resumo · {total} ativos no universo</Label>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
             gap: 12,
           }}>
-            {STATUSES.map(s => (
-              <SummaryCard key={s} status={s} count={counts[s]} />
+            {summaryCards.map(card => (
+              <SummaryCard key={card.badge.label} {...card} />
             ))}
           </div>
         </Section>
 
         {/* ── Coverage table ── */}
         <Section>
-          <SectionLabel>Ativos · B3 Universe</SectionLabel>
+          <Label>Ativos · B3 Universe</Label>
           <Card style={{ padding: "18px 20px" }}>
             <CoverageTable assets={B3_UNIVERSE} />
           </Card>
@@ -186,30 +219,49 @@ export default function CoberturaPaged() {
 
         {/* ── Status explanations ── */}
         <Section>
-          <SectionLabel>O que significa cada status</SectionLabel>
+          <Label>O que significa cada nível de cobertura</Label>
           <Card style={{ padding: "0 24px" }}>
-            {STATUSES.map((s, i) => (
+            {STATUS_EXPLANATIONS.map((row, i) => (
               <div
-                key={s}
-                style={i === STATUSES.length - 1 ? { borderBottom: "none" } : {}}
+                key={row.status}
+                style={i === STATUS_EXPLANATIONS.length - 1 ? { borderBottom: "none" } : {}}
               >
-                <StatusRow status={s} />
+                <StatusRow status={row.status} desc={row.desc} />
               </div>
             ))}
           </Card>
         </Section>
 
-        {/* ── Disclaimer ── */}
-        <div style={{
-          background: "#fff", border: "1px solid #fde68a",
-          borderRadius: 8, padding: "12px 18px",
-        }}>
-          <Prose>
-            <strong style={{ color: "#92400e" }}>Aviso: </strong>
-            A cobertura e os dados apresentados têm finalidade educacional e demonstrativa.
-            A disponibilidade de dados não representa recomendação de investimento.
-          </Prose>
-        </div>
+        {/* ── Sector-specific note ── */}
+        <Section style={{ marginBottom: 0 }}>
+          <Label>Ativos com modelo específico</Label>
+          <Card>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+              {[
+                { label: "Bancos",       desc: "Modelo específico para instituições financeiras." },
+                { label: "Seguradoras",  desc: "Modelo específico para seguradoras." },
+                { label: "FIIs",         desc: "Modelo específico para fundos imobiliários." },
+                { label: "ETFs",         desc: "Fundo/índice — não usa demonstrações corporativas tradicionais." },
+                { label: "BDRs",         desc: "Recibo de ativo estrangeiro — exige tratamento específico." },
+              ].map(item => (
+                <div key={item.label} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{
+                    flexShrink: 0, fontSize: 10, fontWeight: 700,
+                    padding: "3px 8px", borderRadius: 4,
+                    background: COVERAGE_BADGE.sector_specific_model_required.bg,
+                    color: COVERAGE_BADGE.sector_specific_model_required.color,
+                    marginTop: 1, letterSpacing: "0.2px",
+                  }}>
+                    {item.label}
+                  </span>
+                  <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.55 }}>
+                    {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Section>
 
       </main>
     </div>

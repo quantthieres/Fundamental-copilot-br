@@ -3,6 +3,7 @@ import { classifyAsset } from "./asset-classifier";
 import type { AssetType as RichAssetType } from "./coverage-types";
 import { getBankCoverageReason } from "@/lib/banks/bank-coverage";
 import { getFiiCoverageReason } from "@/lib/fiis/fii-coverage";
+import { getInsuranceCoverageReason } from "@/lib/insurance/insurance-coverage";
 
 export type { RichAssetType };
 
@@ -47,7 +48,7 @@ export function getCoverageReason(asset: B3Asset): string {
     case "sector_specific_model_required":
       switch (richType) {
         case "bank":      return getBankCoverageReason(asset.ticker);
-        case "insurance": return "Modelo específico para seguradoras.";
+        case "insurance": return getInsuranceCoverageReason(asset.ticker);
         case "financial": return "Holding ou infraestrutura financeira — modelo específico.";
         case "fii":       return getFiiCoverageReason(asset.ticker);
         case "etf":       return "Fundo/índice — não usa demonstrações corporativas tradicionais.";

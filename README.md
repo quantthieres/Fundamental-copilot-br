@@ -160,7 +160,7 @@ Cada ativo possui um status de cobertura (`src/data/b3-universe.ts`):
 Nem todo ativo B3 recebe o mesmo nível de análise. A plataforma degrada graciosamente em vez de aplicar métricas industriais inadequadas:
 
 - **Bancos** (`sector_specific_model_required`) — camada bancária dedicada: extrai DFP anual via CVM com normalizador conservador (code-first + fallback por nome), calcula ROE, ROA, PL/Ativos, crescimento YoY e exibe painel bancário próprio no dashboard. Cache em `src/data/bank-cache/annual/`. Não usa indicadores industriais.
-- **Seguradoras** (`sector_specific_model_required`) — utilizam índice de sinistralidade e outras métricas próprias. Exibem mensagem explicativa sem forçar indicadores industriais.
+- **Seguradoras** (`sector_specific_model_required`) — camada de seguradora dedicada: extrai DFP anual consolidada (`DRE_con`, `BPA_con`, `BPP_con`) via CVM com normalizador próprio por correspondência de palavras-chave (prêmios ganhos, sinistros ocorridos, provisões técnicas). Calcula ROE, ROA, PL/Ativos, crescimento YoY e índice de sinistralidade (claimsRatio). Cache em `src/data/insurance-cache/annual/`. Não usa indicadores industriais (sem EBIT, FCL, receita, P/L). Seguradoras não são comparadas com empresas operacionais. Script: `npm run insurance:precompute`.
 - **FIIs** (`sector_specific_model_required`) — camada de FII dedicada: extrai informe mensal via CVM (`dados/FII/DOC/INF_MENSAL/DADOS/`, ZIPs anuais), com CNPJ lookup por nome normalizado + mapa de overrides para fundos renomeados. Calcula patrimônio líquido, VP/cota, rendimentos mensais e DY/P×VP com cotação de mercado em tempo de renderização. Cache em `src/data/fii-cache/monthly/`. Não usa indicadores industriais (sem EBIT, FCL, receita). Script: `npm run fii:precompute`.
 - **ETFs** — replicam índices e não possuem demonstrações financeiras corporativas próprias.
 - **BDRs** — representam ativos estrangeiros e exigem tratamento regulatório específico.
@@ -275,6 +275,7 @@ npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e
 npm run coverage:audit                 # audita cobertura B3 por tipo de ativo e nível (offline)
 npm run bank:precompute                # gera cache bancário anual via CVM DFP
 npm run fii:precompute                 # gera cache de FII via CVM informe mensal
+npm run insurance:precompute           # gera cache de seguradora anual via CVM DFP
 ```
 
 ---

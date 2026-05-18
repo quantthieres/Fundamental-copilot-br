@@ -17,9 +17,11 @@ import type { CvmStripStatus } from "@/components/dashboard/CvmValidationStrip";
 import ForecastPanel from "@/components/dashboard/ForecastPanel";
 import BankAnalysisPanel from "@/components/dashboard/BankAnalysisPanel";
 import FiiAnalysisPanel from "@/components/dashboard/FiiAnalysisPanel";
+import InsuranceAnalysisPanel from "@/components/dashboard/InsuranceAnalysisPanel";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import type { BankAnalysisResponse } from "@/lib/banks/bank-types";
 import type { FiiAnalysisResponse } from "@/lib/fiis/fii-types";
+import type { InsuranceAnalysisResponse } from "@/lib/insurance/insurance-types";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 import {
   buildCompanyAnalysisDataFromCvm,
@@ -214,7 +216,7 @@ function EmptyStateView({
         )}
         {status === "unavailable" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Este ticker está no universo B3, mas ainda sem dados financeiros integrados.
+            Este ticker não possui cobertura de dados ativa. O ativo pode ter sido descontinuado, incorporado ou ainda não integrado à plataforma.
           </p>
         )}
         {showQuote && (
@@ -382,6 +384,8 @@ export default function DashboardPageClient() {
   const [bankLoading, setBankLoading]       = useState(false);
   const [fiiData, setFiiData]               = useState<FiiAnalysisResponse | null>(null);
   const [fiiLoading, setFiiLoading]         = useState(false);
+  const [insuranceData, setInsuranceData]   = useState<InsuranceAnalysisResponse | null>(null);
+  const [insuranceLoading, setInsuranceLoading] = useState(false);
 
   // ── Static lookups (no network) ───────────────────────────────────────────
   const companyData = useMemo(
@@ -401,6 +405,11 @@ export default function DashboardPageClient() {
 
   const isFii = useMemo(
     () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "fii",
+    [b3Entry],
+  );
+
+  const isInsurance = useMemo(
+    () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "insurance" && b3Entry.coverageStatus !== "unavailable",
     [b3Entry],
   );
 
@@ -543,9 +552,32 @@ export default function DashboardPageClient() {
     return () => { active = false; controller.abort(); };
   }, [selectedTicker, isFii]);
 
+  // ── Insurance analysis fetch ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedTicker || !isInsurance) {
+      setInsuranceData(null);
+      setInsuranceLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    setInsuranceData(null);
+    setInsuranceLoading(true);
+
+    fetch(`/api/insurance/analysis/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
+      .then(res => res.json())
+      .then((body: InsuranceAnalysisResponse) => {
+        if (active) setInsuranceData(body);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setInsuranceLoading(false); });
+
+    return () => { active = false; controller.abort(); };
+  }, [selectedTicker, isInsurance]);
+
   // ── CVM financials fetch ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedTicker || !b3Entry || isBank || isFii) {
+    if (!selectedTicker || !b3Entry || isBank || isFii || isInsurance) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;
@@ -857,6 +889,46 @@ export default function DashboardPageClient() {
             ) : (
               <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
                 Dados de FII indisponíveis.
+              </div>
+            )}
+          </div>
+        </>
+
+      /* ── State 3.7: insurance dashboard ─────────────────────────────────── */
+      ) : isInsurance ? (
+        <>
+          <CompanyHeader
+            company={buildPreliminaryCompany(b3Entry!, marketQuote)}
+            quote={marketQuote}
+            quoteLoading={quoteLoading}
+          />
+          <div style={{
+            padding: "7px 24px", background: "#fffbeb",
+            borderBottom: "1px solid #fde68a",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+              textTransform: "uppercase" as const,
+              color: "#c2410c", background: "#fff7ed",
+              padding: "2px 7px", borderRadius: 4,
+            }}>
+              Modelo de Seguradora
+            </span>
+            <span style={{ fontSize: 12, color: "#92400e" }}>
+              Dados extraídos da DFP anual consolidada (CVM). Não constitui recomendação de investimento.
+            </span>
+          </div>
+          <div style={{ padding: "18px 24px", maxWidth: 900 }}>
+            {insuranceLoading ? (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Carregando dados de seguradora...
+              </div>
+            ) : insuranceData ? (
+              <InsuranceAnalysisPanel data={insuranceData} />
+            ) : (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Dados de seguradora indisponíveis.
               </div>
             )}
           </div>

@@ -195,7 +195,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   // ── Seguros ──────────────────────────────────────────────────────────────────
   stock("BBSE3",  "BB Seguridade Participações S.A.",                    "BB Seguridade",  "Seguros",                "Seguro Bancário",                SS),
   stock("PSSA3",  "Porto Seguro S.A.",                                   "Porto Seguro",   "Seguros",                "Seguro Diversificado",           SS),
-  stock("SULA11", "SulAmérica S.A.",                                     "SulAmérica",     "Seguros",                "Seguro Saúde e Vida",            SS, false, false, "unit"),
+  stock("SULA11", "SulAmérica S.A.",                                     "SulAmérica",     "Seguros",                "Seguro Saúde e Vida",            "unavailable", false, false, "unit"),
   stock("IRBR3",  "IRB Brasil RE S.A.",                                  "IRB Brasil",     "Seguros",                "Resseguro",                      SS),
   stock("CXSE3",  "Caixa Seguridade Participações S.A.",                 "Caixa Seguridade","Seguros",               "Seguro Bancário",                SS),
 

@@ -5,6 +5,7 @@ import { B3_UNIVERSE } from "@/data/b3-universe";
 import { COVERAGE_BADGE, type CoverageStatus } from "@/data/coverage-types";
 import { BANK_BADGE, BANK_CACHE_COUNT, hasBankAnalysisCache } from "@/lib/banks/bank-coverage";
 import { FII_BADGE, FII_CACHE_COUNT, hasFiiAnalysisCache } from "@/lib/fiis/fii-coverage";
+import { INSURANCE_BADGE, INSURANCE_CACHE_COUNT, hasInsuranceAnalysisCache } from "@/lib/insurance/insurance-coverage";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 
 // ── Counts ────────────────────────────────────────────────────────────────────
@@ -24,12 +25,13 @@ function countByStatus(): Record<CoverageStatus, number> {
 }
 
 // Sector-specific assets that do not yet have an implemented specific model.
-// Excludes bank and FII tickers that already have their own model cache.
+// Excludes bank, FII, and insurance tickers that already have their own model cache.
 function countSectorSpecificPending(): number {
   return B3_UNIVERSE.filter(a =>
     a.coverageStatus === "sector_specific_model_required" &&
-    !(classifyB3Asset(a) === "bank" && hasBankAnalysisCache(a.ticker)) &&
-    !(classifyB3Asset(a) === "fii" && hasFiiAnalysisCache(a.ticker)),
+    !(classifyB3Asset(a) === "bank"      && hasBankAnalysisCache(a.ticker)) &&
+    !(classifyB3Asset(a) === "fii"       && hasFiiAnalysisCache(a.ticker)) &&
+    !(classifyB3Asset(a) === "insurance" && hasInsuranceAnalysisCache(a.ticker)),
   ).length;
 }
 
@@ -171,7 +173,7 @@ export default function CoberturaPage() {
     {
       badge: COVERAGE_BADGE.sector_specific_model_required,
       count: sectorSpecificCount,
-      desc:  "Seguradoras, FIIs, ETFs, BDRs e bancos sem modelo específico ainda implementado.",
+      desc:  "ETFs, BDRs, holdings financeiras e demais ativos sem modelo específico implementado.",
     },
     {
       badge: BANK_BADGE,
@@ -182,6 +184,11 @@ export default function CoberturaPage() {
       badge: FII_BADGE,
       count: FII_CACHE_COUNT,
       desc:  "FIIs com modelo inicial disponível — patrimônio e rendimentos mensais baseados no informe mensal CVM.",
+    },
+    {
+      badge: INSURANCE_BADGE,
+      count: INSURANCE_CACHE_COUNT,
+      desc:  "Seguradoras com modelo inicial disponível — indicadores anuais baseados na DFP CVM.",
     },
   ];
 

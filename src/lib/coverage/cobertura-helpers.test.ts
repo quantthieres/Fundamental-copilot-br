@@ -110,7 +110,7 @@ describe("getCoverageReason", () => {
 
   it("BBSE3 (insurance, sector_specific) → insurance model message", () => {
     const reason = getCoverageReason(find("BBSE3"));
-    expect(reason).toContain("seguradoras");
+    expect(reason).toContain("seguradora");
   });
 
   it("MXRF11 (FII, sector_specific) → FII model message", () => {

@@ -16,8 +16,10 @@ import CvmValidationStrip from "@/components/dashboard/CvmValidationStrip";
 import type { CvmStripStatus } from "@/components/dashboard/CvmValidationStrip";
 import ForecastPanel from "@/components/dashboard/ForecastPanel";
 import BankAnalysisPanel from "@/components/dashboard/BankAnalysisPanel";
+import FiiAnalysisPanel from "@/components/dashboard/FiiAnalysisPanel";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import type { BankAnalysisResponse } from "@/lib/banks/bank-types";
+import type { FiiAnalysisResponse } from "@/lib/fiis/fii-types";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 import {
   buildCompanyAnalysisDataFromCvm,
@@ -378,6 +380,8 @@ export default function DashboardPageClient() {
   const [financialSource, setFinancialSource] = useState<"mock" | "cvm">("cvm");
   const [bankData, setBankData]             = useState<BankAnalysisResponse | null>(null);
   const [bankLoading, setBankLoading]       = useState(false);
+  const [fiiData, setFiiData]               = useState<FiiAnalysisResponse | null>(null);
+  const [fiiLoading, setFiiLoading]         = useState(false);
 
   // ── Static lookups (no network) ───────────────────────────────────────────
   const companyData = useMemo(
@@ -392,6 +396,11 @@ export default function DashboardPageClient() {
 
   const isBank = useMemo(
     () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "bank",
+    [b3Entry],
+  );
+
+  const isFii = useMemo(
+    () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "fii",
     [b3Entry],
   );
 
@@ -511,9 +520,32 @@ export default function DashboardPageClient() {
     return () => { active = false; controller.abort(); };
   }, [selectedTicker, isBank]);
 
+  // ── FII analysis fetch ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedTicker || !isFii) {
+      setFiiData(null);
+      setFiiLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    setFiiData(null);
+    setFiiLoading(true);
+
+    fetch(`/api/fiis/analysis/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
+      .then(res => res.json())
+      .then((body: FiiAnalysisResponse) => {
+        if (active) setFiiData(body);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setFiiLoading(false); });
+
+    return () => { active = false; controller.abort(); };
+  }, [selectedTicker, isFii]);
+
   // ── CVM financials fetch ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedTicker || !b3Entry || isBank) {
+    if (!selectedTicker || !b3Entry || isBank || isFii) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;
@@ -785,6 +817,46 @@ export default function DashboardPageClient() {
             ) : (
               <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
                 Dados bancários indisponíveis.
+              </div>
+            )}
+          </div>
+        </>
+
+      /* ── State 3.6: FII dashboard ───────────────────────────────────────── */
+      ) : isFii ? (
+        <>
+          <CompanyHeader
+            company={buildPreliminaryCompany(b3Entry!, marketQuote)}
+            quote={marketQuote}
+            quoteLoading={quoteLoading}
+          />
+          <div style={{
+            padding: "7px 24px", background: "#f5f3ff",
+            borderBottom: "1px solid #ddd6fe",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+              textTransform: "uppercase" as const,
+              color: "#6d28d9", background: "#ede9fe",
+              padding: "2px 7px", borderRadius: 4,
+            }}>
+              Modelo de FII
+            </span>
+            <span style={{ fontSize: 12, color: "#5b21b6" }}>
+              Dados extraídos do Informe Mensal CVM. Não constitui recomendação de investimento.
+            </span>
+          </div>
+          <div style={{ padding: "18px 24px", maxWidth: 900 }}>
+            {fiiLoading ? (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Carregando dados do FII...
+              </div>
+            ) : fiiData ? (
+              <FiiAnalysisPanel data={fiiData} marketPrice={marketQuote?.price ?? null} />
+            ) : (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Dados de FII indisponíveis.
               </div>
             )}
           </div>

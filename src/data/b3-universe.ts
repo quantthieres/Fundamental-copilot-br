@@ -244,6 +244,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("BCFF11", "BTG Pactual Fundo de Fundos FII",                     "BCFF11",         "FII",                    "Fundo de Fundos",                SS, false, false, "fii"),
   stock("IRDM11", "Iridium Recebíveis Imobiliários FII",                 "IRDM11",         "FII",                    "Papel (CRI)",                    SS, false, false, "fii"),
   stock("KNCR11", "Kinea CRI Imobiliários FII",                          "KNCR11",         "FII",                    "Papel (CRI)",                    SS, false, false, "fii"),
+  stock("HGRE11", "CSHG Real Estate FII",                                "HGRE11",         "FII",                    "Lajes Corporativas",             SS, false, false, "fii"),
 
   // ── ETFs (sector_specific_model_required) ─────────────────────────────────────
   stock("BOVA11", "iShares Ibovespa FI Ações",                           "BOVA11",         "ETF",                    "Índice Ibovespa",                SS, false, false, "etf"),

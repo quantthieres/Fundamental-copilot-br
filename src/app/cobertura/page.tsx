@@ -4,6 +4,7 @@ import CoverageTable from "@/components/coverage/CoverageTable";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import { COVERAGE_BADGE, type CoverageStatus } from "@/data/coverage-types";
 import { BANK_BADGE, BANK_CACHE_COUNT, hasBankAnalysisCache } from "@/lib/banks/bank-coverage";
+import { FII_BADGE, FII_CACHE_COUNT, hasFiiAnalysisCache } from "@/lib/fiis/fii-coverage";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 
 // ── Counts ────────────────────────────────────────────────────────────────────
@@ -22,12 +23,13 @@ function countByStatus(): Record<CoverageStatus, number> {
   return counts;
 }
 
-// Sector-specific assets that still do not have an implemented specific model.
-// Excludes bank tickers that already have bank analysis cache (counted separately).
-function countSectorSpecificWithoutBankCache(): number {
+// Sector-specific assets that do not yet have an implemented specific model.
+// Excludes bank and FII tickers that already have their own model cache.
+function countSectorSpecificPending(): number {
   return B3_UNIVERSE.filter(a =>
     a.coverageStatus === "sector_specific_model_required" &&
-    !(classifyB3Asset(a) === "bank" && hasBankAnalysisCache(a.ticker)),
+    !(classifyB3Asset(a) === "bank" && hasBankAnalysisCache(a.ticker)) &&
+    !(classifyB3Asset(a) === "fii" && hasFiiAnalysisCache(a.ticker)),
   ).length;
 }
 
@@ -148,7 +150,7 @@ function StatusRow({ status, desc }: { status: CoverageStatus; desc: string }) {
 export default function CoberturaPage() {
   const counts = countByStatus();
   const total  = B3_UNIVERSE.length;
-  const sectorSpecificCount = countSectorSpecificWithoutBankCache();
+  const sectorSpecificCount = countSectorSpecificPending();
 
   const summaryCards: SummaryItem[] = [
     {
@@ -175,6 +177,11 @@ export default function CoberturaPage() {
       badge: BANK_BADGE,
       count: BANK_CACHE_COUNT,
       desc:  "Bancos com modelo bancário inicial disponível — indicadores específicos de instituições financeiras baseados em dados CVM.",
+    },
+    {
+      badge: FII_BADGE,
+      count: FII_CACHE_COUNT,
+      desc:  "FIIs com modelo inicial disponível — patrimônio e rendimentos mensais baseados no informe mensal CVM.",
     },
   ];
 
@@ -258,7 +265,7 @@ export default function CoberturaPage() {
               {[
                 { label: "Bancos",       desc: "Modelo bancário inicial disponível para os principais bancos. Indicadores específicos de instituições financeiras baseados em dados CVM." },
                 { label: "Seguradoras",  desc: "Modelo específico para seguradoras." },
-                { label: "FIIs",         desc: "Modelo específico para fundos imobiliários." },
+                { label: "FIIs",         desc: "Modelo de FII com patrimônio e rendimentos mensais baseados no informe mensal CVM. Indicadores industriais não se aplicam." },
                 { label: "ETFs",         desc: "Fundo/índice — não usa demonstrações corporativas tradicionais." },
                 { label: "BDRs",         desc: "Recibo de ativo estrangeiro — exige tratamento específico." },
               ].map(item => (

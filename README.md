@@ -161,7 +161,7 @@ Nem todo ativo B3 recebe o mesmo nível de análise. A plataforma degrada gracio
 
 - **Bancos** (`sector_specific_model_required`) — camada bancária dedicada: extrai DFP anual via CVM com normalizador conservador (code-first + fallback por nome), calcula ROE, ROA, PL/Ativos, crescimento YoY e exibe painel bancário próprio no dashboard. Cache em `src/data/bank-cache/annual/`. Não usa indicadores industriais.
 - **Seguradoras** (`sector_specific_model_required`) — utilizam índice de sinistralidade e outras métricas próprias. Exibem mensagem explicativa sem forçar indicadores industriais.
-- **FIIs** — são avaliados por DY, NAV e composição de carteira, não por EBIT ou FCL corporativo.
+- **FIIs** (`sector_specific_model_required`) — camada de FII dedicada: extrai informe mensal via CVM (`dados/FII/DOC/INF_MENSAL/DADOS/`, ZIPs anuais), com CNPJ lookup por nome normalizado + mapa de overrides para fundos renomeados. Calcula patrimônio líquido, VP/cota, rendimentos mensais e DY/P×VP com cotação de mercado em tempo de renderização. Cache em `src/data/fii-cache/monthly/`. Não usa indicadores industriais (sem EBIT, FCL, receita). Script: `npm run fii:precompute`.
 - **ETFs** — replicam índices e não possuem demonstrações financeiras corporativas próprias.
 - **BDRs** — representam ativos estrangeiros e exigem tratamento regulatório específico.
 
@@ -274,6 +274,7 @@ npm run cvm:audit                      # audita disponibilidade de dados CVM via
 npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e métrica
 npm run coverage:audit                 # audita cobertura B3 por tipo de ativo e nível (offline)
 npm run bank:precompute                # gera cache bancário anual via CVM DFP
+npm run fii:precompute                 # gera cache de FII via CVM informe mensal
 ```
 
 ---

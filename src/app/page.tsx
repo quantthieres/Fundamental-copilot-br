@@ -118,24 +118,69 @@ export default function LandingPage() {
         <div style={{
           width: "100%",
           padding: "0 clamp(24px, 3vw, 48px)",
-          textAlign: "left",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 32,
+          flexWrap: "wrap",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <span style={{ color: "#f8fafc", fontWeight: 700, fontSize: 13, letterSpacing: "-0.2px" }}>
-              Fundamental Copilot
-            </span>
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: "0.9px",
-              color: "#64748b", background: "#1e293b", border: "1px solid #334155",
-              borderRadius: 4, padding: "2px 6px",
-            }}>
-              BR
-            </span>
+          {/* Brand + disclaimer */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span style={{ color: "#f8fafc", fontWeight: 700, fontSize: 13, letterSpacing: "-0.2px" }}>
+                Fundamental Copilot
+              </span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: "0.9px",
+                color: "#64748b", background: "#1e293b", border: "1px solid #334155",
+                borderRadius: 4, padding: "2px 6px",
+              }}>
+                BR
+              </span>
+            </div>
+            <p style={{ margin: 0, color: "#475569", lineHeight: 1.6, maxWidth: 520 }}>
+              Projeto educacional em desenvolvimento.{" "}
+              As informações exibidas não constituem recomendação de investimento.
+            </p>
           </div>
-          <p style={{ margin: 0, color: "#475569", lineHeight: 1.6, maxWidth: 520 }}>
-            Projeto educacional em desenvolvimento.{" "}
-            As informações exibidas não constituem recomendação de investimento.
-          </p>
+
+          {/* Contact block */}
+          <div style={{
+            borderLeft: "1px solid #1e293b",
+            paddingLeft: 24,
+            minWidth: 200,
+          }}>
+            <p style={{ margin: "0 0 4px", color: "#94a3b8", fontWeight: 700, fontSize: 10, letterSpacing: "0.7px", textTransform: "uppercase" }}>
+              Contato
+            </p>
+            <p style={{ margin: "0 0 10px", color: "#475569", lineHeight: 1.55 }}>
+              Encontrou um problema ou quer sugerir algo?
+            </p>
+            <a
+              href="https://github.com/quantthieres"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                color: "#cbd5e1", textDecoration: "none", fontWeight: 600,
+                fontSize: 12, transition: "color 0.15s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "#f8fafc")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#cbd5e1")}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width={14}
+                height={14}
+                fill="currentColor"
+                aria-hidden="true"
+                style={{ flexShrink: 0 }}
+              >
+                <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+              </svg>
+              github.com/quantthieres
+            </a>
+          </div>
         </div>
       </footer>
 

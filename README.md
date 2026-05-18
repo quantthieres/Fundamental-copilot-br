@@ -159,7 +159,8 @@ Cada ativo possui um status de cobertura (`src/data/b3-universe.ts`):
 
 Nem todo ativo B3 recebe o mesmo nível de análise. A plataforma degrada graciosamente em vez de aplicar métricas industriais inadequadas:
 
-- **Bancos e seguradoras** (`sector_specific_model_required`) — utilizam métricas próprias (P/VPA, ROE bancário, índice de sinistralidade) que diferem estruturalmente das empresas industriais. A plataforma exibe mensagem explicativa sem forçar indicadores não aplicáveis.
+- **Bancos** (`sector_specific_model_required`) — camada bancária dedicada: extrai DFP anual via CVM com normalizador conservador (code-first + fallback por nome), calcula ROE, ROA, PL/Ativos, crescimento YoY e exibe painel bancário próprio no dashboard. Cache em `src/data/bank-cache/annual/`. Não usa indicadores industriais.
+- **Seguradoras** (`sector_specific_model_required`) — utilizam índice de sinistralidade e outras métricas próprias. Exibem mensagem explicativa sem forçar indicadores industriais.
 - **FIIs** — são avaliados por DY, NAV e composição de carteira, não por EBIT ou FCL corporativo.
 - **ETFs** — replicam índices e não possuem demonstrações financeiras corporativas próprias.
 - **BDRs** — representam ativos estrangeiros e exigem tratamento regulatório específico.
@@ -272,6 +273,7 @@ npm run forecast:precompute:baseline   # gera cache de previsões baseline (loca
 npm run cvm:audit                      # audita disponibilidade de dados CVM via API local
 npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e métrica
 npm run coverage:audit                 # audita cobertura B3 por tipo de ativo e nível (offline)
+npm run bank:precompute                # gera cache bancário anual via CVM DFP
 ```
 
 ---

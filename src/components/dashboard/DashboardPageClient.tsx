@@ -15,7 +15,10 @@ import FundamentalDiagnosis from "@/components/dashboard/FundamentalDiagnosis";
 import CvmValidationStrip from "@/components/dashboard/CvmValidationStrip";
 import type { CvmStripStatus } from "@/components/dashboard/CvmValidationStrip";
 import ForecastPanel from "@/components/dashboard/ForecastPanel";
+import BankAnalysisPanel from "@/components/dashboard/BankAnalysisPanel";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
+import type { BankAnalysisResponse } from "@/lib/banks/bank-types";
+import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 import {
   buildCompanyAnalysisDataFromCvm,
   isCvmAnalysisEligible,
@@ -373,6 +376,8 @@ export default function DashboardPageClient() {
   const [cvmLoading, setCvmLoading]         = useState(false);
   const [cvmError, setCvmError]             = useState(false);
   const [financialSource, setFinancialSource] = useState<"mock" | "cvm">("cvm");
+  const [bankData, setBankData]             = useState<BankAnalysisResponse | null>(null);
+  const [bankLoading, setBankLoading]       = useState(false);
 
   // ── Static lookups (no network) ───────────────────────────────────────────
   const companyData = useMemo(
@@ -383,6 +388,11 @@ export default function DashboardPageClient() {
   const b3Entry = useMemo(
     () => B3_UNIVERSE.find(c => c.ticker === selectedTicker),
     [selectedTicker],
+  );
+
+  const isBank = useMemo(
+    () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "bank",
+    [b3Entry],
   );
 
   // ── Derived from CVM fetch ────────────────────────────────────────────────
@@ -456,6 +466,7 @@ export default function DashboardPageClient() {
     setActiveTab("Visão Geral");
     setFinancialSource("cvm");
     setCvmError(false);
+    setBankData(null);
   }, [selectedTicker]);
 
   // ── Market quote fetch ────────────────────────────────────────────────────
@@ -477,9 +488,32 @@ export default function DashboardPageClient() {
     return () => { active = false; controller.abort(); };
   }, [selectedTicker]);
 
+  // ── Bank analysis fetch ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedTicker || !isBank) {
+      setBankData(null);
+      setBankLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    setBankData(null);
+    setBankLoading(true);
+
+    fetch(`/api/banks/analysis/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
+      .then(res => res.json())
+      .then((body: BankAnalysisResponse) => {
+        if (active) setBankData(body);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setBankLoading(false); });
+
+    return () => { active = false; controller.abort(); };
+  }, [selectedTicker, isBank]);
+
   // ── CVM financials fetch ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedTicker || !b3Entry) {
+    if (!selectedTicker || !b3Entry || isBank) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;
@@ -713,6 +747,46 @@ export default function DashboardPageClient() {
             <div style={{ maxWidth: 760, marginTop: 4 }}>
               <ForecastPanel ticker={selectedTicker} />
             </div>
+          </div>
+        </>
+
+      /* ── State 3.5: bank dashboard ──────────────────────────────────────── */
+      ) : isBank ? (
+        <>
+          <CompanyHeader
+            company={buildPreliminaryCompany(b3Entry!, marketQuote)}
+            quote={marketQuote}
+            quoteLoading={quoteLoading}
+          />
+          <div style={{
+            padding: "7px 24px", background: "#f0fdf4",
+            borderBottom: "1px solid #bbf7d0",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+              textTransform: "uppercase" as const,
+              color: "#15803d", background: "#dcfce7",
+              padding: "2px 7px", borderRadius: 4,
+            }}>
+              Modelo Bancário
+            </span>
+            <span style={{ fontSize: 12, color: "#166534" }}>
+              Dados extraídos da DFP anual consolidada (CVM). Não constitui recomendação de investimento.
+            </span>
+          </div>
+          <div style={{ padding: "18px 24px", maxWidth: 900 }}>
+            {bankLoading ? (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Carregando dados bancários...
+              </div>
+            ) : bankData ? (
+              <BankAnalysisPanel data={bankData} />
+            ) : (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Dados bancários indisponíveis.
+              </div>
+            )}
           </div>
         </>
 

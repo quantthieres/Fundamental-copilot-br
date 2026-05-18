@@ -52,6 +52,7 @@ describe("computeFiiIndicators", () => {
     const result = computeFiiIndicators(records, null);
     // Should sum only last 12 records (12 × 1.0 = 12.0), not all 14
     expect(result?.twelveMonthDistributionPerShare).toBeCloseTo(12.0);
+    expect(result?.distributionCoverageMonths).toBe(12);
   });
 
   it("returns null for twelveMonthDist when all distributions are null", () => {
@@ -63,14 +64,52 @@ describe("computeFiiIndicators", () => {
     expect(result?.twelveMonthDistributionPerShare).toBeNull();
   });
 
-  it("sums only non-null distribution values (partial coverage)", () => {
-    const records = [
-      rec("2024-10-31", 100, null, 1.0),
-      rec("2024-11-30", 100, null, null),
-      rec("2024-12-31", 100, null, 1.5),
-    ];
+  it("sums only non-null distribution values (partial coverage, ≥6 months)", () => {
+    const records = Array.from({ length: 12 }, (_, i) =>
+      rec(`2024-${String(i + 1).padStart(2, "0")}-28`, 100, null, i % 2 === 0 ? 1.0 : null),
+    );
+    // 6 non-null months (i=0,2,4,6,8,10), sum = 6.0
     const result = computeFiiIndicators(records, null);
-    expect(result?.twelveMonthDistributionPerShare).toBeCloseTo(2.5);
+    expect(result?.twelveMonthDistributionPerShare).toBeCloseTo(6.0);
+    expect(result?.distributionCoverageMonths).toBe(6);
+  });
+
+  it("returns null for twelveMonthDist when fewer than 6 valid months", () => {
+    const records = Array.from({ length: 10 }, (_, i) =>
+      rec(`2024-${String(i + 1).padStart(2, "0")}-28`, 100, null, i < 4 ? 1.0 : null),
+    );
+    // Only 4 non-null months — below threshold
+    const result = computeFiiIndicators(records, null);
+    expect(result?.twelveMonthDistributionPerShare).toBeNull();
+    expect(result?.dividendYield12m).toBeNull();
+    expect(result?.distributionCoverageMonths).toBe(4);
+  });
+
+  it("returns null for DY 12m when coverage is insufficient even with market price", () => {
+    const records = Array.from({ length: 5 }, (_, i) =>
+      rec(`2024-${String(i + 1).padStart(2, "0")}-28`, 100, null, 1.0),
+    );
+    // 5 non-null months — below threshold of 6
+    const result = computeFiiIndicators(records, 120);
+    expect(result?.twelveMonthDistributionPerShare).toBeNull();
+    expect(result?.dividendYield12m).toBeNull();
+  });
+
+  it("returns correct distributionCoverageMonths when all 12 months have data", () => {
+    const records = Array.from({ length: 12 }, (_, i) =>
+      rec(`2024-${String(i + 1).padStart(2, "0")}-28`, 100, null, 1.0),
+    );
+    const result = computeFiiIndicators(records, null);
+    expect(result?.distributionCoverageMonths).toBe(12);
+  });
+
+  it("returns zero distributionCoverageMonths when all distributions are null", () => {
+    const records = Array.from({ length: 10 }, (_, i) =>
+      rec(`2024-${String(i + 1).padStart(2, "0")}-28`, 100, null, null),
+    );
+    const result = computeFiiIndicators(records, null);
+    expect(result?.distributionCoverageMonths).toBe(0);
+    expect(result?.twelveMonthDistributionPerShare).toBeNull();
   });
 
   it("returns null for market-dependent indicators when marketPrice is null", () => {
@@ -126,7 +165,9 @@ describe("computeFiiIndicators", () => {
     const records = [rec("2024-12-31", 98.5, 1_000_000, 0.75)];
     const result = computeFiiIndicators(records, 105);
     expect(result?.netAssetValuePerShare).toBe(98.5);
-    expect(result?.twelveMonthDistributionPerShare).toBeCloseTo(0.75);
+    // 1 month < 6-month threshold → twelveMonthDist is null
+    expect(result?.twelveMonthDistributionPerShare).toBeNull();
+    expect(result?.distributionCoverageMonths).toBe(1);
     expect(result?.priceToBookValuePerShare).toBeCloseTo(105 / 98.5);
   });
 });

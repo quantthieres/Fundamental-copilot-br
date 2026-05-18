@@ -6,8 +6,8 @@ interface Company {
   ticker: string;
   exchange: string;
   sector: string;
-  price: number;
-  priceChangePct: number;
+  price: number | null;
+  priceChangePct: number | null;
   marketCap: string;
   enterpriseValue: string;
   currency: string;
@@ -34,7 +34,7 @@ function formatTime(iso: string): string {
 export default function CompanyHeader({ company, quote, quoteLoading, exportUrl }: CompanyHeaderProps) {
   const displayPrice     = quote?.price         ?? company.price;
   const displayChangePct = quote?.changePercent  ?? company.priceChangePct;
-  const isUp             = displayChangePct >= 0;
+  const isUp             = displayChangePct != null ? displayChangePct >= 0 : true;
   const isLive           = quote?.source === "brapi";
 
   let sourceLabel = "Fonte: dados ilustrativos";
@@ -73,10 +73,12 @@ export default function CompanyHeader({ company, quote, quoteLoading, exportUrl 
             )}
           </div>
           <div style={styles.price}>
-            R$ {displayPrice.toFixed(2).replace(".", ",")}
+            {displayPrice != null ? `R$ ${displayPrice.toFixed(2).replace(".", ",")}` : "—"}
           </div>
           <div style={{ ...styles.priceChange, color: isUp ? "#16a34a" : "#dc2626" }}>
-            {isUp ? "▲" : "▼"} {Math.abs(displayChangePct).toFixed(2).replace(".", ",")}% hoje
+            {displayChangePct != null
+              ? `${isUp ? "▲" : "▼"} ${Math.abs(displayChangePct).toFixed(2).replace(".", ",")}% hoje`
+              : "—"}
           </div>
           <div style={styles.sourceLabel}>{sourceLabel}</div>
         </div>

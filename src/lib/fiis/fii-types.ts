@@ -17,6 +17,9 @@ export type FiiIndicators = {
   twelveMonthDistributionPerShare: number | null;
   dividendYield12m: number | null;
   priceToBookValuePerShare: number | null;
+  // Number of non-null distribution months in the last 12 records.
+  // Used by the panel to decide whether to show distribution warnings.
+  distributionCoverageMonths: number;
 };
 
 export type FiiAnalysisResponse = {

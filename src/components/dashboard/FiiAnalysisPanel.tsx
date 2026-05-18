@@ -124,7 +124,7 @@ function MonthlyTable({ records }: { records: FiiFinancialRecord[] }) {
               <td style={tdStyle}>{brlB(r.netAssetValue)}</td>
               <td style={tdStyle}>{fmtQuota(r.quotaCount)}</td>
               <td style={tdStyle}>{brl(r.netAssetValuePerShare)}</td>
-              <td style={tdStyle}>{r.monthlyDistributionPerShare != null ? brl(r.monthlyDistributionPerShare) : "—"}</td>
+              <td style={tdStyle}>{(r.monthlyDistributionPerShare != null && r.monthlyDistributionPerShare > 0) ? brl(r.monthlyDistributionPerShare) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -184,6 +184,22 @@ export default function FiiAnalysisPanel({ data, marketPrice }: Props) {
           title="Indicadores de FII"
           subtitle={`Último período: ${fmtDate(latestDate)} · Fonte: CVM Informe Mensal`}
         >
+          {indicators.distributionCoverageMonths < 6 && (
+            <div style={{
+              marginBottom: 10, padding: "8px 12px", background: "#f8fafc",
+              border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 12, color: "#64748b",
+            }}>
+              Dados de rendimentos ainda não estão disponíveis de forma padronizada para este FII.
+            </div>
+          )}
+          {indicators.distributionCoverageMonths >= 6 && indicators.distributionCoverageMonths < 12 && (
+            <div style={{
+              marginBottom: 10, padding: "8px 12px", background: "#fefce8",
+              border: "1px solid #fde68a", borderRadius: 6, fontSize: 12, color: "#92400e",
+            }}>
+              Série de rendimentos incompleta: {indicators.distributionCoverageMonths} de 12 meses disponíveis. DY 12m pode estar subestimado.
+            </div>
+          )}
           <IndicatorsGrid ind={indicators} />
         </SectionCard>
       )}

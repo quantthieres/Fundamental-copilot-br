@@ -60,7 +60,7 @@ function getSectorSpecificDetail(b3Entry: B3Asset | undefined): string | null {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildPreliminaryCompany(b3Entry: B3Asset, quote: MarketDataQuote | null) {
-  const price = quote?.price ?? 0;
+  const price = quote?.price ?? null;
   const mcRaw = quote?.marketCap;
   const mcStr = mcRaw ? `R$ ${(mcRaw / 1_000_000_000).toFixed(1).replace(".", ",")}B` : "—";
   return {
@@ -69,7 +69,7 @@ function buildPreliminaryCompany(b3Entry: B3Asset, quote: MarketDataQuote | null
     exchange:        "B3",
     sector:          b3Entry.sector,
     price,
-    priceChangePct:  quote?.changePercent ?? 0,
+    priceChangePct:  quote?.changePercent ?? null,
     marketCap:       mcStr,
     enterpriseValue: "—",
     currency:        "BRL",

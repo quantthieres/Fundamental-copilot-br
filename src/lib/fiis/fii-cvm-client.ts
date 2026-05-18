@@ -199,7 +199,9 @@ async function extractRowsForYear(
     // Monthly distribution: DY_decimal × NAV per share
     // Percentual_Dividend_Yield_Mes is stored as a decimal fraction (e.g. 0.00672
     // = 0.672%), not as a percentage value. Do NOT divide by 100.
-    const monthlyDist = (dyRaw !== null && vpRaw !== null)
+    // dyRaw === 0 is treated as null — a zero in this CVM field is indistinguishable
+    // from "not reported / not filed for this month" and produces misleading zeros.
+    const monthlyDist = (dyRaw !== null && dyRaw !== 0 && vpRaw !== null)
       ? dyRaw * vpRaw
       : null;
 

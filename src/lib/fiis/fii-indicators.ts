@@ -22,13 +22,15 @@ export function computeFiiIndicators(
   const navPerShare = latest.netAssetValuePerShare ?? null;
   const lastDist    = latest.monthlyDistributionPerShare ?? null;
 
-  // Sum the last 12 monthly distribution values (nulls excluded from sum only
-  // if at least one non-null value exists; if all null, result is null).
   const last12 = sorted.slice(-12);
   const distValues = last12
     .map(r => r.monthlyDistributionPerShare ?? null)
     .filter((v): v is number => v !== null);
-  const twelveMonthDist = distValues.length > 0
+  const coverageMonths = distValues.length;
+
+  // Require at least 6 non-null months to compute 12m distribution sum.
+  // Fewer than 6 valid months means the series is too sparse to be meaningful.
+  const twelveMonthDist = coverageMonths >= 6
     ? distValues.reduce((a, b) => a + b, 0)
     : null;
 
@@ -41,5 +43,6 @@ export function computeFiiIndicators(
     twelveMonthDistributionPerShare: twelveMonthDist,
     dividendYield12m,
     priceToBookValuePerShare,
+    distributionCoverageMonths:     coverageMonths,
   };
 }

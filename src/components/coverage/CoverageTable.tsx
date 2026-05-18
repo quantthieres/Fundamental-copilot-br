@@ -11,6 +11,7 @@ import {
   getCoverageReason,
   type RichAssetType,
 } from "@/lib/coverage/cobertura-helpers";
+import { hasBankAnalysisCache, BANK_BADGE } from "@/lib/banks/bank-coverage";
 
 // ── Filter option types ───────────────────────────────────────────────────────
 
@@ -143,10 +144,12 @@ export default function CoverageTable({ assets }: Props) {
               </tr>
             ) : (
               filtered.map(({ asset, richType, reason }) => {
-                const badge = COVERAGE_BADGE[asset.coverageStatus];
+                const isBankCached = richType === "bank" && hasBankAnalysisCache(asset.ticker);
+                const badge = isBankCached ? BANK_BADGE : COVERAGE_BADGE[asset.coverageStatus];
                 const isDashboardLinked = asset.coverageStatus === "full_analysis" ||
                   asset.coverageStatus === "cvm_analysis" ||
-                  asset.coverageStatus === "cvm_financials";
+                  asset.coverageStatus === "cvm_financials" ||
+                  isBankCached;
                 return (
                   <tr key={asset.ticker} style={S.row}>
                     <td style={S.tickerCell}>

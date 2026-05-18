@@ -3,6 +3,8 @@ import AppHeader from "@/components/layout/AppHeader";
 import CoverageTable from "@/components/coverage/CoverageTable";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import { COVERAGE_BADGE, type CoverageStatus } from "@/data/coverage-types";
+import { BANK_BADGE, BANK_CACHE_COUNT, hasBankAnalysisCache } from "@/lib/banks/bank-coverage";
+import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 
 // ── Counts ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +20,15 @@ function countByStatus(): Record<CoverageStatus, number> {
   };
   for (const a of B3_UNIVERSE) counts[a.coverageStatus]++;
   return counts;
+}
+
+// Sector-specific assets that still do not have an implemented specific model.
+// Excludes bank tickers that already have bank analysis cache (counted separately).
+function countSectorSpecificWithoutBankCache(): number {
+  return B3_UNIVERSE.filter(a =>
+    a.coverageStatus === "sector_specific_model_required" &&
+    !(classifyB3Asset(a) === "bank" && hasBankAnalysisCache(a.ticker)),
+  ).length;
 }
 
 // ── Layout primitives ─────────────────────────────────────────────────────────
@@ -137,6 +148,7 @@ function StatusRow({ status, desc }: { status: CoverageStatus; desc: string }) {
 export default function CoberturaPage() {
   const counts = countByStatus();
   const total  = B3_UNIVERSE.length;
+  const sectorSpecificCount = countSectorSpecificWithoutBankCache();
 
   const summaryCards: SummaryItem[] = [
     {
@@ -156,8 +168,13 @@ export default function CoberturaPage() {
     },
     {
       badge: COVERAGE_BADGE.sector_specific_model_required,
-      count: counts.sector_specific_model_required,
-      desc:  "Bancos, seguradoras, FIIs, ETFs e BDRs com metodologia analítica própria.",
+      count: sectorSpecificCount,
+      desc:  "Seguradoras, FIIs, ETFs, BDRs e bancos sem modelo específico ainda implementado.",
+    },
+    {
+      badge: BANK_BADGE,
+      count: BANK_CACHE_COUNT,
+      desc:  "Bancos com modelo bancário inicial disponível — indicadores específicos de instituições financeiras baseados em dados CVM.",
     },
   ];
 
@@ -190,8 +207,9 @@ export default function CoberturaPage() {
           </p>
           <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.7, maxWidth: 680 }}>
             Bancos, seguradoras, FIIs, ETFs e BDRs requerem modelos específicos e não são
-            enquadrados no modelo industrial padrão, que foi projetado para empresas operacionais.
-            A cobertura é expandida gradualmente conforme os dados CVM são processados.
+            enquadrados no modelo industrial padrão. Um modelo bancário inicial está disponível
+            para os principais bancos listados na B3, com indicadores específicos baseados em
+            dados CVM. A cobertura é expandida gradualmente.
           </p>
         </Section>
 
@@ -238,7 +256,7 @@ export default function CoberturaPage() {
           <Card>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
               {[
-                { label: "Bancos",       desc: "Modelo específico para instituições financeiras." },
+                { label: "Bancos",       desc: "Modelo bancário inicial disponível para os principais bancos. Indicadores específicos de instituições financeiras baseados em dados CVM." },
                 { label: "Seguradoras",  desc: "Modelo específico para seguradoras." },
                 { label: "FIIs",         desc: "Modelo específico para fundos imobiliários." },
                 { label: "ETFs",         desc: "Fundo/índice — não usa demonstrações corporativas tradicionais." },

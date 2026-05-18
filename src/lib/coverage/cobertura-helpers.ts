@@ -1,6 +1,7 @@
 import type { B3Asset } from "@/data/b3-universe";
 import { classifyAsset } from "./asset-classifier";
 import type { AssetType as RichAssetType } from "./coverage-types";
+import { getBankCoverageReason } from "@/lib/banks/bank-coverage";
 
 export type { RichAssetType };
 
@@ -44,7 +45,7 @@ export function getCoverageReason(asset: B3Asset): string {
       return "Apenas dados de mercado disponíveis no momento.";
     case "sector_specific_model_required":
       switch (richType) {
-        case "bank":      return "Modelo específico para instituições financeiras.";
+        case "bank":      return getBankCoverageReason(asset.ticker);
         case "insurance": return "Modelo específico para seguradoras.";
         case "financial": return "Holding ou infraestrutura financeira — modelo específico.";
         case "fii":       return "Modelo específico para fundos imobiliários.";

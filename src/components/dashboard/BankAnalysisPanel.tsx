@@ -127,7 +127,7 @@ export default function BankAnalysisPanel({ data }: Props) {
     return (
       <SectionCard title="Análise Bancária" subtitle="Modelo específico para instituições financeiras">
         <div style={{ color: "#64748b", fontSize: 13, padding: "8px 0" }}>
-          Dados bancários ainda não disponíveis para este ticker.
+          Este ativo exige modelo específico para instituições financeiras. O modelo bancário está sendo introduzido gradualmente.
           {data.warnings.length > 0 && (
             <div style={{ marginTop: 6, color: "#94a3b8", fontSize: 11 }}>
               {data.warnings[0]}

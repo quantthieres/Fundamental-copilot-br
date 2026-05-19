@@ -228,11 +228,13 @@ function EmptyStateView({
               Cotação atual · Fonte: brapi
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, color: "#0f172a", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-1px" }}>
-              R$ {quote!.price.toFixed(2).replace(".", ",")}
+              {quote!.price > 0 ? `R$ ${quote!.price.toFixed(2).replace(".", ",")}` : "—"}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: isUp ? "#16a34a" : "#dc2626", fontFamily: "'JetBrains Mono', monospace", marginTop: 3 }}>
-              {isUp ? "▲" : "▼"} {Math.abs(quote!.changePercent ?? 0).toFixed(2).replace(".", ",")}% hoje
-            </div>
+            {quote!.changePercent != null && (
+              <div style={{ fontSize: 13, fontWeight: 500, color: isUp ? "#16a34a" : "#dc2626", fontFamily: "'JetBrains Mono', monospace", marginTop: 3 }}>
+                {isUp ? "▲" : "▼"} {Math.abs(quote!.changePercent).toFixed(2).replace(".", ",")}% hoje
+              </div>
+            )}
           </div>
         )}
         {quoteLoading && (status === "quote_only" || status === "sector_specific_model_required") && (

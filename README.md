@@ -76,6 +76,37 @@ A plataforma não produz preço-alvo, recomendação de compra/venda ou estimati
 - Diagnóstico de confiabilidade das projeções: nível (Alta/Média/Baixa/Insuficiente), score 0–100, razões em português e avisos de qualidade. Camada explicativa embutida no cache; não constitui recomendação de investimento.
 - Testes automatizados com Vitest.
 - Build e validação TypeScript.
+- Camada informativa para ETFs e BDRs — sem análise fundamentalista corporativa (ver seção abaixo).
+
+---
+
+## ETFs e BDRs — camada informativa
+
+ETFs (fundos de índice listados) e BDRs (recibos de ativos estrangeiros) não utilizam demonstrações financeiras corporativas comparáveis às de empresas operacionais brasileiras. Por isso, **não recebem análise fundamentalista industrial**, previsões, indicadores de valuation, ou qualquer linguagem de recomendação.
+
+O dashboard exibe uma **tela informativa** dedicada para esses instrumentos com:
+
+- Tipo do instrumento (ETF, BDR ou fundo listado).
+- Breve descrição do instrumento e do ativo subjacente.
+- Cotação de mercado via brapi (quando disponível).
+- Explicação de por que a análise fundamentalista corporativa não se aplica.
+- Aviso de que a tela é informativa e não constitui recomendação de investimento.
+
+**Tickers suportados na camada informativa:**
+
+| Tipo | Tickers                                         |
+|------|-------------------------------------------------|
+| ETF  | BOVA11, IVVB11, SMAL11, HASH11, SPXI11, GOLD11 |
+| BDR  | AAPL34, MSFT34, TSLA34, AMZO34, GOGL34, NVDC34, GOOGL34 |
+
+**O que NÃO é exibido para ETFs/BDRs:**
+- Receita, EBIT, fluxo de caixa livre, margens.
+- ROE, ROA, indicadores industriais.
+- Painel de projeções (ForecastPanel).
+- Indicadores de FII, banco ou seguradora.
+- Preço-alvo, valor intrínseco, upside/downside, DCF, linguagem de compra/venda/manutenção.
+
+**Roteamento de modelo:** ETFs e BDRs são roteados para `informational_instrument` em `src/lib/coverage/model-routing.ts` e não chegam ao pipeline industrial, bancário, de FII ou de seguradora.
 
 ---
 

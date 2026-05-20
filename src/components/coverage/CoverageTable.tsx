@@ -12,6 +12,9 @@ import {
   type RichAssetType,
 } from "@/lib/coverage/cobertura-helpers";
 import { hasBankAnalysisCache, BANK_BADGE } from "@/lib/banks/bank-coverage";
+import { getInstrumentCoverageReason } from "@/lib/instruments/instrument-info";
+
+const INFORMATIONAL_BADGE = { label: "Informativo", bg: "#e0f2fe", color: "#0369a1" };
 
 // ── Filter option types ───────────────────────────────────────────────────────
 
@@ -144,12 +147,19 @@ export default function CoverageTable({ assets }: Props) {
               </tr>
             ) : (
               filtered.map(({ asset, richType, reason }) => {
-                const isBankCached = richType === "bank" && hasBankAnalysisCache(asset.ticker);
-                const badge = isBankCached ? BANK_BADGE : COVERAGE_BADGE[asset.coverageStatus];
-                const isDashboardLinked = asset.coverageStatus === "full_analysis" ||
-                  asset.coverageStatus === "cvm_analysis" ||
+                const isBankCached          = richType === "bank"      && hasBankAnalysisCache(asset.ticker);
+                const isInformational       = (richType === "etf" || richType === "bdr" || richType === "fund") && asset.coverageStatus !== "unavailable";
+                const badge =
+                  isBankCached    ? BANK_BADGE :
+                  isInformational ? INFORMATIONAL_BADGE :
+                  COVERAGE_BADGE[asset.coverageStatus];
+                const displayReason = isInformational ? getInstrumentCoverageReason(asset.ticker) : reason;
+                const isDashboardLinked =
+                  asset.coverageStatus === "full_analysis" ||
+                  asset.coverageStatus === "cvm_analysis"  ||
                   asset.coverageStatus === "cvm_financials" ||
-                  isBankCached;
+                  isBankCached ||
+                  isInformational;
                 return (
                   <tr key={asset.ticker} style={S.row}>
                     <td style={S.tickerCell}>
@@ -179,7 +189,7 @@ export default function CoverageTable({ assets }: Props) {
                       </span>
                     </td>
                     <td style={S.reasonCell}>
-                      {reason}
+                      {displayReason}
                     </td>
                     <td style={S.actionCell}>
                       {isDashboardLinked && (

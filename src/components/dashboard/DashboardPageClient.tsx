@@ -18,6 +18,8 @@ import ForecastPanel from "@/components/dashboard/ForecastPanel";
 import BankAnalysisPanel from "@/components/dashboard/BankAnalysisPanel";
 import FiiAnalysisPanel from "@/components/dashboard/FiiAnalysisPanel";
 import InsuranceAnalysisPanel from "@/components/dashboard/InsuranceAnalysisPanel";
+import InstrumentInfoPanel from "@/components/dashboard/InstrumentInfoPanel";
+import type { InstrumentInfoResponse } from "@/lib/instruments/instrument-types";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import type { BankAnalysisResponse } from "@/lib/banks/bank-types";
 import type { FiiAnalysisResponse } from "@/lib/fiis/fii-types";
@@ -388,6 +390,8 @@ export default function DashboardPageClient() {
   const [fiiLoading, setFiiLoading]         = useState(false);
   const [insuranceData, setInsuranceData]   = useState<InsuranceAnalysisResponse | null>(null);
   const [insuranceLoading, setInsuranceLoading] = useState(false);
+  const [instrumentData, setInstrumentData]     = useState<InstrumentInfoResponse | null>(null);
+  const [instrumentLoading, setInstrumentLoading] = useState(false);
 
   // ── Static lookups (no network) ───────────────────────────────────────────
   const companyData = useMemo(
@@ -414,6 +418,12 @@ export default function DashboardPageClient() {
     () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "insurance" && b3Entry.coverageStatus !== "unavailable",
     [b3Entry],
   );
+
+  const isInformationalInstrument = useMemo(() => {
+    if (!b3Entry || b3Entry.coverageStatus === "unavailable") return false;
+    const t = classifyB3Asset(b3Entry);
+    return t === "etf" || t === "bdr" || t === "fund";
+  }, [b3Entry]);
 
   // ── Derived from CVM fetch ────────────────────────────────────────────────
   const cvmAnalysisData = useMemo(() => {
@@ -487,6 +497,7 @@ export default function DashboardPageClient() {
     setFinancialSource("cvm");
     setCvmError(false);
     setBankData(null);
+    setInstrumentData(null);
   }, [selectedTicker]);
 
   // ── Market quote fetch ────────────────────────────────────────────────────
@@ -579,7 +590,7 @@ export default function DashboardPageClient() {
 
   // ── CVM financials fetch ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedTicker || !b3Entry || isBank || isFii || isInsurance) {
+    if (!selectedTicker || !b3Entry || isBank || isFii || isInsurance || isInformationalInstrument) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;
@@ -610,7 +621,30 @@ export default function DashboardPageClient() {
       .finally(() => { if (active) setCvmLoading(false); });
 
     return () => { active = false; controller.abort(); };
-  }, [selectedTicker, b3Entry]);
+  }, [selectedTicker, b3Entry, isInformationalInstrument]);
+
+  // ── Instrument info fetch (ETF / BDR / fund) ──────────────────────────────
+  useEffect(() => {
+    if (!selectedTicker || !isInformationalInstrument) {
+      setInstrumentData(null);
+      setInstrumentLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    setInstrumentData(null);
+    setInstrumentLoading(true);
+
+    fetch(`/api/instruments/info/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
+      .then(res => res.json())
+      .then((body: InstrumentInfoResponse) => {
+        if (active) setInstrumentData(body);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setInstrumentLoading(false); });
+
+    return () => { active = false; controller.abort(); };
+  }, [selectedTicker, isInformationalInstrument]);
 
   function handleSelectCompany(ticker: string) {
     router.push(`/dashboard?ticker=${encodeURIComponent(ticker)}`);
@@ -934,6 +968,48 @@ export default function DashboardPageClient() {
               </div>
             )}
           </div>
+        </>
+
+      /* ── State 3.8: ETF / BDR / fund informational dashboard ──────────────── */
+      ) : isInformationalInstrument ? (
+        <>
+          <CompanyHeader
+            company={buildPreliminaryCompany(b3Entry!, marketQuote)}
+            quote={marketQuote}
+            quoteLoading={quoteLoading}
+          />
+          <div style={{
+            padding: "7px 24px", background: "#f0f9ff",
+            borderBottom: "1px solid #bae6fd",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+              textTransform: "uppercase" as const,
+              color: "#0369a1", background: "#e0f2fe",
+              padding: "2px 7px", borderRadius: 4,
+            }}>
+              Camada Informativa
+            </span>
+            <span style={{ fontSize: 12, color: "#0369a1" }}>
+              ETF, BDR ou fundo listado — sem análise fundamentalista corporativa. Não constitui recomendação de investimento.
+            </span>
+          </div>
+          {instrumentLoading ? (
+            <div style={{ padding: "24px", fontSize: 13, color: "#94a3b8" }}>
+              Carregando informações do instrumento...
+            </div>
+          ) : instrumentData ? (
+            <InstrumentInfoPanel
+              data={instrumentData}
+              quote={marketQuote}
+              quoteLoading={quoteLoading}
+            />
+          ) : (
+            <div style={{ padding: "24px", fontSize: 13, color: "#94a3b8" }}>
+              Informações indisponíveis para este instrumento.
+            </div>
+          )}
         </>
 
       /* ── State 4: not eligible / quote-only / sector-specific / unavailable ── */

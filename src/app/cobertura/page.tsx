@@ -8,6 +8,8 @@ import { FII_BADGE, FII_CACHE_COUNT, hasFiiAnalysisCache } from "@/lib/fiis/fii-
 import { INSURANCE_BADGE, INSURANCE_CACHE_COUNT, hasInsuranceAnalysisCache } from "@/lib/insurance/insurance-coverage";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 
+const INFORMATIONAL_BADGE = { label: "Informativo", bg: "#e0f2fe", color: "#0369a1" };
+
 // ── Counts ────────────────────────────────────────────────────────────────────
 
 function countByStatus(): Record<CoverageStatus, number> {
@@ -24,15 +26,26 @@ function countByStatus(): Record<CoverageStatus, number> {
   return counts;
 }
 
+// Assets with the informational layer (ETFs, BDRs, funds).
+function countInformational(): number {
+  return B3_UNIVERSE.filter(a => {
+    const t = classifyB3Asset(a);
+    return (t === "etf" || t === "bdr" || t === "fund") && a.coverageStatus !== "unavailable";
+  }).length;
+}
+
 // Sector-specific assets that do not yet have an implemented specific model.
-// Excludes bank, FII, and insurance tickers that already have their own model cache.
+// Excludes bank, FII, insurance tickers with cache AND ETF/BDR/fund (now informational).
 function countSectorSpecificPending(): number {
-  return B3_UNIVERSE.filter(a =>
-    a.coverageStatus === "sector_specific_model_required" &&
-    !(classifyB3Asset(a) === "bank"      && hasBankAnalysisCache(a.ticker)) &&
-    !(classifyB3Asset(a) === "fii"       && hasFiiAnalysisCache(a.ticker)) &&
-    !(classifyB3Asset(a) === "insurance" && hasInsuranceAnalysisCache(a.ticker)),
-  ).length;
+  return B3_UNIVERSE.filter(a => {
+    if (a.coverageStatus !== "sector_specific_model_required") return false;
+    const t = classifyB3Asset(a);
+    if (t === "bank"      && hasBankAnalysisCache(a.ticker))      return false;
+    if (t === "fii"       && hasFiiAnalysisCache(a.ticker))       return false;
+    if (t === "insurance" && hasInsuranceAnalysisCache(a.ticker)) return false;
+    if (t === "etf" || t === "bdr" || t === "fund")               return false;
+    return true;
+  }).length;
 }
 
 // ── Layout primitives ─────────────────────────────────────────────────────────
@@ -152,7 +165,8 @@ function StatusRow({ status, desc }: { status: CoverageStatus; desc: string }) {
 export default function CoberturaPage() {
   const counts = countByStatus();
   const total  = B3_UNIVERSE.length;
-  const sectorSpecificCount = countSectorSpecificPending();
+  const sectorSpecificCount  = countSectorSpecificPending();
+  const informationalCount   = countInformational();
 
   const summaryCards: SummaryItem[] = [
     {
@@ -171,9 +185,14 @@ export default function CoberturaPage() {
       desc:  "Apenas dados de mercado disponíveis. Financeiros CVM ainda não processados.",
     },
     {
+      badge: INFORMATIONAL_BADGE,
+      count: informationalCount,
+      desc:  "ETFs e BDRs com camada informativa — sem análise fundamentalista corporativa.",
+    },
+    {
       badge: COVERAGE_BADGE.sector_specific_model_required,
       count: sectorSpecificCount,
-      desc:  "ETFs, BDRs, holdings financeiras e demais ativos sem modelo específico implementado.",
+      desc:  "Holdings financeiras e demais ativos sem modelo específico implementado.",
     },
     {
       badge: BANK_BADGE,
@@ -273,8 +292,8 @@ export default function CoberturaPage() {
                 { label: "Bancos",       desc: "Modelo bancário inicial disponível para os principais bancos. Indicadores específicos de instituições financeiras baseados em dados CVM." },
                 { label: "Seguradoras",  desc: "Modelo específico para seguradoras." },
                 { label: "FIIs",         desc: "Modelo de FII com patrimônio e rendimentos mensais baseados no informe mensal CVM. Indicadores industriais não se aplicam." },
-                { label: "ETFs",         desc: "Fundo/índice — não usa demonstrações corporativas tradicionais." },
-                { label: "BDRs",         desc: "Recibo de ativo estrangeiro — exige tratamento específico." },
+                { label: "ETFs",         desc: "Fundo/índice listado em bolsa — exibição informativa disponível. Não utiliza demonstrações corporativas tradicionais." },
+                { label: "BDRs",         desc: "Recibo de ativo estrangeiro — exibição informativa disponível. A empresa subjacente não reporta pela estrutura CVM brasileira." },
               ].map(item => (
                 <div key={item.label} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <span style={{

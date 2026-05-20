@@ -253,4 +253,13 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("HASH11", "Hashdex Nasdaq Crypto Index FI Ações",                "HASH11",         "ETF",                    "Criptoativos",                   SS, false, false, "etf"),
   stock("SPXI11", "iShares S&P 500 BRL FI Ações",                        "SPXI11",         "ETF",                    "Índice S&P 500 (BRL)",           SS, false, false, "etf"),
   stock("GOLD11", "Trend ETF Ouro FI Ações",                             "GOLD11",         "ETF",                    "Commodities – Ouro",             SS, false, false, "etf"),
+
+  // ── BDRs (sector_specific_model_required) ─────────────────────────────────────
+  stock("AAPL34",  "Apple Inc.",                                          "AAPL34",         "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"),
+  stock("MSFT34",  "Microsoft Corporation",                               "MSFT34",         "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"),
+  stock("TSLA34",  "Tesla Inc.",                                          "TSLA34",         "BDR",                    "Veículos Elétricos (EUA)",       SS, false, false, "bdr"),
+  stock("AMZO34",  "Amazon.com Inc.",                                     "AMZO34",         "BDR",                    "Comércio e Tecnologia (EUA)",    SS, false, false, "bdr"),
+  stock("GOGL34",  "Alphabet Inc. (Google)",                              "GOGL34",         "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"),
+  stock("NVDC34",  "NVIDIA Corporation",                                  "NVDC34",         "BDR",                    "Semicondutores (EUA)",           SS, false, false, "bdr"),
+  stock("GOOGL34", "Alphabet Inc. (Google)",                              "GOOGL34",        "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"),
 ];

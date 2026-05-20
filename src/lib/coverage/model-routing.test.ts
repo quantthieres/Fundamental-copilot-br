@@ -69,27 +69,32 @@ describe("resolveModelRoute", () => {
     expect(resolveModelRoute(fromUniverse("SULA11"))).toBe<ModelRoute>("unavailable");
   });
 
-  // ── ETF ─────────────────────────────────────────────────────────────────────
+  // ── ETF → informational_instrument ──────────────────────────────────────────
 
-  it("IVVB11 → sector_specific_pending (ETF, no model yet)", () => {
-    expect(resolveModelRoute(fromUniverse("IVVB11"))).toBe<ModelRoute>("sector_specific_pending");
+  it("IVVB11 → informational_instrument", () => {
+    expect(resolveModelRoute(fromUniverse("IVVB11"))).toBe<ModelRoute>("informational_instrument");
   });
 
-  // ── BDR (synthetic — AAPL34 not in B3_UNIVERSE) ────────────────────────────
+  it("BOVA11 → informational_instrument", () => {
+    expect(resolveModelRoute(fromUniverse("BOVA11"))).toBe<ModelRoute>("informational_instrument");
+  });
 
-  it("AAPL34 → sector_specific_pending (BDR)", () => {
-    const bdr: B3Asset = {
-      ticker:         "AAPL34",
-      companyName:    "Apple Inc.",
-      tradingName:    "AAPL34",
-      sector:         "Tecnologia",
-      subsector:      "BDR",
-      assetType:      "bdr",
-      hasMockData:    false,
-      hasCvmMapping:  false,
-      coverageStatus: "sector_specific_model_required",
-    };
-    expect(resolveModelRoute(bdr)).toBe<ModelRoute>("sector_specific_pending");
+  it("HASH11 → informational_instrument", () => {
+    expect(resolveModelRoute(fromUniverse("HASH11"))).toBe<ModelRoute>("informational_instrument");
+  });
+
+  // ── BDR → informational_instrument ──────────────────────────────────────────
+
+  it("AAPL34 → informational_instrument", () => {
+    expect(resolveModelRoute(fromUniverse("AAPL34"))).toBe<ModelRoute>("informational_instrument");
+  });
+
+  it("MSFT34 → informational_instrument", () => {
+    expect(resolveModelRoute(fromUniverse("MSFT34"))).toBe<ModelRoute>("informational_instrument");
+  });
+
+  it("TSLA34 → informational_instrument", () => {
+    expect(resolveModelRoute(fromUniverse("TSLA34"))).toBe<ModelRoute>("informational_instrument");
   });
 
   // ── Edge cases ──────────────────────────────────────────────────────────────
@@ -125,7 +130,7 @@ describe("resolveModelRoute", () => {
     expect(resolveModelRoute(quoteOnly)).toBe<ModelRoute>("quote_only");
   });
 
-  it("ETF with quote_only status → quote_only", () => {
+  it("ETF with any coverageStatus → informational_instrument (assetType wins)", () => {
     const etfQuote: B3Asset = {
       ticker:         "BOVA11",
       companyName:    "iShares Ibovespa ETF",
@@ -137,6 +142,6 @@ describe("resolveModelRoute", () => {
       hasCvmMapping:  false,
       coverageStatus: "quote_only",
     };
-    expect(resolveModelRoute(etfQuote)).toBe<ModelRoute>("quote_only");
+    expect(resolveModelRoute(etfQuote)).toBe<ModelRoute>("informational_instrument");
   });
 });

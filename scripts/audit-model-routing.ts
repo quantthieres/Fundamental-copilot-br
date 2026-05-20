@@ -31,6 +31,7 @@ const ALL_ROUTES: ModelRoute[] = [
   "bank",
   "fii",
   "insurance",
+  "informational_instrument",
   "quote_only",
   "sector_specific_pending",
   "unavailable",
@@ -97,6 +98,27 @@ function buildGroups(): Map<ModelRoute, RouteGroup> {
         `${asset.ticker}: coverageStatus=sector_specific_model_required but in industrial route`,
       );
     }
+
+    // ETF or BDR routed to industrial (should never happen).
+    if (route === "industrial" && (type === "etf" || type === "bdr")) {
+      group.suspicious.push(
+        `${asset.ticker}: ETF/BDR unexpectedly routed to industrial model`,
+      );
+    }
+
+    // ETF or BDR routed to bank/fii/insurance (should never happen).
+    if ((type === "etf" || type === "bdr") && (route === "bank" || route === "fii" || route === "insurance")) {
+      group.suspicious.push(
+        `${asset.ticker}: ETF/BDR unexpectedly routed to sector model "${route}"`,
+      );
+    }
+
+    // ETF or BDR not in informational_instrument route (suspicious).
+    if ((type === "etf" || type === "bdr") && route !== "informational_instrument" && route !== "unavailable") {
+      group.suspicious.push(
+        `${asset.ticker}: ETF/BDR not in informational_instrument route (got "${route}")`,
+      );
+    }
   }
 
   return groups;
@@ -105,13 +127,14 @@ function buildGroups(): Map<ModelRoute, RouteGroup> {
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
 const ROUTE_LABEL: Record<ModelRoute, string> = {
-  industrial:               "Industrial (CVM)",
-  bank:                     "Banco",
-  fii:                      "FII",
-  insurance:                "Seguradora",
-  quote_only:               "Cotação apenas",
-  sector_specific_pending:  "Modelo específico pendente",
-  unavailable:              "Indisponível / descontinuado",
+  industrial:                "Industrial (CVM)",
+  bank:                      "Banco",
+  fii:                       "FII",
+  insurance:                 "Seguradora",
+  informational_instrument:  "Camada informativa (ETF/BDR)",
+  quote_only:                "Cotação apenas",
+  sector_specific_pending:   "Modelo específico pendente",
+  unavailable:               "Indisponível / descontinuado",
 };
 
 function printGroup(group: RouteGroup): void {

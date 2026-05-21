@@ -322,6 +322,7 @@ npm run typecheck                 # verificação TypeScript sem emitir
 ```bash
 npm run coverage:audit:models     # auditoria de roteamento de modelos do dashboard (offline)
 npm run report:audit              # auditoria de rotas de relatório por ticker (offline)
+npm run coverage:audit:quote-only # classifica ativos quote-only, sem modelo e indisponíveis (offline)
 npm run coverage:audit            # audita cobertura B3 por tipo de ativo e nível (offline)
 npm run cvm:audit                 # audita disponibilidade de dados CVM via API local
 npm run cvm:audit:quarterly       # audita valores trimestrais por ticker e métrica

@@ -151,7 +151,7 @@ function NoTickerView({ onTicker }: { onTicker: (t: string) => void }) {
 // ─── Empty / coverage state ───────────────────────────────────────────────────
 
 function EmptyStateView({
-  ticker, companyName, coverageStatus, quote, quoteLoading, sectorDetail,
+  ticker, companyName, coverageStatus, quote, quoteLoading, sectorDetail, exportUrl,
 }: {
   ticker: string;
   companyName: string;
@@ -159,6 +159,7 @@ function EmptyStateView({
   quote?: MarketDataQuote | null;
   quoteLoading?: boolean;
   sectorDetail?: string | null;
+  exportUrl?: string;
 }) {
   const status = coverageStatus ?? "unavailable";
   const badge = COVERAGE_BADGE[status];
@@ -242,6 +243,25 @@ function EmptyStateView({
         {quoteLoading && (status === "quote_only" || status === "sector_specific_model_required") && (
           <div style={{ marginTop: 16, fontSize: 12, color: "#94a3b8" }}>
             Buscando cotação...
+          </div>
+        )}
+        {exportUrl && (
+          <div style={{ marginTop: 20 }}>
+            <a
+              href={exportUrl}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                fontSize: 12, fontWeight: 500, color: "#2563eb",
+                textDecoration: "none", padding: "6px 12px",
+                background: "#eff6ff", border: "1px solid #bfdbfe",
+                borderRadius: 7,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Exportar Relatório
+            </a>
           </div>
         )}
       </div>
@@ -685,7 +705,7 @@ export default function DashboardPageClient() {
             company={effectiveCompanyData.company}
             quote={marketQuote}
             quoteLoading={quoteLoading}
-            exportUrl={!isCvmAnalysis ? `/relatorio/${selectedTicker}?source=${financialSource}` : undefined}
+            exportUrl={`/relatorio/${selectedTicker}?source=${isCvmAnalysis ? "cvm" : financialSource}`}
           />
           <MetricsRow metrics={effectiveCompanyData.metrics} />
           <SourceBanner variant={fullDashboardBanner} cvmLoading={cvmLoading} />
@@ -818,6 +838,7 @@ export default function DashboardPageClient() {
             company={buildPreliminaryCompany(b3Entry!, marketQuote)}
             quote={marketQuote}
             quoteLoading={quoteLoading}
+            exportUrl={`/relatorio/${selectedTicker}`}
           />
 
           <SourceBanner
@@ -857,6 +878,7 @@ export default function DashboardPageClient() {
             company={buildPreliminaryCompany(b3Entry!, marketQuote)}
             quote={marketQuote}
             quoteLoading={quoteLoading}
+            exportUrl={`/relatorio/${selectedTicker}`}
           />
           <div style={{
             padding: "7px 24px", background: "#f0fdf4",
@@ -897,6 +919,7 @@ export default function DashboardPageClient() {
             company={buildPreliminaryCompany(b3Entry!, marketQuote)}
             quote={marketQuote}
             quoteLoading={quoteLoading}
+            exportUrl={`/relatorio/${selectedTicker}`}
           />
           <div style={{
             padding: "7px 24px", background: "#f5f3ff",
@@ -937,6 +960,7 @@ export default function DashboardPageClient() {
             company={buildPreliminaryCompany(b3Entry!, marketQuote)}
             quote={marketQuote}
             quoteLoading={quoteLoading}
+            exportUrl={`/relatorio/${selectedTicker}`}
           />
           <div style={{
             padding: "7px 24px", background: "#fffbeb",
@@ -977,6 +1001,7 @@ export default function DashboardPageClient() {
             company={buildPreliminaryCompany(b3Entry!, marketQuote)}
             quote={marketQuote}
             quoteLoading={quoteLoading}
+            exportUrl={`/relatorio/${selectedTicker}`}
           />
           <div style={{
             padding: "7px 24px", background: "#f0f9ff",
@@ -1021,6 +1046,7 @@ export default function DashboardPageClient() {
           quote={marketQuote}
           quoteLoading={quoteLoading}
           sectorDetail={getSectorSpecificDetail(b3Entry)}
+          exportUrl={b3Entry ? `/relatorio/${selectedTicker}` : undefined}
         />
       )}
     </div>

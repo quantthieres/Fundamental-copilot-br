@@ -5,6 +5,8 @@ import { readBankCache } from "@/lib/banks/bank-cache";
 import { readFiiCache } from "@/lib/fiis/fii-cache";
 import { readInsuranceCache } from "@/lib/insurance/insurance-cache";
 import { getInstrumentInfo } from "@/lib/instruments/instrument-info";
+import { getPrecomputedFinancials } from "@/lib/cvm/precomputed-cache";
+import { buildFundamentalIndicators } from "@/lib/fundamentals/indicators";
 import { getBrapiQuote } from "@/lib/market-data/brapi";
 import ReportPageClient from "./ReportPageClient";
 import ReportShell from "@/components/report/ReportShell";
@@ -13,7 +15,9 @@ import ReportMetricGrid from "@/components/report/ReportMetricGrid";
 import type { BankAnalysisResponse, BankFinancialRecord } from "@/lib/banks/bank-types";
 import type { FiiAnalysisResponse } from "@/lib/fiis/fii-types";
 import type { InsuranceAnalysisResponse, InsuranceFinancialRecord } from "@/lib/insurance/insurance-types";
+import type { NormalizedFinancials } from "@/lib/cvm/types";
 import type { MarketDataQuote } from "@/lib/market-data/types";
+import type { B3Asset } from "@/data/b3-universe";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +39,11 @@ function fmtBRL(v: number | null | undefined): string {
 function fmtPct(v: number | null | undefined): string {
   if (v == null) return "—";
   return v.toFixed(1).replace(".", ",") + "%";
+}
+
+function fmtX(v: number | null | undefined): string {
+  if (v == null) return "—";
+  return v.toFixed(1).replace(".", ",") + "×";
 }
 
 function fmtPrice(v: number | null | undefined): string {
@@ -148,6 +157,138 @@ function WarnPill({ text }: { text: string }) {
     }}>
       {text}
     </div>
+  );
+}
+
+// ─── Industrial report (CVM cache) ───────────────────────────────────────────
+
+function IndustrialHistoricalTable({ financials }: { financials: NormalizedFinancials[] }) {
+  const rows = [...financials].sort((a, b) => a.fiscalYear - b.fiscalYear);
+  const heads = ["Ano", "Receita", "EBIT", "Lucro Líq.", "CFO", "Capex", "FCL", "Dívida Líq."];
+  return (
+    <div className="report-table-wrap" style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: MONO }}>
+        <thead>
+          <tr style={{ background: "#f8fafc" }}>
+            {heads.map((h, i) => (
+              <th key={h} style={{
+                padding: "6px 10px",
+                textAlign: i === 0 ? "center" : "right",
+                color: "#64748b", fontWeight: 600,
+                borderBottom: "1px solid #e2e8f0",
+                fontSize: 10, textTransform: "uppercase" as const,
+                letterSpacing: "0.3px", whiteSpace: "nowrap" as const,
+              }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, idx) => {
+            const netDebtRaw = r.netDebt ?? ((r.totalDebt ?? 0) - (r.cash ?? 0));
+            const netDebt = netDebtRaw !== 0 ? netDebtRaw : null;
+            const td: React.CSSProperties = {
+              padding: "5px 10px", textAlign: "right",
+              color: "#374151", borderBottom: "1px solid #f1f5f9",
+              whiteSpace: "nowrap",
+            };
+            return (
+              <tr key={r.fiscalYear} style={{ background: idx % 2 === 0 ? "#fff" : "#fafbfc" }}>
+                <td style={{ ...td, textAlign: "center", fontWeight: 700, color: "#475569" }}>{r.fiscalYear}</td>
+                <td style={td}>{fmtBRL(r.revenue ?? null)}</td>
+                <td style={td}>{fmtBRL(r.ebit ?? null)}</td>
+                <td style={td}>{fmtBRL(r.netIncome ?? null)}</td>
+                <td style={td}>{fmtBRL(r.operatingCashFlow ?? null)}</td>
+                <td style={td}>{fmtBRL(r.capex !== undefined ? -r.capex : null)}</td>
+                <td style={{ ...td, fontWeight: 600 }}>{fmtBRL(r.freeCashFlow ?? null)}</td>
+                <td style={td}>{fmtBRL(netDebt)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function IndustrialReport({
+  ticker, b3Asset, financials, quote,
+}: {
+  ticker:     string;
+  b3Asset:    B3Asset;
+  financials: NormalizedFinancials[];
+  quote:      MarketDataQuote | null;
+}) {
+  const companyName = b3Asset.companyName;
+  const hasSufficient = financials.length >= 2;
+  const ind = hasSufficient ? buildFundamentalIndicators(financials, quote) : null;
+
+  const indicatorItems = ind ? [
+    { label: "CAGR Receita",         value: fmtPct(ind.growth.revenueCAGR),            note: "Crescimento composto" },
+    { label: "Crescimento YoY",      value: fmtPct(ind.growth.revenueGrowthYoY),        note: "Receita último ano" },
+    { label: "Margem EBIT",          value: fmtPct(ind.margins.ebitMargin),             note: "Último exercício" },
+    { label: "Margem Líquida",       value: fmtPct(ind.margins.netMargin),              note: "Último exercício" },
+    { label: "Margem FCL",           value: fmtPct(ind.margins.fcfMargin),              note: "FCL / Receita" },
+    { label: "Conversão CFO/Lucro",  value: fmtX(ind.cashConversion.cfoOverNetIncome), note: "Qualidade do caixa" },
+    { label: "Dívida Líq./EBIT",     value: fmtX(ind.debt.netDebtOverEbit),            note: "Alavancagem" },
+    { label: "P/L",                  value: fmtX(ind.market.pe),                       note: quote ? "Com cotação brapi" : "Cotação indisponível" },
+    { label: "EV/EBIT",              value: fmtX(ind.market.evOverEbit),               note: quote ? "Com cotação brapi" : "Cotação indisponível" },
+  ] : [];
+
+  return (
+    <ReportShell ticker={ticker} modelLabel="Modelo Industrial" sourceLabel="CVM · DFP anual consolidada">
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+          {companyName} ({ticker})
+        </div>
+        <div style={{ fontSize: 13, color: "#64748b" }}>
+          {b3Asset.sector} · Relatório industrial — Dados anuais CVM
+        </div>
+      </div>
+
+      {!hasSufficient && financials.length > 0 && (
+        <div style={{
+          padding: "12px 16px", background: "#fef9c3", borderRadius: 8,
+          fontSize: 12, color: "#854d0e", marginBottom: 20,
+          border: "1px solid #fde68a",
+        }}>
+          Apenas {financials.length} ano(s) de dados disponíveis. Indicadores de crescimento e CAGR requerem no mínimo 2 anos.
+        </div>
+      )}
+      {financials.length === 0 && (
+        <div style={{
+          padding: "12px 16px", background: "#fee2e2", borderRadius: 8,
+          fontSize: 12, color: "#991b1b", marginBottom: 20,
+          border: "1px solid #fecaca",
+        }}>
+          Dados financeiros da CVM não disponíveis para este ticker no cache local.
+        </div>
+      )}
+
+      <QuoteBlock quote={quote} />
+
+      {indicatorItems.length > 0 && (
+        <ReportSection title="Indicadores fundamentalistas" subtitle="Calculados a partir da DFP CVM">
+          <ReportMetricGrid items={indicatorItems} columns={3} />
+        </ReportSection>
+      )}
+
+      {financials.length > 0 && (
+        <ReportSection
+          title="Histórico financeiro"
+          subtitle="DFP anual consolidada · valores em R$ bilhões"
+        >
+          <IndustrialHistoricalTable financials={financials} />
+        </ReportSection>
+      )}
+
+      <ReportSection title="Nota sobre os dados">
+        <p style={{ margin: 0, fontSize: 12, color: "#64748b", lineHeight: 1.7 }}>
+          Dados extraídos da DFP anual consolidada via CVM (sistema ENET/CVM, com cache temporário para melhorar desempenho).
+          Capex, FCL e dívida líquida são normalizados a partir das demonstrações.
+          Indicadores de mercado (P/L, EV/EBIT) dependem de cotação em tempo real via brapi e podem estar indisponíveis.
+        </p>
+      </ReportSection>
+    </ReportShell>
   );
 }
 
@@ -424,15 +565,21 @@ export default async function ReportPage({ params, searchParams }: Props) {
   const b3Entry   = B3_UNIVERSE.find(a => a.ticker === upper);
   const modelRoute = b3Entry ? resolveModelRoute(b3Entry) : "unavailable";
 
-  // Industrial path — hand off to existing client component (unchanged behaviour).
-  if (modelRoute === "industrial") {
-    return <ReportPageClient ticker={upper} source={source} />;
-  }
-
   // Quote is useful for all non-unavailable routes.
   const quote = modelRoute !== "unavailable"
     ? await getBrapiQuote(upper).catch(() => null)
     : null;
+
+  // Industrial path — prefer CVM cache (covers all tickers); fall back to
+  // legacy client component only when the cache file is missing.
+  if (modelRoute === "industrial") {
+    const financials = getPrecomputedFinancials(upper);
+    if (financials !== null) {
+      return <IndustrialReport ticker={upper} b3Asset={b3Entry!} financials={financials} quote={quote} />;
+    }
+    // No CVM cache — fall through to legacy client component (5 hardcoded mock tickers).
+    return <ReportPageClient ticker={upper} source={source} />;
+  }
 
   if (modelRoute === "bank") {
     const data = readBankCache(upper);

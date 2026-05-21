@@ -293,17 +293,47 @@ Para o design técnico completo do Forecast Layer, consulte [`docs/forecast-laye
 
 ## Scripts disponíveis
 
+### Validação
+
+```bash
+npm run validate   # executa todas as verificações antes de commit (ver abaixo)
+```
+
+`npm run validate` encadeia:
+1. `typecheck` — verificação TypeScript (`tsc --noEmit`)
+2. `test` — suite de testes Vitest
+3. `coverage:audit:models` — auditoria de roteamento de modelos (offline)
+4. `report:audit` — auditoria de rotas de relatório por ticker (offline)
+5. `build` — build de produção Next.js
+
+O mesmo comando é executado automaticamente em CI (push e pull request para `main`).
+
+### Desenvolvimento
+
 ```bash
 npm run dev                       # servidor de desenvolvimento
 npm run build                     # build de produção
-npm run test                      # testes com Vitest
+npm test                          # testes com Vitest
+npm run typecheck                 # verificação TypeScript sem emitir
+```
+
+### Auditorias
+
+```bash
+npm run coverage:audit:models     # auditoria de roteamento de modelos do dashboard (offline)
+npm run report:audit              # auditoria de rotas de relatório por ticker (offline)
+npm run coverage:audit            # audita cobertura B3 por tipo de ativo e nível (offline)
+npm run cvm:audit                 # audita disponibilidade de dados CVM via API local
+npm run cvm:audit:quarterly       # audita valores trimestrais por ticker e métrica
+```
+
+### Cache e pré-computação
+
+```bash
 npm run cvm:precompute            # regenera cache CVM anual (DFP) para todos os tickers
 npm run cvm:precompute:quarterly  # regenera cache CVM trimestral (ITR) para todos os tickers
 npm run time-series:precompute         # gera cache de séries temporais normalizadas a partir do ITR
 npm run forecast:precompute:baseline   # gera cache de previsões baseline (local, sem rede)
-npm run cvm:audit                      # audita disponibilidade de dados CVM via API local
-npm run cvm:audit:quarterly            # audita valores trimestrais por ticker e métrica
-npm run coverage:audit                 # audita cobertura B3 por tipo de ativo e nível (offline)
 npm run bank:precompute                # gera cache bancário anual via CVM DFP
 npm run fii:precompute                 # gera cache de FII via CVM informe mensal
 npm run insurance:precompute           # gera cache de seguradora anual via CVM DFP

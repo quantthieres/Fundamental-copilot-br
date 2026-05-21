@@ -10,6 +10,7 @@ import ReportHeader from "@/components/report/ReportHeader";
 import ReportSection from "@/components/report/ReportSection";
 import ReportMetricGrid from "@/components/report/ReportMetricGrid";
 import ReportPrintButton from "@/components/report/ReportPrintButton";
+import ReportCopyLinkButton from "@/components/report/ReportCopyLinkButton";
 
 const MONO = "'JetBrains Mono', 'Courier New', monospace";
 
@@ -38,7 +39,7 @@ function HistoricalTable({ financials }: { financials: NormalizedFinancials[] })
   const heads = ["Ano", "Receita", "EBIT", "Lucro Líq.", "CFO", "Capex", "FCL", "Dívida Líq."];
 
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div className="report-table-wrap" style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: MONO }}>
         <thead>
           <tr style={{ background: "#f8fafc" }}>
@@ -88,11 +89,54 @@ function HistoricalTable({ financials }: { financials: NormalizedFinancials[] })
 const PRINT_CSS = `
   @media print {
     .no-print { display: none !important; }
-    body { background: #fff !important; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .report-page { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; padding: 0 !important; }
-    .report-section { page-break-inside: avoid; }
-    table { page-break-inside: avoid; }
+
+    body {
+      background: #fff !important;
+      margin: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .report-outer {
+      background: #fff !important;
+      padding: 0 !important;
+      min-height: unset !important;
+    }
+
+    .report-page {
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .report-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      border-radius: 0 !important;
+    }
+
+    .report-table-wrap {
+      overflow: visible !important;
+    }
+
+    table {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      width: 100% !important;
+    }
+
+    th, td {
+      color: #000 !important;
+    }
+
+    a {
+      color: #000 !important;
+      text-decoration: none !important;
+    }
   }
+
   @page { size: A4; margin: 18mm 14mm; }
 `;
 
@@ -215,20 +259,24 @@ export default function ReportPageClient({ ticker, source }: Props) {
     <>
       <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
 
-      <div style={{ minHeight: "100vh", background: "#f0f2f5", padding: "24px 16px" }}>
+      <div className="report-outer" style={{ minHeight: "100vh", background: "#f0f2f5", padding: "24px 16px" }}>
 
         {/* Top bar — hidden in print */}
         <div className="no-print" style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
           maxWidth: 900, margin: "0 auto 20px",
         }}>
-          <Link href="/" style={{ fontSize: 12, color: "#2563eb", textDecoration: "none", fontWeight: 500 }}>
+          <Link
+            href={`/dashboard?ticker=${encodeURIComponent(ticker)}`}
+            style={{ fontSize: 12, color: "#2563eb", textDecoration: "none", fontWeight: 500 }}
+          >
             ← Voltar ao Dashboard
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 11, color: "#94a3b8" }}>
               {hasCvm ? "Dados CVM" : "Dados ilustrativos"}
             </span>
+            <ReportCopyLinkButton />
             <ReportPrintButton />
           </div>
         </div>

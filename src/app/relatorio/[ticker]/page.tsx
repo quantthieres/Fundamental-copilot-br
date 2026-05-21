@@ -97,7 +97,7 @@ function AnnualTable({
 }) {
   const sorted = [...rows].sort((a, b) => Number(a.fiscalYear) - Number(b.fiscalYear));
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div className="report-table-wrap" style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: MONO }}>
         <thead>
           <tr style={{ background: "#f8fafc" }}>

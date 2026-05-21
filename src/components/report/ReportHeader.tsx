@@ -24,10 +24,11 @@ export default function ReportHeader({ company, source, quoteSource, generatedAt
           </div>
           <div style={{ fontSize: 11, color: "#94a3b8" }}>Relatório fundamentalista · Uso educacional e demonstrativo</div>
         </div>
-        <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.7 }}>
+        <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.8 }}>
           <div>Gerado em {generatedAt}</div>
           <div>Financeiros: <strong style={{ fontWeight: 600, color: "#374151" }}>{financialsLabel}</strong></div>
           <div>Cotação: <strong style={{ fontWeight: 600, color: "#374151" }}>{quoteLabel}</strong></div>
+          <div style={{ color: "#94a3b8" }}>Finalidade: educacional e informativa</div>
         </div>
       </div>
 

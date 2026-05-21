@@ -1,15 +1,59 @@
 import React from "react";
 import Link from "next/link";
 import ReportPrintButton from "./ReportPrintButton";
+import ReportCopyLinkButton from "./ReportCopyLinkButton";
 
 const PRINT_CSS = `
   @media print {
     .no-print { display: none !important; }
-    body { background: #fff !important; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .report-page { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; padding: 0 !important; }
-    .report-section { page-break-inside: avoid; }
-    table { page-break-inside: avoid; }
+
+    body {
+      background: #fff !important;
+      margin: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .report-outer {
+      background: #fff !important;
+      padding: 0 !important;
+      min-height: unset !important;
+    }
+
+    .report-page {
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .report-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      border-radius: 0 !important;
+    }
+
+    .report-table-wrap {
+      overflow: visible !important;
+    }
+
+    table {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      width: 100% !important;
+    }
+
+    th, td {
+      color: #000 !important;
+    }
+
+    a {
+      color: #000 !important;
+      text-decoration: none !important;
+    }
   }
+
   @page { size: A4; margin: 18mm 14mm; }
 `;
 
@@ -29,7 +73,7 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
-      <div style={{ minHeight: "100vh", background: "#f0f2f5", padding: "24px 16px" }}>
+      <div className="report-outer" style={{ minHeight: "100vh", background: "#f0f2f5", padding: "24px 16px" }}>
 
         {/* ── Top bar (hidden in print) ── */}
         <div className="no-print" style={{
@@ -42,10 +86,11 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
           >
             ← Voltar ao Dashboard
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {sourceLabel && (
               <span style={{ fontSize: 11, color: "#94a3b8" }}>{sourceLabel}</span>
             )}
+            <ReportCopyLinkButton />
             <ReportPrintButton />
           </div>
         </div>
@@ -57,7 +102,7 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
           boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
         }}>
 
-          {/* Brand header */}
+          {/* Brand header — visible in print */}
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "flex-start",
             marginBottom: 18,
@@ -73,14 +118,18 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
                 {modelLabel} · Uso educacional e demonstrativo
               </div>
             </div>
-            <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.7 }}>
+            <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.8 }}>
               <div>Gerado em {generatedAt}</div>
+              {sourceLabel && (
+                <div>Fonte: <strong style={{ fontWeight: 600, color: "#374151" }}>{sourceLabel}</strong></div>
+              )}
+              <div style={{ color: "#94a3b8" }}>Finalidade: educacional e informativa</div>
             </div>
           </div>
 
           {children}
 
-          {/* Shared legal disclaimer */}
+          {/* Shared legal disclaimer — always visible including in print */}
           <div style={{
             marginTop: 24, paddingTop: 16, borderTop: "1px solid #e2e8f0",
             fontSize: 11, color: "#94a3b8", lineHeight: 1.8,

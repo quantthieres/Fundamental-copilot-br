@@ -300,7 +300,7 @@ export default function SobrePage() {
               labelBg="#dcfce7"
               labelColor="#15803d"
               title="DFP anual consolidada — demonstrações financeiras oficiais"
-              description="Dados baixados diretamente de dados.cvm.gov.br. Inclui DRE, DFC (método indireto ou direto) e Balanço Patrimonial dos anos 2020–2024. Valores normalizados para BRL bilhões. Disponível para empresas com mapeamento verificado."
+              description="Dados baixados diretamente de dados.cvm.gov.br. Inclui DRE, DFC (método indireto ou direto) e Balanço Patrimonial dos exercícios encerrados desde 2020 (o mais recente entra quando a CVM publica a DFP). Valores normalizados para BRL bilhões. Disponível para empresas com mapeamento verificado."
               note="Acesso em: /api/cvm/financials/[ticker]. Capex e FCL são calculados a partir de linhas da DFC — podem divergir de relatórios de analistas."
             />
             <DataSourceRow
@@ -375,7 +375,7 @@ export default function SobrePage() {
             "Diagnóstico baseado em regras — sinais objetivos sobre tendências nos dados",
             "Tabela de múltiplos comparáveis setoriais",
             "Integração com brapi.dev para cotações em tempo real (server-side, token protegido)",
-            "Endpoint CVM DFP — download, parsing e normalização de DFP anual (2020–2024)",
+            "Endpoint CVM DFP — download, parsing e normalização de DFP anual (exercícios encerrados desde 2020)",
             "Modo Dados CVM — análise fundamentalista com dados reais quando disponíveis",
             "DataSourceNotice — identifica a origem de cada campo antes do uso em análise",
             "Página de metodologia — explica fonte de dados, cálculos de indicadores, diagnóstico e limitações",

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import SectionCard from "./SectionCard";
+import { formatFiscalYearRange } from "@/lib/formatters";
 
 interface FinancialRow {
   year: string;
@@ -34,11 +35,12 @@ export default function HistoricalChart({ data }: { data: FinancialRow[] }) {
   const y = (v: number) => chartH - (v / maxVal) * chartH;
 
   const toggles = [{ key: "all", label: "Todos" }, ...METRICS];
+  const yearRange = formatFiscalYearRange(data.map(d => d.year));
 
   return (
     <SectionCard
       title="Financeiros Históricos"
-      subtitle="BRL Bilhões · AF2020–AF2024"
+      subtitle={yearRange ? `BRL Bilhões · ${yearRange}` : "BRL Bilhões · Histórico anual"}
       action={
         <div style={{ display: "flex", gap: 2 }}>
           {toggles.map(t => (

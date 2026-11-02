@@ -6,6 +6,14 @@
  *   npm run bank:precompute
  *   BANK_PRECOMPUTE_TICKERS=ITUB4,BBAS3 npm run bank:precompute   # subset
  *   BANK_PRECOMPUTE_CONCURRENCY=1 npm run bank:precompute          # serial
+ *   CVM_DFP_END_YEAR=2024 npm run bank:precompute                  # DFP year window (default 2020..current−1)
+ *   SECTOR_ALLOW_FUZZY_CVM_MATCH=1 npm run bank:precompute         # manual investigation only
+ *
+ * CVM identity comes from VERIFIED_BANK_IDENTITIES
+ * (src/lib/cvm/sector-model-identities.ts) and is checked against the live
+ * CVM registry (same CD_CVM + CNPJ, ATIVO). Registry name matching is used
+ * only for unmapped tickers and only with SECTOR_ALLOW_FUZZY_CVM_MATCH=1.
+ * Exits 1 if any target fails, so the scheduled refresh never commits it.
  *
  * Does NOT modify any industrial CVM caches.
  * Does NOT import @/ aliases — uses relative paths for tsx runtime compatibility.
@@ -22,6 +30,8 @@ import { normalizeBankRows } from "../src/lib/banks/bank-normalizer";
 import { computeBankIndicators } from "../src/lib/banks/bank-indicators";
 import type { BankAnalysisResponse, BankFinancialRecord } from "../src/lib/banks/bank-types";
 import type { RawCvmStatementRow } from "../src/lib/cvm/types";
+import { getDfpYears } from "../src/lib/cvm/dfp-years";
+import { checkRegistryIdentity, resolveSectorCvmCode } from "../src/lib/cvm/sector-model-identities";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -29,16 +39,13 @@ const CONCURRENCY  = Number(process.env.BANK_PRECOMPUTE_CONCURRENCY ?? process.e
 const DFP_BASE     = "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS";
 const REGISTRY_URL = "https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv";
 const CACHE_DIR    = join(process.cwd(), "src/data/bank-cache/annual");
-const DFP_YEARS    = [2020, 2021, 2022, 2023, 2024] as const;
+const DFP_YEARS    = getDfpYears(); // 2020..(current year − 1); CVM_DFP_START_YEAR/CVM_DFP_END_YEAR override
 
 const STATEMENT_TYPES = ["DRE_con", "BPA_con", "BPP_con"] as const;
 
-// Manual CVM code overrides — required when registry name-matching cannot
-// unambiguously identify the active company (e.g. BRSR6 whose registry name
-// is "BANCO DO ESTADO DO RIO GRANDE DO SUL SA", not "Banrisul").
-const CVM_CODE_OVERRIDES: Record<string, string> = {
-  BRSR6: "1210", // Banco do Estado do Rio Grande do Sul SA
-};
+// Fuzzy registry name matching is for manual investigation of unmapped tickers.
+// Verified identities (incl. BRSR6 → 1210, formerly an override here) always win.
+const ALLOW_FUZZY = process.env.SECTOR_ALLOW_FUZZY_CVM_MATCH === "1";
 
 // ─── Registry lookup ──────────────────────────────────────────────────────────
 
@@ -98,9 +105,7 @@ async function fetchRegistry(): Promise<RegistryEntry[]> {
   return results;
 }
 
-function findCvmCode(ticker: string, companyName: string, registry: RegistryEntry[]): string | null {
-  if (CVM_CODE_OVERRIDES[ticker]) return CVM_CODE_OVERRIDES[ticker];
-
+function findCvmCodeByName(companyName: string, registry: RegistryEntry[]): string | null {
   const target = normaReg(companyName);
   // Only consider ATIVO companies — prevents matching cancelled predecessors
   // that share the same name (e.g. old Itaú Unibanco entities).
@@ -210,12 +215,23 @@ async function processTicker(
   companyName: string,
   registry: RegistryEntry[],
 ): Promise<TickerResult> {
-  const cvmCode = findCvmCode(ticker, companyName, registry);
-  if (!cvmCode) {
-    return { ticker, status: "no_cvm_code", yearsFound: 0, error: "CVM code not found in registry" };
+  const resolution = resolveSectorCvmCode(ticker, "bank", {
+    allowFuzzyFallback: ALLOW_FUZZY,
+    fuzzyMatch: () => findCvmCodeByName(companyName, registry),
+  });
+  if (!resolution) {
+    return {
+      ticker, status: "no_cvm_code", yearsFound: 0,
+      error: "No verified CVM identity (add to VERIFIED_BANK_IDENTITIES after manual verification)",
+    };
   }
+  if (resolution.source === "verified") {
+    const problem = checkRegistryIdentity(resolution.identity, registry);
+    if (problem) return { ticker, status: "error", yearsFound: 0, error: `Identity check failed: ${problem}` };
+  }
+  const { cvmCode } = resolution;
 
-  console.log(`  [${ticker}] CVM code: ${cvmCode}`);
+  console.log(`  [${ticker}] CVM code: ${cvmCode} (${resolution.source === "verified" ? "verified identity" : "FUZZY name match — manual use only"})`);
 
   const annual: BankFinancialRecord[] = [];
   const fetchWarnings: string[] = [];
@@ -351,10 +367,16 @@ async function main(): Promise<void> {
   console.log(`  No data:      ${noData.length}`);
   console.log(`  Error:        ${errors.length}`);
   if (noCode.length > 0) {
-    console.log("\n  Tickers without CVM match — add to CVM_CODE_OVERRIDES if known:");
-    for (const r of noCode) console.log(`    "${r.ticker}": "XXXXXX",`);
+    console.log("\n  Tickers without verified CVM identity — verify manually, then add to VERIFIED_BANK_IDENTITIES:");
+    for (const r of noCode) console.log(`    ${r.ticker}`);
   }
   console.log("\nDone. Cache written to src/data/bank-cache/annual/\n");
+
+  const failed = [...noCode, ...noData, ...errors];
+  if (failed.length > 0) {
+    console.error(`Bank precompute failed for: ${failed.map(r => r.ticker).join(", ")}`);
+    process.exit(1);
+  }
 }
 
 main().catch(err => {

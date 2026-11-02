@@ -7,6 +7,14 @@
  *   INSURANCE_PRECOMPUTE_TICKERS=BBSE3,PSSA3 npm run insurance:precompute
  *   INSURANCE_PRECOMPUTE_CONCURRENCY=1 npm run insurance:precompute
  *   npm run insurance:precompute -- --skip-existing
+ *   SECTOR_ALLOW_FUZZY_CVM_MATCH=1 npm run insurance:precompute   # manual investigation only
+ *
+ * CVM identity comes from VERIFIED_INSURANCE_IDENTITIES
+ * (src/lib/cvm/sector-model-identities.ts) and is checked against the live
+ * CVM registry (same CD_CVM + CNPJ, ATIVO). Registry name matching is used
+ * only for unmapped tickers and only with SECTOR_ALLOW_FUZZY_CVM_MATCH=1.
+ * A verified ticker that yields no data fails (exit 1) without overwriting its
+ * cache, so the scheduled refresh never commits a degraded file.
  *
  * Does NOT modify bank, FII, or industrial CVM caches.
  * Does NOT import @/ aliases — uses relative paths for tsx runtime compatibility.
@@ -23,6 +31,7 @@ import { normalizeInsuranceRows } from "../src/lib/insurance/insurance-normalize
 import { computeInsuranceIndicators } from "../src/lib/insurance/insurance-indicators";
 import type { InsuranceAnalysisResponse, InsuranceFinancialRecord } from "../src/lib/insurance/insurance-types";
 import type { RawCvmStatementRow } from "../src/lib/cvm/types";
+import { checkRegistryIdentity, resolveSectorCvmCode } from "../src/lib/cvm/sector-model-identities";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -37,9 +46,9 @@ const DFP_YEARS   = Array.from({ length: currentYear - 2019 }, (_, i) => 2020 + 
 
 const STATEMENT_TYPES = ["DRE_con", "BPA_con", "BPP_con"] as const;
 
-// Manual CVM code overrides — required when registry name-matching cannot
-// unambiguously identify the active company.
-const INSURANCE_CVM_CODE_OVERRIDES: Record<string, string> = {};
+// Fuzzy registry name matching is for manual investigation of unmapped tickers.
+// Verified identities always win.
+const ALLOW_FUZZY = process.env.SECTOR_ALLOW_FUZZY_CVM_MATCH === "1";
 
 // Discontinued tickers: acquired, merged, or delisted. The precompute writes
 // an unavailable cache entry and skips DFP processing.
@@ -106,9 +115,7 @@ async function fetchRegistry(): Promise<RegistryEntry[]> {
   return results;
 }
 
-function findCvmCode(ticker: string, companyName: string, registry: RegistryEntry[]): string | null {
-  if (INSURANCE_CVM_CODE_OVERRIDES[ticker]) return INSURANCE_CVM_CODE_OVERRIDES[ticker];
-
+function findCvmCodeByName(companyName: string, registry: RegistryEntry[]): string | null {
   const target = normaReg(companyName);
   const active = registry.filter(e => e.status === "ATIVO");
 
@@ -225,12 +232,23 @@ async function processTicker(
     return { ticker, status: "skipped", yearsFound: 0 };
   }
 
-  const cvmCode = findCvmCode(ticker, companyName, registry);
-  if (!cvmCode) {
-    return { ticker, status: "no_cvm_code", yearsFound: 0, error: "CVM code not found in registry" };
+  const resolution = resolveSectorCvmCode(ticker, "insurance", {
+    allowFuzzyFallback: ALLOW_FUZZY,
+    fuzzyMatch: () => findCvmCodeByName(companyName, registry),
+  });
+  if (!resolution) {
+    return {
+      ticker, status: "no_cvm_code", yearsFound: 0,
+      error: "No verified CVM identity (add to VERIFIED_INSURANCE_IDENTITIES after manual verification)",
+    };
   }
+  if (resolution.source === "verified") {
+    const problem = checkRegistryIdentity(resolution.identity, registry);
+    if (problem) return { ticker, status: "error", yearsFound: 0, error: `Identity check failed: ${problem}` };
+  }
+  const { cvmCode } = resolution;
 
-  console.log(`  [${ticker}] CVM code: ${cvmCode}`);
+  console.log(`  [${ticker}] CVM code: ${cvmCode} (${resolution.source === "verified" ? "verified identity" : "FUZZY name match — manual use only"})`);
 
   const annual: InsuranceFinancialRecord[] = [];
   const fetchWarnings: string[] = [];
@@ -260,6 +278,11 @@ async function processTicker(
   annual.sort((a, b) => a.fiscalYear - b.fiscalYear);
 
   if (annual.length === 0) {
+    // A verified issuer with no data means a failed download — keep the
+    // committed cache untouched instead of degrading it to unavailable.
+    if (resolution.source === "verified") {
+      return { ticker, status: "no_data", yearsFound: 0, error: `No insurance financials extracted (${fetchWarnings.join("; ") || "no DFP rows"})` };
+    }
     writeUnavailable(ticker, companyName, cvmCode, outPath, [
       ...fetchWarnings,
       "Nenhum registro financeiro extraído da DFP.",
@@ -394,8 +417,8 @@ async function main(): Promise<void> {
   console.log(`  Error:        ${errors.length}`);
 
   if (noCode.length > 0) {
-    console.log("\n  Tickers without CVM match — add to INSURANCE_CVM_CODE_OVERRIDES if known:");
-    for (const r of noCode) console.log(`    // ${r.ticker}: "XXXXXX",`);
+    console.log("\n  Tickers without verified CVM identity — verify manually, then add to VERIFIED_INSURANCE_IDENTITIES:");
+    for (const r of noCode) console.log(`    ${r.ticker}`);
   }
   if (ok.length > 0) {
     console.log("\n  Successful tickers — update CACHED_TICKERS in src/lib/insurance/insurance-coverage.ts:");
@@ -403,6 +426,12 @@ async function main(): Promise<void> {
   }
 
   console.log("\nDone. Cache written to src/data/insurance-cache/annual/\n");
+
+  const failed = [...noCode, ...noData, ...errors];
+  if (failed.length > 0) {
+    console.error(`Insurance precompute failed for: ${failed.map(r => r.ticker).join(", ")}`);
+    process.exit(1);
+  }
 }
 
 main().catch(err => {

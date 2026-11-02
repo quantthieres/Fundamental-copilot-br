@@ -3,10 +3,9 @@ import { unzipSync } from "fflate";
 import type { RawCvmStatementRow, NormalizedFinancials } from "./types";
 import { parseDfpCsv } from "./dfp-parser";
 import { normalizeCvmRows } from "./normalizer";
+import { getDfpYears } from "./dfp-years";
 
 const DFP_BASE = "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS";
-
-export const DFP_YEARS = [2020, 2021, 2022, 2023, 2024] as const;
 
 const STATEMENT_TYPES = [
   "DRE_con",
@@ -137,7 +136,7 @@ async function processYear(
 export async function getAnnualDfpFinancials(
   ticker: string,
   cvmCode: string,
-  years: readonly number[] = DFP_YEARS,
+  years: readonly number[] = getDfpYears(),
 ): Promise<NormalizedFinancials[]> {
   const key = `${ticker}:${cvmCode}`;
 

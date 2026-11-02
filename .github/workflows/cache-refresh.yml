@@ -1,0 +1,170 @@
+name: Cache refresh
+
+# Weekly refresh of the committed financial caches (src/data/*-cache).
+#
+# Fails closed: any refresh, audit, validation, raw-file or changed-file guard
+# failure stops the job before anything is staged, committed or pushed.
+# Commits back to main only when generated cache content actually changed.
+# After a bot push the normal CI workflow (ci.yml) is dispatched explicitly:
+# pushes made with GITHUB_TOKEN do not trigger other workflows by themselves.
+#
+# This workflow intentionally has no `push` trigger (avoids recursive runs).
+# GitHub does not guarantee scheduled runs start at the exact minute; under
+# load they may be delayed or, rarely, dropped.
+
+on:
+  schedule:
+    - cron: "15 6 * * 0" # Sundays 06:15 UTC
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Which caches to refresh"
+        type: choice
+        default: all
+        options:
+          - all
+          - industrial
+          - sector-models
+          - forecasts
+
+permissions:
+  contents: write # commit and push refreshed caches
+  actions: write  # dispatch ci.yml after the push
+
+concurrency:
+  group: cache-refresh-main
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh caches
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    # Only ever commits to main; a dispatch from another branch is a no-op.
+    if: github.ref == 'refs/heads/main'
+
+    env:
+      # Scheduled runs have no inputs and always refresh everything.
+      SCOPE: ${{ github.event.inputs.scope || 'all' }}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show refresh scope
+        run: echo "Refresh scope=$SCOPE"
+
+      # ── Source data (network: dados.cvm.gov.br) ────────────────────────────
+      # Annual must precede quarterly: Q4 is derived from the annual DFP cache.
+
+      - name: Annual CVM financials and documents
+        if: env.SCOPE == 'all' || env.SCOPE == 'industrial'
+        env:
+          CVM_CONCURRENCY: "1"
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        run: npm run cvm:precompute
+
+      - name: Quarterly CVM (ITR)
+        if: env.SCOPE == 'all' || env.SCOPE == 'industrial'
+        run: npm run cvm:precompute:quarterly # sets --max-old-space-size=4096 itself
+
+      - name: Bank model cache
+        if: env.SCOPE == 'all' || env.SCOPE == 'sector-models'
+        env:
+          BANK_PRECOMPUTE_CONCURRENCY: "1"
+        run: npm run bank:precompute
+
+      - name: FII model cache
+        if: env.SCOPE == 'all' || env.SCOPE == 'sector-models'
+        env:
+          FII_PRECOMPUTE_CONCURRENCY: "1"
+        run: npm run fii:precompute
+
+      - name: Insurance model cache
+        if: env.SCOPE == 'all' || env.SCOPE == 'sector-models'
+        env:
+          INSURANCE_PRECOMPUTE_CONCURRENCY: "1"
+        run: npm run insurance:precompute
+
+      # ── Derived data (local only, reads cvm-cache/quarterly) ───────────────
+
+      - name: Normalized time series
+        if: env.SCOPE == 'all' || env.SCOPE == 'industrial' || env.SCOPE == 'forecasts'
+        run: npm run time-series:precompute
+
+      - name: Baseline forecasts
+        if: env.SCOPE == 'all' || env.SCOPE == 'industrial' || env.SCOPE == 'forecasts'
+        run: npm run forecast:precompute:baseline
+
+      # ── Validation barrier ─────────────────────────────────────────────────
+
+      - name: Quote-only coverage audit
+        run: npm run coverage:audit:quote-only
+
+      - name: Model routing audit
+        run: npm run coverage:audit:models
+
+      - name: Report audit
+        run: npm run report:audit
+
+      - name: Validate (typecheck, tests, audits, build)
+        run: npm run validate
+
+      - name: Whitespace check
+        run: git diff --check
+
+      - name: Raw ZIP/CSV check
+        run: |
+          raw="$(find src/data -type f \( -name '*.zip' -o -name '*.csv' \))"
+          if [ -n "$raw" ]; then
+            echo "Raw CVM files found in src/data:"
+            echo "$raw"
+            exit 1
+          fi
+
+      # Restores caches whose only change is generatedAt/updatedAt, and the
+      # audit markdown when only its "Gerado em <date>" line changed.
+      - name: Drop timestamp-only changes
+        run: npx tsx scripts/cache-refresh-guard.ts normalize
+
+      - name: Changed-file safety guard
+        run: npx tsx scripts/cache-refresh-guard.ts check --list-out "$RUNNER_TEMP/approved-paths.txt"
+
+      # ── Commit (only approved paths, only when something changed) ──────────
+
+      - name: Commit and push
+        id: commit
+        run: |
+          if [ ! -s "$RUNNER_TEMP/approved-paths.txt" ]; then
+            echo "No cache changes detected"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --pathspec-from-file="$RUNNER_TEMP/approved-paths.txt"
+          if git diff --cached --quiet; then
+            echo "No cache changes detected"
+            exit 0
+          fi
+          git commit -m "chore(data): refresh financial caches"
+          # Fast-forward only: if main moved during the run the push is
+          # rejected and the job fails instead of overwriting newer commits.
+          git push origin HEAD:main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run CI on the refreshed commit
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref main

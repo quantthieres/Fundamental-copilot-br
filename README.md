@@ -326,6 +326,7 @@ npm run coverage:audit:quote-only # classifica ativos quote-only, sem modelo e i
 npm run coverage:audit            # audita cobertura B3 por tipo de ativo e nível (offline)
 npm run cvm:audit                 # audita disponibilidade de dados CVM via API local
 npm run cvm:audit:quarterly       # audita valores trimestrais por ticker e métrica
+npm run cache:audit:freshness     # idade dos caches por família (offline, informativo)
 ```
 
 ### Cache e pré-computação
@@ -339,6 +340,56 @@ npm run bank:precompute                # gera cache bancário anual via CVM DFP
 npm run fii:precompute                 # gera cache de FII via CVM informe mensal
 npm run insurance:precompute           # gera cache de seguradora anual via CVM DFP
 ```
+
+### Atualização automática de caches
+
+O workflow `.github/workflows/cache-refresh.yml` atualiza os caches JSON versionados
+em `src/data/` toda semana e só faz commit quando o conteúdo gerado mudou de fato.
+
+- **Agenda:** domingos às 06:15 UTC (`15 6 * * 0`). O GitHub não garante o início
+  no minuto exato; execuções agendadas podem atrasar em horários de carga.
+- **Manual:** `workflow_dispatch` com `scope` = `all` (padrão), `industrial`,
+  `sector-models` ou `forecasts`. Execuções agendadas usam sempre `all`.
+  Só roda a partir de `main`.
+- **Ordem de atualização:**
+  1. CVM anual — DFP e documentos (`cvm:precompute`, `CVM_CONCURRENCY=1`) — rede.
+     Exercícios fechados de 2020 até o ano anterior (ex.: 2020–2025 durante 2026),
+     ajustáveis com `CVM_DFP_START_YEAR`/`CVM_DFP_END_YEAR`; o mesmo vale para bancos
+  2. CVM trimestral — ITR (`cvm:precompute:quarterly`, heap de 4 GB) — rede; o Q4
+     é derivado do cache anual, por isso roda depois dele
+  3. Bancos, FIIs e seguradoras (`bank:`, `fii:`, `insurance:precompute`, concorrência 1) — rede.
+     Bancos e seguradoras usam identidades CVM verificadas (`src/lib/cvm/sector-model-identities.ts`,
+     conferidas contra o cadastro CVM a cada execução); busca por nome só manualmente
+     com `SECTOR_ALLOW_FUZZY_CVM_MATCH=1`
+  4. Séries temporais (`time-series:precompute`) — local, lê o cache trimestral
+  5. Previsões baseline (`forecast:precompute:baseline`) — local, lê as séries
+- **Fonte:** apenas dados abertos da CVM (`dados.cvm.gov.br`). Nenhum mapeamento CVM
+  novo é descoberto ou adicionado automaticamente.
+- **Barreira de validação:** `coverage:audit:quote-only`, `coverage:audit:models`,
+  `report:audit`, `npm run validate`, `git diff --check` e verificação de arquivos
+  ZIP/CSV brutos em `src/data`. Qualquer falha encerra o job sem commit nem push.
+- **Guarda de arquivos alterados** (`scripts/cache-refresh-guard.ts`, regras em
+  `src/lib/cache-refresh/refresh-guard.ts`):
+  - descarta arquivos cuja única mudança é `generatedAt`/`updatedAt` (e a data do
+    relatório quote-only), evitando commits semanais sem dados novos — o timestamp
+    passa a indicar a última mudança real de conteúdo;
+  - só aceita JSON em `src/data/{cvm,forecast,bank,fii,insurance}-cache/` e
+    `docs/coverage-audit-quote-only.md`; qualquer outro caminho (código, scripts,
+    `package*.json`, workflows, ZIP/CSV, temporários), remoção ou renomeação falha o job
+    e lista os caminhos rejeitados;
+  - rejeita regressões de dados (histórico menor, cache que vira `available: false`,
+    documentos zerados), pois os clientes CVM tratam falhas de rede como dados vazios.
+- **Commit:** apenas os caminhos aprovados são adicionados (nunca `git add .`), como
+  `github-actions[bot]`, com a mensagem `chore(data): refresh financial caches`.
+  Sem mudanças, imprime `No cache changes detected` e termina com sucesso.
+- **CI após o push:** pushes feitos com `GITHUB_TOKEN` não disparam outros workflows,
+  então o job dispara `ci.yml` explicitamente (`workflow_dispatch`) para validar o
+  novo commit de forma independente.
+- Arquivos ZIP/CSV brutos da CVM nunca são gravados nem commitados.
+
+`npm run cache:audit:freshness` lista, por família de cache, a quantidade de arquivos,
+os timestamps mais antigo e mais recente e os arquivos acima do limite de idade.
+É offline, somente leitura e informativo (não falha por idade).
 
 ---
 

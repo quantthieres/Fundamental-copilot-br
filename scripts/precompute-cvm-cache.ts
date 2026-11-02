@@ -5,6 +5,7 @@
  * Usage:
  *   npm run cvm:precompute
  *   CVM_PRECOMPUTE_TICKERS=AERI3,RECV3 npm run cvm:precompute   # subset only
+ *   CVM_DFP_END_YEAR=2024 npm run cvm:precompute                 # DFP year window (default 2020..current−1)
  *
  * Files written:
  *   src/data/cvm-cache/financials/<TICKER>.json

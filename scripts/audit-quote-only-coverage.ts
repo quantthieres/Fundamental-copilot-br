@@ -96,12 +96,39 @@ const KNOWN_OBSOLETE_TICKERS = new Set(["RRRP3", "VVAR3", "PETZ3"]);
 // They hold stakes in other companies rather than operating directly.
 const FINANCIAL_HOLDING = new Set(["BRAP4"]);
 
+// Explicit review decisions for quote-only operating companies that were
+// checked during mapping rounds and deliberately NOT mapped. Verified
+// 2026-11-02 against cad_cia_aberta, FCA valor_mobiliario and IPE filings.
+const REVIEW_DECISIONS: Record<string, { action: SuggestedAction; note: string }> = {
+  VAMO3: {
+    action: "manual_review",
+    note: "Reorganização estratégica consumada em 2024-11-30 (concessionárias segregadas → AMOB3); compra de frota no FCO distorce FCF industrial",
+  },
+  SEQL3: {
+    action: "manual_review",
+    note: "Recuperação extrajudicial homologada 2024-10, grupamentos de ações, mudança de controle 2026-02 e repactuação de dívida 2026",
+  },
+  ALOS3: {
+    action: "needs_sector_specific_model",
+    note: "Shopping centers: exige modelo imobiliário (NOI/FFO/NAV); DFP extraído tem dívida total = 0 em todos os anos e EBIT 2023 > receita (ganho de combinação)",
+  },
+  AMBP3: {
+    action: "keep_quote_only",
+    note: "Em recuperação judicial desde 2025-10-30",
+  },
+  CASH3: {
+    action: "keep_quote_only",
+    note: "Modelo de negócio pivotado para tesouraria em Bitcoin (2025–2026) — modelo industrial inadequado",
+  },
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SuggestedAction =
   | "candidate_for_cvm_mapping"
   | "keep_quote_only"
   | "needs_sector_specific_model"
+  | "manual_review"
   | "mark_unavailable_or_discontinued"
   | "already_has_cache_but_status_mismatch";
 
@@ -162,6 +189,10 @@ function suggestAction(asset: B3Asset, hasCvmCache: boolean, hasCvmMapping: bool
   // Pure financial holding — no operating industrial model makes sense.
   if (FINANCIAL_HOLDING.has(asset.ticker)) return "keep_quote_only";
 
+  // Explicit decision from a mapping-round review.
+  const decision = REVIEW_DECISIONS[asset.ticker];
+  if (decision) return decision.action;
+
   const richType = getRichType(asset);
 
   // Asset type implies a sector-specific model that hasn't been implemented yet.
@@ -206,6 +237,10 @@ function buildNotes(asset: B3Asset, entry: Omit<AuditEntry, "notes">): string {
   }
   if (FINANCIAL_HOLDING.has(asset.ticker)) {
     notes.push("Pure holding company — industrial DFP model may not reflect underlying value");
+  }
+  const decision = REVIEW_DECISIONS[asset.ticker];
+  if (decision && asset.coverageStatus === "quote_only") {
+    notes.push(`Revisado: ${decision.note}`);
   }
 
   return notes.join("; ") || "—";
@@ -302,6 +337,7 @@ function main(): void {
     "candidate_for_cvm_mapping",
     "needs_sector_specific_model",
     "keep_quote_only",
+    "manual_review",
     "mark_unavailable_or_discontinued",
     "already_has_cache_but_status_mismatch",
   ];
@@ -309,7 +345,8 @@ function main(): void {
   const ACTION_LABEL: Record<SuggestedAction, string> = {
     candidate_for_cvm_mapping:           "Candidate for CVM mapping",
     needs_sector_specific_model:         "Needs sector-specific model",
-    keep_quote_only:                     "Keep quote-only (holding/financial)",
+    keep_quote_only:                     "Keep quote-only (holding/financial/not industrial)",
+    manual_review:                       "Manual review (identity OK, restructuring/fit pending)",
     mark_unavailable_or_discontinued:    "Mark unavailable / discontinued",
     already_has_cache_but_status_mismatch: "⚠ Cache exists but status mismatch",
   };
@@ -352,6 +389,7 @@ function main(): void {
   console.log(`    Sector-specific model pending:          ${ssNeedsModel.length}`);
   console.log(`    Likely discontinued (CANCELADA):        ${discontinued.length}`);
   console.log(`    Keep quote-only (holding/financial):    ${(byAction.get("keep_quote_only") ?? []).length}`);
+  console.log(`    Manual review:                          ${(byAction.get("manual_review") ?? []).length}`);
   console.log(`    Status mismatch (cache exists):         ${(byAction.get("already_has_cache_but_status_mismatch") ?? []).length}`);
   console.log("──────────────────────────────────────────────────────────────────\n");
 
@@ -390,6 +428,7 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
     "Candidato mapeamento CVM": entries.filter(e => e.suggestedAction === "candidate_for_cvm_mapping").length,
     "Modelo setorial pendente":  entries.filter(e => e.suggestedAction === "needs_sector_specific_model").length,
     "Manter quote-only":         entries.filter(e => e.suggestedAction === "keep_quote_only").length,
+    "Revisão manual":            entries.filter(e => e.suggestedAction === "manual_review").length,
     "Marcar descontinuado":      entries.filter(e => e.suggestedAction === "mark_unavailable_or_discontinued").length,
     "Mismatch cache/status":     entries.filter(e => e.suggestedAction === "already_has_cache_but_status_mismatch").length,
   };
@@ -413,11 +452,11 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
   }
 
   lines.push(`\n## Modelo Setorial Pendente\n`);
-  lines.push(`Ativos com \`sector_specific_model_required\` sem cache de modelo implementado.\n`);
-  lines.push(`| Ticker | Empresa | Tipo | Rota |`);
-  lines.push(`|---|---|---|---|`);
+  lines.push(`Ativos que exigem modelo setorial (\`sector_specific_model_required\`, ou \`quote_only\` revisados como inadequados ao modelo industrial).\n`);
+  lines.push(`| Ticker | Empresa | Status | Tipo | Rota | Notas |`);
+  lines.push(`|---|---|---|---|---|---|`);
   for (const e of entries.filter(e => e.suggestedAction === "needs_sector_specific_model")) {
-    lines.push(`| ${e.ticker} | ${e.companyName} | ${e.richType} | ${e.modelRoute} |`);
+    lines.push(`| ${e.ticker} | ${e.companyName} | ${e.coverageStatus} | ${e.richType} | ${e.modelRoute} | ${e.notes} |`);
   }
 
   lines.push(`\n## Prováveis Descontinuados\n`);
@@ -429,7 +468,13 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
   lines.push(`\n## Manter Quote-Only\n`);
   lines.push(`Holdings financeiras ou estruturas sem modelo industrial aplicável.\n`);
   for (const e of entries.filter(e => e.suggestedAction === "keep_quote_only")) {
-    lines.push(`- **${e.ticker}** — ${e.companyName} (${e.sector})`);
+    lines.push(`- **${e.ticker}** — ${e.companyName} (${e.sector})${e.notes !== "—" ? ` — ${e.notes}` : ""}`);
+  }
+
+  lines.push(`\n## Revisão Manual\n`);
+  lines.push(`Identidade CVM verificada, mas reestruturação societária ou adequação ao modelo industrial ainda pendente.\n`);
+  for (const e of entries.filter(e => e.suggestedAction === "manual_review")) {
+    lines.push(`- **${e.ticker}** — ${e.companyName} — ${e.notes}`);
   }
 
   lines.push(`\n---\n_Para atualizar: \`npm run coverage:audit:quote-only\`_`);

@@ -1124,6 +1124,59 @@ const CVM_COMPANY_MAP: Record<string, CvmCompany> = {
     sector: "Tecnologia da Informação",
     hasCvmMapping: true,
   },
+
+  // ── Quote-only → CVM mapping, Round 2 (verified 2026-11-02) ───────────────────
+  // Same checks as Round 1 (registry ATIVO/Categoria A/FASE OPERACIONAL, ticker
+  // in FCA 2026 under the same CNPJ, DFP 2020–2024), plus a review of IPE
+  // material facts 2024–2026 for corporate actions and an industrial-model fit
+  // check. See docs/coverage-audit-quote-only.md.
+  PLPL3: {
+    ticker: "PLPL3",
+    tradingName: "PLANO E PLANO",
+    companyName: "Plano & Plano Desenvolvimento Imobiliário S.A.",
+    cvmCode: "25070",
+    cnpj: "24.230.275/0001-80",
+    sector: "Consumo Cíclico",
+    hasCvmMapping: true,
+  },
+  PRNR3: {
+    ticker: "PRNR3",
+    tradingName: "PRINER",
+    companyName: "Priner Serviços Industriais S.A.",
+    cvmCode: "24236",
+    cnpj: "18.593.815/0001-97",
+    sector: "Bens Industriais",
+    hasCvmMapping: true,
+  },
+  LOGN3: {
+    ticker: "LOGN3",
+    tradingName: "LOG-IN",
+    companyName: "Log-In Logística Intermodal S.A.",
+    cvmCode: "20710",
+    cnpj: "42.278.291/0001-24",
+    sector: "Transporte",
+    hasCvmMapping: true,
+  },
+  LJQQ3: {
+    ticker: "LJQQ3",
+    tradingName: "QUERO-QUERO",
+    // The issuer's CVM record (registry, FCA and DFP) uses this /0218 CNPJ.
+    companyName: "Lojas Quero-Quero S.A.",
+    cvmCode: "25038",
+    cnpj: "96.418.264/0218-02",
+    sector: "Consumo Cíclico",
+    hasCvmMapping: true,
+  },
+  PTBL3: {
+    ticker: "PTBL3",
+    tradingName: "PORTOBELLO",
+    // Legal name in CVM registry: PBG S/A (formerly Portobello S.A.); same CNPJ/CD_CVM.
+    companyName: "PBG S.A.",
+    cvmCode: "13773",
+    cnpj: "83.475.913/0001-91",
+    sector: "Materiais Básicos",
+    hasCvmMapping: true,
+  },
 };
 
 export function getCvmCompanyByTicker(ticker: string): CvmCompany | null {

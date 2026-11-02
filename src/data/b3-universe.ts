@@ -139,7 +139,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("VAMO3",  "Vamos Locações S.A.",                                 "Vamos",          "Transporte",             "Locação de Veículos",            QO),
   stock("AZUL4",  "Azul S.A.",                                           "Azul",           "Transporte",             "Aviação Regional",               CA, false, true),
   stock("GOLL4",  "Gol Linhas Aéreas Inteligentes S.A.",                 "GOL",            "Transporte",             "Aviação",                        "unavailable"), // CVM 19569 CANCELADA 2026-04-01 (elisão por incorporação)
-  stock("LOGN3",  "Log-In Logística Intermodal S.A.",                    "Log-In",         "Transporte",             "Logística Portuária",            QO),
+  stock("LOGN3",  "Log-In Logística Intermodal S.A.",                    "Log-In",         "Transporte",             "Logística Portuária",            CA, false, true),
   stock("STBP3",  "Santos Brasil Participações S.A.",                    "Santos Brasil",  "Transporte",             "Portuário",                      CA, false, true),
   stock("SEQL3",  "Sequoia Logística e Transportes S.A.",                "Sequoia",        "Transporte",             "Logística",                      QO),
 
@@ -158,14 +158,14 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("GMAT3",  "Grupo Mateus S.A.",                                   "Grupo Mateus",   "Varejo",                 "Supermercados",                  CA, false, true),
   stock("VVAR3",  "Casas Bahia S.A.",                                    "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        "unavailable"), // obsolete ticker: VVAR3 → VIIA3 → BHIA3, same CNPJ 33.041.260/0652-90
   stock("ALPA4",  "Alpargatas S.A.",                                     "Alpargatas",     "Varejo",                 "Calçados e Acessórios",          CA, false, true),
-  stock("LJQQ3",  "Quero-Quero S.A.",                                    "Quero-Quero",    "Varejo",                 "Materiais de Construção",        QO),
-  stock("PTBL3",  "Portobello S.A.",                                     "Portobello",     "Varejo",                 "Revestimentos Cerâmicos",        QO),
+  stock("LJQQ3",  "Lojas Quero-Quero S.A.",                              "Quero-Quero",    "Varejo",                 "Materiais de Construção",        CA, false, true),
+  stock("PTBL3",  "PBG S.A. (Portobello)",                              "Portobello",     "Varejo",                 "Revestimentos Cerâmicos",        CA, false, true),
 
   // ── Construção Civil ─────────────────────────────────────────────────────────
   stock("CYRE3",  "Cyrela Brazil Realty S.A.",                           "Cyrela",         "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
   stock("MRVE3",  "MRV Engenharia e Participações S.A.",                 "MRV",            "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
   stock("CURY3",  "Cury Construtora e Incorporadora S.A.",               "Cury",           "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
-  stock("PLPL3",  "Plano & Plano Desenvolvimento Imobiliário S.A.",      "Plano&Plano",    "Construção Civil",       "Incorporação Imobiliária",       QO),
+  stock("PLPL3",  "Plano & Plano Desenvolvimento Imobiliário S.A.",      "Plano&Plano",    "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
   stock("EVEN3",  "Even Construtora e Incorporadora S.A.",               "Even",           "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
   stock("DIRR3",  "Direcional Engenharia S.A.",                          "Direcional",     "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
   stock("TEND3",  "Construtora Tenda S.A.",                              "Tenda",          "Construção Civil",       "Incorporação Imobiliária",       CA, false, true),
@@ -226,7 +226,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("AMBP3",  "Ambipar Participações e Franquias S.A.",              "Ambipar",        "Serviços",               "Gestão Ambiental",               QO),
   stock("CVCB3",  "CVC Brasil Operadora e Agência de Viagens S.A.",      "CVC",            "Serviços",               "Turismo e Viagens",              CA, false, true),
   stock("VLID3",  "Valid Soluções S.A.",                                  "Valid",          "Serviços",               "Documentos e Soluções Digitais", CA, false, true),
-  stock("PRNR3",  "Priner Serviços Industriais S.A.",                    "Priner",         "Serviços",               "Serviços Industriais",           QO),
+  stock("PRNR3",  "Priner Serviços Industriais S.A.",                    "Priner",         "Serviços",               "Serviços Industriais",           CA, false, true),
 
   // ── Tecnologia ───────────────────────────────────────────────────────────────
   stock("TOTS3",  "Totvs S.A.",                                          "Totvs",          "Tecnologia",             "Software Empresarial",           CA, false, true),

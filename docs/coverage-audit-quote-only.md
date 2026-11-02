@@ -6,9 +6,10 @@ _Gerado em 2026-11-02 por `npm run coverage:audit:quote-only`._
 
 | Categoria | Total |
 |---|---|
-| Candidato mapeamento CVM | 10 |
-| Modelo setorial pendente | 34 |
-| Manter quote-only | 4 |
+| Candidato mapeamento CVM | 0 |
+| Modelo setorial pendente | 35 |
+| Manter quote-only | 6 |
+| Revisão manual | 2 |
 | Marcar descontinuado | 8 |
 | Mismatch cache/status | 0 |
 
@@ -18,57 +19,48 @@ Empresas operacionais com `quote_only` que provavelmente têm CNPJ ativo na CVM 
 
 | Ticker | Empresa | Setor | Notas |
 |---|---|---|---|
-| VAMO3 | Vamos Locações S.A. | Transporte | — |
-| LOGN3 | Log-In Logística Intermodal S.A. | Transporte | — |
-| SEQL3 | Sequoia Logística e Transportes S.A. | Transporte | — |
-| LJQQ3 | Quero-Quero S.A. | Varejo | — |
-| PTBL3 | Portobello S.A. | Varejo | — |
-| PLPL3 | Plano & Plano Desenvolvimento Imobiliário S.A. | Construção Civil | — |
-| ALOS3 | Allos S.A. | Imóveis Comerciais | — |
-| AMBP3 | Ambipar Participações e Franquias S.A. | Serviços | — |
-| PRNR3 | Priner Serviços Industriais S.A. | Serviços | — |
-| CASH3 | Méliuz S.A. | Tecnologia | — |
 
 ## Modelo Setorial Pendente
 
-Ativos com `sector_specific_model_required` sem cache de modelo implementado.
+Ativos que exigem modelo setorial (`sector_specific_model_required`, ou `quote_only` revisados como inadequados ao modelo industrial).
 
-| Ticker | Empresa | Tipo | Rota |
-|---|---|---|---|
-| ITUB4 | Itaú Unibanco Holding S.A. | bank | bank |
-| ITUB3 | Itaú Unibanco Holding S.A. | bank | sector_specific_pending |
-| BBDC4 | Banco Bradesco S.A. | bank | bank |
-| BBDC3 | Banco Bradesco S.A. | bank | sector_specific_pending |
-| BBAS3 | Banco do Brasil S.A. | bank | bank |
-| BPAC11 | BTG Pactual S.A. | bank | bank |
-| SANB11 | Banco Santander Brasil S.A. | bank | bank |
-| BRSR6 | Banrisul – Banco do Estado do Rio Grande do Sul S.A. | bank | bank |
-| BBSE3 | BB Seguridade Participações S.A. | insurance | insurance |
-| PSSA3 | Porto Seguro S.A. | insurance | insurance |
-| IRBR3 | IRB Brasil RE S.A. | insurance | insurance |
-| CXSE3 | Caixa Seguridade Participações S.A. | insurance | insurance |
-| MXRF11 | Maxi Renda FII | fii | fii |
-| XPML11 | XP Malls FII | fii | fii |
-| HGLG11 | CSHG Logística FII | fii | fii |
-| KNRI11 | Kinea Renda Imobiliária FII | fii | fii |
-| VISC11 | Vinci Shopping Centers FII | fii | fii |
-| BCFF11 | BTG Pactual Fundo de Fundos FII | fii | sector_specific_pending |
-| IRDM11 | Iridium Recebíveis Imobiliários FII | fii | fii |
-| KNCR11 | Kinea CRI Imobiliários FII | fii | fii |
-| HGRE11 | CSHG Real Estate FII | fii | fii |
-| BOVA11 | iShares Ibovespa FI Ações | etf | informational_instrument |
-| IVVB11 | iShares S&P 500 FI Ações | etf | informational_instrument |
-| SMAL11 | iShares Small Cap FI Ações | etf | informational_instrument |
-| HASH11 | Hashdex Nasdaq Crypto Index FI Ações | etf | informational_instrument |
-| SPXI11 | iShares S&P 500 BRL FI Ações | etf | informational_instrument |
-| GOLD11 | Trend ETF Ouro FI Ações | etf | informational_instrument |
-| AAPL34 | Apple Inc. | bdr | informational_instrument |
-| MSFT34 | Microsoft Corporation | bdr | informational_instrument |
-| TSLA34 | Tesla Inc. | bdr | informational_instrument |
-| AMZO34 | Amazon.com Inc. | bdr | informational_instrument |
-| GOGL34 | Alphabet Inc. (Google) | bdr | informational_instrument |
-| NVDC34 | NVIDIA Corporation | bdr | informational_instrument |
-| GOOGL34 | Alphabet Inc. (Google) | bdr | informational_instrument |
+| Ticker | Empresa | Status | Tipo | Rota | Notas |
+|---|---|---|---|---|---|
+| ALOS3 | Allos S.A. | quote_only | common_stock | quote_only | Revisado: Shopping centers: exige modelo imobiliário (NOI/FFO/NAV); DFP extraído tem dívida total = 0 em todos os anos e EBIT 2023 > receita (ganho de combinação) |
+| ITUB4 | Itaú Unibanco Holding S.A. | sector_specific_model_required | bank | bank | — |
+| ITUB3 | Itaú Unibanco Holding S.A. | sector_specific_model_required | bank | sector_specific_pending | — |
+| BBDC4 | Banco Bradesco S.A. | sector_specific_model_required | bank | bank | — |
+| BBDC3 | Banco Bradesco S.A. | sector_specific_model_required | bank | sector_specific_pending | — |
+| BBAS3 | Banco do Brasil S.A. | sector_specific_model_required | bank | bank | — |
+| BPAC11 | BTG Pactual S.A. | sector_specific_model_required | bank | bank | — |
+| SANB11 | Banco Santander Brasil S.A. | sector_specific_model_required | bank | bank | — |
+| BRSR6 | Banrisul – Banco do Estado do Rio Grande do Sul S.A. | sector_specific_model_required | bank | bank | — |
+| BBSE3 | BB Seguridade Participações S.A. | sector_specific_model_required | insurance | insurance | — |
+| PSSA3 | Porto Seguro S.A. | sector_specific_model_required | insurance | insurance | — |
+| IRBR3 | IRB Brasil RE S.A. | sector_specific_model_required | insurance | insurance | — |
+| CXSE3 | Caixa Seguridade Participações S.A. | sector_specific_model_required | insurance | insurance | — |
+| MXRF11 | Maxi Renda FII | sector_specific_model_required | fii | fii | — |
+| XPML11 | XP Malls FII | sector_specific_model_required | fii | fii | — |
+| HGLG11 | CSHG Logística FII | sector_specific_model_required | fii | fii | — |
+| KNRI11 | Kinea Renda Imobiliária FII | sector_specific_model_required | fii | fii | — |
+| VISC11 | Vinci Shopping Centers FII | sector_specific_model_required | fii | fii | — |
+| BCFF11 | BTG Pactual Fundo de Fundos FII | sector_specific_model_required | fii | sector_specific_pending | Sector cache file is an available:false placeholder — not model coverage |
+| IRDM11 | Iridium Recebíveis Imobiliários FII | sector_specific_model_required | fii | fii | — |
+| KNCR11 | Kinea CRI Imobiliários FII | sector_specific_model_required | fii | fii | — |
+| HGRE11 | CSHG Real Estate FII | sector_specific_model_required | fii | fii | — |
+| BOVA11 | iShares Ibovespa FI Ações | sector_specific_model_required | etf | informational_instrument | — |
+| IVVB11 | iShares S&P 500 FI Ações | sector_specific_model_required | etf | informational_instrument | — |
+| SMAL11 | iShares Small Cap FI Ações | sector_specific_model_required | etf | informational_instrument | — |
+| HASH11 | Hashdex Nasdaq Crypto Index FI Ações | sector_specific_model_required | etf | informational_instrument | — |
+| SPXI11 | iShares S&P 500 BRL FI Ações | sector_specific_model_required | etf | informational_instrument | — |
+| GOLD11 | Trend ETF Ouro FI Ações | sector_specific_model_required | etf | informational_instrument | — |
+| AAPL34 | Apple Inc. | sector_specific_model_required | bdr | informational_instrument | — |
+| MSFT34 | Microsoft Corporation | sector_specific_model_required | bdr | informational_instrument | — |
+| TSLA34 | Tesla Inc. | sector_specific_model_required | bdr | informational_instrument | — |
+| AMZO34 | Amazon.com Inc. | sector_specific_model_required | bdr | informational_instrument | — |
+| GOGL34 | Alphabet Inc. (Google) | sector_specific_model_required | bdr | informational_instrument | — |
+| NVDC34 | NVIDIA Corporation | sector_specific_model_required | bdr | informational_instrument | — |
+| GOOGL34 | Alphabet Inc. (Google) | sector_specific_model_required | bdr | informational_instrument | — |
 
 ## Prováveis Descontinuados
 
@@ -87,10 +79,19 @@ Entidade CVM CANCELADA no registro ou código de negociação obsoleto. Recomend
 
 Holdings financeiras ou estruturas sem modelo industrial aplicável.
 
-- **BRAP4** — Bradespar S.A. (Mineração)
+- **BRAP4** — Bradespar S.A. (Mineração) — Pure holding company — industrial DFP model may not reflect underlying value
 - **B3SA3** — B3 S.A. – Brasil, Bolsa, Balcão (Financeiro)
 - **ITSA4** — Itaúsa S.A. (Holding Financeira)
 - **ITSA3** — Itaúsa S.A. (Holding Financeira)
+- **AMBP3** — Ambipar Participações e Franquias S.A. (Serviços) — Revisado: Em recuperação judicial desde 2025-10-30
+- **CASH3** — Méliuz S.A. (Tecnologia) — Revisado: Modelo de negócio pivotado para tesouraria em Bitcoin (2025–2026) — modelo industrial inadequado
+
+## Revisão Manual
+
+Identidade CVM verificada, mas reestruturação societária ou adequação ao modelo industrial ainda pendente.
+
+- **VAMO3** — Vamos Locações S.A. — Revisado: Reorganização estratégica consumada em 2024-11-30 (concessionárias segregadas → AMOB3); compra de frota no FCO distorce FCF industrial
+- **SEQL3** — Sequoia Logística e Transportes S.A. — Revisado: Recuperação extrajudicial homologada 2024-10, grupamentos de ações, mudança de controle 2026-02 e repactuação de dívida 2026
 
 ---
 _Para atualizar: `npm run coverage:audit:quote-only`_
@@ -176,3 +177,70 @@ Gerados com os novos filtros opcionais (`CVM_PRECOMPUTE_TICKERS`, `CVM_ITR_TICKE
 - Audit quote-only: arquivos de cache setorial com `available: false` (SULA11, BCFF11) são tratados como placeholders,
   não como cobertura de modelo — deixam de gerar casos suspeitos. Status declarado `unavailable` também é autoritativo no audit.
 - Teste `model-cache-consistency.test.ts` garante que `CACHED_TICKERS` (banco/FII/seguro) contém exatamente os arquivos `available: true`.
+
+## Round 2 — Mapeamento CVM de tickers quote-only (2026-11-02)
+
+> As notas do Round 1 **não** foram tomadas como verdade: todos os candidatos foram re-verificados com downloads novos de
+> `cad_cia_aberta.csv`, `fca_cia_aberta_valor_mobiliario_2026.csv`, `ipe_cia_aberta_{2024,2025,2026}.csv` (fatos relevantes e
+> reorganizações societárias), `dfp_cia_aberta_2024.csv` (CNPJ declarado no DFP) e o pipeline `getAnnualDfpFinancials`.
+> Também foi feita uma checagem explícita de adequação ao modelo industrial e de qualidade dos dados extraídos.
+
+**quote_only:** 12 → 7 (−5 mapeados). **Candidatos revisados:** 10 (todos os `quote_only` operacionais restantes).
+
+### Mapeamentos VERIFIED (5)
+
+Todos: `SIT=ATIVO`, Categoria A, `FASE OPERACIONAL`, ticker na FCA 2026 sob o mesmo CNPJ sem data fim, DFP 2020–2024 (5 anos),
+elegível para `cvm_analysis`. Status no universo: `quote_only` → `cvm_analysis`.
+
+| Ticker | Razão social (CVM) | CD_CVM | CNPJ | Trimestres ITR | Forecast | Observações |
+|---|---|---|---|---|---|---|
+| PLPL3 | PLANO & PLANO DESENVOLVIMENTO IMOBILIÁRIO S.A. | 25070 | 24.230.275/0001-80 | 25 | sim | Incorporadora — mesmo modelo de CYRE3/MRVE3/TEND3. Único fato 2026: novo acordo de acionistas |
+| PRNR3 | PRINER SERVIÇOS INDUSTRIAIS S.A. | 24236 | 18.593.815/0001-97 | 31 | sim | Aquisições pequenas (SEMAR incorporada 2025, 60% SEMEP) e aumentos de capital privados; entidade inalterada |
+| LOGN3 | LOG-IN LOGISTICA INTERMODAL S.A. | 20710 | 42.278.291/0001-24 | 31 | sim | Controlada pela MSC; nenhuma OPA/cancelamento de registro em IPE 2024–2026 |
+| LJQQ3 | LOJAS QUERO QUERO S.A. | 25038 | 96.418.264/0218-02 | 25 | sim | CNPJ /0218 é o do emissor na CVM — idêntico em registro, FCA e DFP 2024. Varejo com braço de crédito próprio consolidado |
+| PTBL3 | PBG S/A (ex-Portobello) | 13773 | 83.475.913/0001-91 | 31 | sim | Razão social atual PBG S/A, mesmo CNPJ/CD_CVM; nome no universo atualizado. Venda da unidade Pointer (2026-08) e reorganização com subsidiária integral (2026-05) não alteram o emissor |
+
+Qualidade dos dados (todos os 5): receita positiva em todos os anos; nenhum valor anual/trimestral igual a zero ou ausente;
+trimestres em ordem cronológica sem duplicatas; nenhum ponto de série temporal convertido de ausente para zero; 12 pontos
+nulos por ticker (mesmo padrão de TUPY3). Trimestres ausentes são apenas Q4 de anos sem DFP no pipeline (2018, 2019, 2025) —
+mantidos ausentes, não estimados.
+
+### MANUAL_REVIEW (2) — permanecem `quote_only`
+
+| Ticker | CD_CVM | Motivo |
+|---|---|---|
+| VAMO3 | 24716 | Reorganização estratégica consumada em 2024-11-30 (concessionárias segregadas para Automob/AMOB3) quebra a comparabilidade 2020–2023 vs 2024 (receita 6,1 → 4,7 bi). Compra de frota é classificada no FCO: FCF industrial ≈ −2,7 bi/ano com capex ≈ 0 — leitura enganosa no modelo atual |
+| SEQL3 | 25160 | Recuperação extrajudicial homologada (2024-10), grupamentos de ações, mudança de controle (2026-02), transação com PGFN e repactuação de debêntures (2026). Prejuízos de −0,8/−1,3 bi em 2023/2024 — aguardar estabilização |
+
+### Necessita modelo setorial
+
+| Ticker | CD_CVM | Decisão |
+|---|---|---|
+| ALOS3 | 22357 | **Não mapeado.** Shopping centers exigem modelo imobiliário (NOI, FFO, NAV/cap rate, vacância). Além disso o DFP extraído é suspeito: dívida total = 0 em todos os anos (a companhia tem debêntures) e EBIT 2023 (5,4 bi) ≈ 2× receita (ganho da combinação Aliansce Sonae/brMalls). Candidato a um futuro modelo `real_estate`. Obs.: MULT3/IGTI11 já usam o modelo industrial — revisar junto com esse modelo |
+
+### REJECTED (2) — permanecem `quote_only`
+
+| Ticker | Motivo |
+|---|---|
+| AMBP3 | Ambipar (CVM 24961) em recuperação judicial desde 2025-10-30 |
+| CASH3 | Méliuz (CVM 25232): fatos relevantes 2025–2026 confirmam estratégia de tesouraria em Bitcoin — modelo industrial inadequado |
+
+### Classificação dos 7 `quote_only` restantes
+
+| Ticker | Classe | Motivo |
+|---|---|---|
+| VAMO3 | manual_review | Reorganização 2024 / FCF distorcido |
+| SEQL3 | manual_review | Reestruturação em curso |
+| ALOS3 | needs_sector_specific_model | Imobiliário (shopping centers) |
+| AMBP3 | keep_quote_only | Recuperação judicial |
+| CASH3 | keep_quote_only | Tesouraria em Bitcoin |
+| BRAP4 | keep_quote_only | Holding pura (participação na Vale) |
+| B3SA3 | keep_quote_only | Infraestrutura de mercado financeiro — sem modelo industrial aplicável |
+
+Essas decisões estão codificadas em `REVIEW_DECISIONS` em `scripts/audit-quote-only-coverage.ts` (nova ação `manual_review`),
+para que o audit não volte a listá-los como candidatos genéricos.
+
+### Caches gerados (apenas os 5 tickers)
+
+`cvm-cache/financials`, `cvm-cache/documents`, `cvm-cache/quarterly`, `forecast-cache/time-series`,
+`forecast-cache/baseline-forecasts` — 25 arquivos novos, nenhum arquivo de cache existente modificado.

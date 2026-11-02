@@ -31,6 +31,7 @@ export type CoverageReasonCode =
   | "BDR_MODEL_REQUIRED"
   | "NO_CVM_MAPPING"
   | "NO_MARKET_DATA"
+  | "DECLARED_UNAVAILABLE"
   | "UNKNOWN_ASSET_TYPE";
 
 export type AssetCoverageProfile = {

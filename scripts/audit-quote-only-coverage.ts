@@ -48,16 +48,35 @@ function cvmFinancialsYears(ticker: string): number {
   } catch { return 0; }
 }
 
+// Sector model cache files may be intentional placeholders written with
+// `available: false` (e.g. SULA11 incorporated, BCFF11 without CNPJ). Only
+// files that are not explicitly unavailable count as implemented model caches.
+type ModelCacheState = "missing" | "implemented" | "placeholder";
+
+function modelCacheState(dir: string, ticker: string): ModelCacheState {
+  const p = join(dir, `${ticker}.json`);
+  if (!existsSync(p)) return "missing";
+  try {
+    const parsed = JSON.parse(readFileSync(p, "utf-8")) as { available?: unknown };
+    return parsed.available === false ? "placeholder" : "implemented";
+  } catch { return "implemented"; }
+}
+
 function hasFiiCacheFile(ticker: string): boolean {
-  return existsSync(join(FII_CACHE_DIR, `${ticker}.json`));
+  return modelCacheState(FII_CACHE_DIR, ticker) === "implemented";
 }
 
 function hasBankCacheFile(ticker: string): boolean {
-  return existsSync(join(BANK_CACHE_DIR, `${ticker}.json`));
+  return modelCacheState(BANK_CACHE_DIR, ticker) === "implemented";
 }
 
 function hasInsuranceCacheFile(ticker: string): boolean {
-  return existsSync(join(INS_CACHE_DIR, `${ticker}.json`));
+  return modelCacheState(INS_CACHE_DIR, ticker) === "implemented";
+}
+
+function hasPlaceholderModelCache(ticker: string): boolean {
+  return [FII_CACHE_DIR, BANK_CACHE_DIR, INS_CACHE_DIR]
+    .some(dir => modelCacheState(dir, ticker) === "placeholder");
 }
 
 // ─── Known metadata ───────────────────────────────────────────────────────────
@@ -65,6 +84,13 @@ function hasInsuranceCacheFile(ticker: string): boolean {
 // Tickers whose CVM entity was CANCELADA at time of last registry audit.
 // Source: comments in src/lib/cvm/company-map.ts.
 const KNOWN_CANCELLED = new Set(["GOLL4", "CRFB3", "SOMA3", "BRPR3"]);
+
+// Obsolete ticker codes: the trading code itself is no longer listed in the
+// CVM FCA valor_mobiliario file (renamed or replaced). Verified 2026-11-02.
+//   RRRP3 → BRAV3 (3R Petroleum renamed Brava Energia, same CNPJ)
+//   VVAR3 → VIIA3 → BHIA3 (Grupo Casas Bahia, same CNPJ)
+//   PETZ3 → AUAU3 (Petz/Cobasi combination; Pet Center CVM 25089 CANCELADA)
+const KNOWN_OBSOLETE_TICKERS = new Set(["RRRP3", "VVAR3", "PETZ3"]);
 
 // Tickers that are pure financial holdings without a matching industrial model.
 // They hold stakes in other companies rather than operating directly.
@@ -126,8 +152,12 @@ function suggestAction(asset: B3Asset, hasCvmCache: boolean, hasCvmMapping: bool
   // A cache file already exists for this ticker despite being QO/SS.
   if (hasCvmCache) return "already_has_cache_but_status_mismatch";
 
-  // Known discontinued/cancelled in CVM registry.
+  // Declared unavailable in B3_UNIVERSE is authoritative (mirrors the coverage resolver).
+  if (asset.coverageStatus === "unavailable") return "mark_unavailable_or_discontinued";
+
+  // Known discontinued/cancelled in CVM registry, or obsolete ticker code.
   if (KNOWN_CANCELLED.has(asset.ticker)) return "mark_unavailable_or_discontinued";
+  if (KNOWN_OBSOLETE_TICKERS.has(asset.ticker)) return "mark_unavailable_or_discontinued";
 
   // Pure financial holding — no operating industrial model makes sense.
   if (FINANCIAL_HOLDING.has(asset.ticker)) return "keep_quote_only";
@@ -156,16 +186,23 @@ function buildNotes(asset: B3Asset, entry: Omit<AuditEntry, "notes">): string {
   const notes: string[] = [];
 
   if (KNOWN_CANCELLED.has(asset.ticker)) {
-    notes.push("CVM entity CANCELADA per registry audit — consider marking unavailable");
+    notes.push(asset.coverageStatus === "unavailable"
+      ? "CVM entity CANCELADA per registry audit — already marked unavailable"
+      : "CVM entity CANCELADA per registry audit — consider marking unavailable");
+  }
+  if (KNOWN_OBSOLETE_TICKERS.has(asset.ticker)) {
+    notes.push(asset.coverageStatus === "unavailable"
+      ? "Obsolete ticker code (renamed/replaced) — already marked unavailable"
+      : "Obsolete ticker code (renamed/replaced) — consider marking unavailable");
   }
   if (entry.hasCvmCache) {
     notes.push(`CVM financials cache exists (${entry.cvmCacheYears} year(s)) but coverageStatus is still "${asset.coverageStatus}"`);
   }
-  if (entry.hasModelCache && !entry.hasCvmMapping) {
-    notes.push("Has sector-specific cache file (bank/FII/insurance) but not registered in coverage set");
+  if (entry.hasModelCache && !getModelCache(asset)) {
+    notes.push("Has implemented sector-specific cache file (bank/FII/insurance) but not registered in coverage set");
   }
-  if (hasFiiCacheFile(asset.ticker) && !hasFiiAnalysisCache(asset.ticker)) {
-    notes.push("FII cache file exists but ticker is not in FII coverage set (possibly empty records)");
+  if (hasPlaceholderModelCache(asset.ticker)) {
+    notes.push("Sector cache file is an available:false placeholder — not model coverage");
   }
   if (FINANCIAL_HOLDING.has(asset.ticker)) {
     notes.push("Pure holding company — industrial DFP model may not reflect underlying value");
@@ -327,6 +364,18 @@ function main(): void {
 
 // ─── Markdown generation ──────────────────────────────────────────────────────
 
+// Everything below this marker in the existing markdown is hand-maintained
+// (e.g. mapping-round notes) and is preserved across regenerations.
+const MANUAL_SECTION_MARKER = "<!-- manual-sections: preserved by coverage:audit:quote-only -->";
+
+function readManualSections(outPath: string): string | null {
+  try {
+    const existing = readFileSync(outPath, "utf-8");
+    const idx = existing.indexOf(MANUAL_SECTION_MARKER);
+    return idx >= 0 ? existing.slice(idx) : null;
+  } catch { return null; }
+}
+
 function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docsDir: string): void {
   const now = new Date().toISOString().slice(0, 10);
   const lines: string[] = [];
@@ -372,9 +421,9 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
   }
 
   lines.push(`\n## Prováveis Descontinuados\n`);
-  lines.push(`Entidade CVM CANCELADA no registro. Recomendação: atualizar \`coverageStatus\` para \`"unavailable"\`.\n`);
+  lines.push(`Entidade CVM CANCELADA no registro ou código de negociação obsoleto. Recomendação: \`coverageStatus\` = \`"unavailable"\`.\n`);
   for (const e of entries.filter(e => e.suggestedAction === "mark_unavailable_or_discontinued")) {
-    lines.push(`- **${e.ticker}** — ${e.companyName}`);
+    lines.push(`- **${e.ticker}** — ${e.companyName} (status atual: \`${e.coverageStatus}\`)`);
   }
 
   lines.push(`\n## Manter Quote-Only\n`);
@@ -386,6 +435,8 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
   lines.push(`\n---\n_Para atualizar: \`npm run coverage:audit:quote-only\`_`);
 
   const outPath = join(docsDir, "coverage-audit-quote-only.md");
+  const manual = readManualSections(outPath);
+  if (manual) lines.push(`\n${manual.trimEnd()}`);
   writeFileSync(outPath, lines.join("\n") + "\n");
   console.log(`  Markdown report written → docs/coverage-audit-quote-only.md`);
 }

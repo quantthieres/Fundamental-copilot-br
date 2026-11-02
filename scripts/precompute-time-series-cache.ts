@@ -4,6 +4,7 @@
 //
 // Usage:
 //   npm run time-series:precompute
+//   TIME_SERIES_PRECOMPUTE_TICKERS=AERI3,RECV3 npm run time-series:precompute   # subset only
 //
 // Fully local — no CVM downloads, no network calls.
 
@@ -11,6 +12,7 @@ import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import type { QuarterlyFinancialRecord } from "@/lib/cvm/types";
 import { buildTickerTimeSeriesCache } from "@/lib/forecasting/time-series-builder";
+import { readTickerFilter } from "./ticker-filter";
 
 const QUARTERLY_CACHE_DIR = join(
   process.cwd(),
@@ -47,9 +49,12 @@ function main(): void {
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
+  const tickerFilter = readTickerFilter("TIME_SERIES_PRECOMPUTE_TICKERS");
   let files: string[];
   try {
-    files = readdirSync(QUARTERLY_CACHE_DIR).filter((f) => f.endsWith(".json"));
+    files = readdirSync(QUARTERLY_CACHE_DIR)
+      .filter((f) => f.endsWith(".json"))
+      .filter((f) => !tickerFilter || tickerFilter.has(f.replace(".json", "")));
   } catch (err) {
     console.error(`[error] Cannot read quarterly cache directory: ${QUARTERLY_CACHE_DIR}`);
     console.error(err);

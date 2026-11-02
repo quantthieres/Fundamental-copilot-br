@@ -15,6 +15,7 @@
  * Environment overrides:
  *   CVM_ITR_START_YEAR  (default 2018)
  *   CVM_ITR_END_YEAR    (default current year)
+ *   CVM_ITR_TICKERS     comma-separated subset of tickers (default: all eligible)
  *
  * Memory strategy — year-first batch processing:
  *   For each year, one ITR ZIP is downloaded (~33 MB), all companies' rows are
@@ -35,6 +36,7 @@ import { fetchItrYearZip, clearItrZipCache } from "../src/lib/cvm/itr-client";
 import { parseDfpCsvForCompanies } from "../src/lib/cvm/dfp-parser";
 import { snapshotFromRows, buildQuarterlyRecords } from "../src/lib/cvm/itr-quarterly";
 import type { CoverageStatus } from "../src/data/coverage-types";
+import { readTickerFilter } from "./ticker-filter";
 import type { NormalizedFinancials, RawCvmStatementRow, QuarterlyFinancialRecord } from "../src/lib/cvm/types";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -122,8 +124,10 @@ async function extractYearRowsForAll(
 async function main(): Promise<void> {
   mkdirSync(join(CACHE_ROOT, "quarterly"), { recursive: true });
 
+  const tickerFilter = readTickerFilter("CVM_ITR_TICKERS");
   const companies = B3_UNIVERSE
     .filter(a => a.hasCvmMapping && ELIGIBLE_STATUSES.has(a.coverageStatus))
+    .filter(a => !tickerFilter || tickerFilter.has(a.ticker))
     .map(a => {
       const cvm = getCvmCompanyByTicker(a.ticker);
       return cvm && cvm.hasCvmMapping && cvm.cvmCode

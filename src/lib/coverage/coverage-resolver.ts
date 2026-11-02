@@ -5,6 +5,7 @@ import type {
   AssetCoverageProfile,
 } from "./coverage-types";
 import { normalizeTicker } from "./asset-classifier";
+import type { CoverageStatus } from "@/data/coverage-types";
 
 // ─── Input ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,10 @@ export type CoverageResolverInput = {
   hasBaselineForecast: boolean;
   companyName?: string;
   sector?: string;
+  // coverageStatus declared in B3_UNIVERSE. "unavailable" is authoritative
+  // (discontinued, incorporated or obsolete ticker) and overrides any
+  // cache-derived resolution; other values do not affect resolution.
+  declaredStatus?: CoverageStatus;
 };
 
 // ─── Industrial model eligibility ─────────────────────────────────────────────
@@ -59,6 +64,8 @@ function buildDisplayMessage(reasonCode: CoverageReasonCode): string {
       return "Este ativo representa um fundo/índice e não utiliza demonstrações financeiras corporativas tradicionais.";
     case "BDR_MODEL_REQUIRED":
       return "Este ativo representa recibo de ativo estrangeiro e exige tratamento específico.";
+    case "DECLARED_UNAVAILABLE":
+      return "Ativo indisponível para análise: descontinuado, incorporado ou com código de negociação substituído.";
     case "NO_MARKET_DATA":
       return "Ativo reconhecido no universo B3, mas ainda sem cobertura de dados financeiros.";
     case "UNKNOWN_ASSET_TYPE":
@@ -137,11 +144,14 @@ export function resolveAssetCoverage(
 ): AssetCoverageProfile {
   const normalizedTicker = normalizeTicker(input.ticker);
   const { assetType } = input;
-  const industrial = isIndustrialEligible(assetType);
+  const declaredUnavailable = input.declaredStatus === "unavailable";
+  const industrial = !declaredUnavailable && isIndustrialEligible(assetType);
 
-  const { coverageLevel, reasonCode } = industrial
-    ? resolveForIndustrial(input)
-    : resolveForNonIndustrial(assetType);
+  const { coverageLevel, reasonCode } = declaredUnavailable
+    ? { coverageLevel: "unavailable" as const, reasonCode: "DECLARED_UNAVAILABLE" as const }
+    : industrial
+      ? resolveForIndustrial(input)
+      : resolveForNonIndustrial(assetType);
 
   const isForecastEligible =
     industrial && input.hasTimeSeries && input.hasBaselineForecast;

@@ -7,7 +7,8 @@
  *   npm run forecast:precompute:baseline
  *
  * Environment:
- *   FORECAST_HORIZON_QUARTERS  default 8
+ *   FORECAST_HORIZON_QUARTERS     default 8
+ *   FORECAST_PRECOMPUTE_TICKERS   comma-separated subset of tickers (default: all)
  *
  * This script is fully local and offline — it does NOT download CVM data,
  * call brapi, or invoke Python. It reads from the existing time-series cache
@@ -19,6 +20,7 @@ import { join } from "path";
 
 import { buildBaselineForecastCache } from "../src/lib/forecasting/baseline-forecast-builder";
 import { parseTimeSeriesCache } from "../src/lib/forecasting/time-series-cache";
+import { readTickerFilter } from "./ticker-filter";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -35,9 +37,12 @@ const HORIZON_QUARTERS = parseInt(
 async function main(): Promise<void> {
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
+  const tickerFilter = readTickerFilter("FORECAST_PRECOMPUTE_TICKERS");
   let files: string[];
   try {
-    files = readdirSync(INPUT_DIR).filter(f => f.endsWith(".json"));
+    files = readdirSync(INPUT_DIR)
+      .filter(f => f.endsWith(".json"))
+      .filter(f => !tickerFilter || tickerFilter.has(f.replace(/\.json$/, "")));
   } catch {
     console.error(`Input directory not found: ${INPUT_DIR}`);
     console.error("Run: npm run time-series:precompute");

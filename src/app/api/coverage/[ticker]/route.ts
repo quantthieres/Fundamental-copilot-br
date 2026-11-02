@@ -61,6 +61,7 @@ export async function GET(
     hasBaselineForecast,
     companyName: b3Entry?.companyName ?? cvmCompany?.companyName,
     sector:      b3Entry?.sector,
+    declaredStatus: b3Entry?.coverageStatus,
   });
 
   return NextResponse.json({ coverage });

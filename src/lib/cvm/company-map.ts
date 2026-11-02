@@ -1044,6 +1044,86 @@ const CVM_COMPANY_MAP: Record<string, CvmCompany> = {
     sector: "Petróleo, Gás e Biocombustíveis",
     hasCvmMapping: true,
   },
+
+  // ── Quote-only → CVM mapping, Round 1 (verified 2026-11-02) ───────────────────
+  // Each entry checked against cad_cia_aberta.csv (SIT=ATIVO, Categoria A,
+  // FASE OPERACIONAL) and fca_cia_aberta_valor_mobiliario_2026.csv (ticker
+  // listed under the same CNPJ with no Data_Fim_Negociacao). DFP 2020–2024
+  // confirmed via getAnnualDfpFinancials. See docs/coverage-audit-quote-only.md.
+  AERI3: {
+    ticker: "AERI3",
+    tradingName: "AERIS",
+    // Legal name in CVM registry: AERIS IND. E COM. DE EQUIP. PARA GER. DE ENG. S.A.
+    companyName: "Aeris Indústria e Comércio de Equipamentos para Geração de Energia S.A.",
+    cvmCode: "25283",
+    cnpj: "12.528.708/0001-07",
+    sector: "Bens Industriais",
+    hasCvmMapping: true,
+  },
+  RECV3: {
+    ticker: "RECV3",
+    tradingName: "PETRORECONCAVO",
+    companyName: "PetroRecôncavo S.A.",
+    cvmCode: "25780",
+    cnpj: "03.342.704/0001-30",
+    sector: "Petróleo, Gás e Biocombustíveis",
+    hasCvmMapping: true,
+  },
+  SBFG3: {
+    ticker: "SBFG3",
+    tradingName: "GRUPO SBF",
+    // Listed holding (CD_CVM 24694 ≠ subsidiary SBF Comércio, CD_CVM 25410, Categoria B).
+    companyName: "Grupo SBF S.A.",
+    cvmCode: "24694",
+    cnpj: "13.217.485/0001-11",
+    sector: "Consumo Cíclico",
+    hasCvmMapping: true,
+  },
+  GMAT3: {
+    ticker: "GMAT3",
+    tradingName: "GRUPO MATEUS",
+    companyName: "Grupo Mateus S.A.",
+    cvmCode: "25186",
+    cnpj: "24.990.777/0001-09",
+    sector: "Consumo não Cíclico",
+    hasCvmMapping: true,
+  },
+  BLAU3: {
+    ticker: "BLAU3",
+    tradingName: "BLAU",
+    companyName: "Blau Farmacêutica S.A.",
+    cvmCode: "24627",
+    cnpj: "58.430.828/0001-60",
+    sector: "Saúde",
+    hasCvmMapping: true,
+  },
+  SMFT3: {
+    ticker: "SMFT3",
+    tradingName: "SMART FIT",
+    companyName: "SmartFit Escola de Ginástica e Dança S.A.",
+    cvmCode: "24260",
+    cnpj: "07.594.978/0001-78",
+    sector: "Consumo Cíclico",
+    hasCvmMapping: true,
+  },
+  VLID3: {
+    ticker: "VLID3",
+    tradingName: "VALID",
+    companyName: "Valid Soluções S.A.",
+    cvmCode: "20028",
+    cnpj: "33.113.309/0001-47",
+    sector: "Bens Industriais",
+    hasCvmMapping: true,
+  },
+  POSI3: {
+    ticker: "POSI3",
+    tradingName: "POSITIVO TEC",
+    companyName: "Positivo Tecnologia S.A.",
+    cvmCode: "20362",
+    cnpj: "81.243.735/0001-48",
+    sector: "Tecnologia da Informação",
+    hasCvmMapping: true,
+  },
 };
 
 export function getCvmCompanyByTicker(ticker: string): CvmCompany | null {

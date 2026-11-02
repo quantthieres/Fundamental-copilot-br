@@ -129,7 +129,7 @@ describe("getCoverageReason", () => {
   });
 
   it("quote_only asset → cotação message", () => {
-    const reason = getCoverageReason(find("RECV3")); // quote_only
+    const reason = getCoverageReason(find("BRAP4")); // quote_only (holding, intentionally kept)
     expect(reason).toContain("dados de mercado");
   });
 

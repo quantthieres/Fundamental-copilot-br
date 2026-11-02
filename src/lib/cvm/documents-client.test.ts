@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   classifyDocumentType,
   parseCvmDate,
@@ -324,6 +324,19 @@ function makeRow(overrides: Partial<CatalogRow> = {}): CatalogRow {
 }
 
 describe("normalizeCatalogRow", () => {
+  // normalizeCatalogRow keeps only filings within an ~18-month (540-day)
+  // window relative to Date.now(). Pin "now" shortly after the fixture's
+  // dtReceb (2025-02-14) so these tests do not depend on the real clock.
+  // With now = 2025-06-01T12:00Z the cutoff is 2023-12-09T12:00Z.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2025-06-01T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns a CvmDocument for a valid row", () => {
     const doc = normalizeCatalogRow(makeRow());
     expect(doc).not.toBeNull();
@@ -360,8 +373,21 @@ describe("normalizeCatalogRow", () => {
   });
 
   it("returns null for very old dtReceb (outside lookback window)", () => {
-    // 2019 is well outside 18 months from now (2026)
+    // 2019 is well outside 18 months from the pinned date (2025-06-01)
     expect(normalizeCatalogRow(makeRow({ dtReceb: "2019-01-01" }))).toBeNull();
+  });
+
+  it("keeps a filing just inside the 18-month window", () => {
+    expect(normalizeCatalogRow(makeRow({ dtReceb: "2023-12-10" }))).not.toBeNull();
+  });
+
+  it("drops a filing just outside the 18-month window", () => {
+    expect(normalizeCatalogRow(makeRow({ dtReceb: "2023-12-08" }))).toBeNull();
+  });
+
+  it("drops the fixture filing once more than 18 months have passed", () => {
+    vi.setSystemTime(new Date("2026-11-02T12:00:00Z"));
+    expect(normalizeCatalogRow(makeRow())).toBeNull();
   });
 
   it("builds title from category + fiscal year", () => {

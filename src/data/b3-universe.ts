@@ -53,7 +53,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("POMO4",  "Marcopolo S.A.",                                      "Marcopolo",      "Bens de Capital",        "Veículos e Ônibus",              CA, false, true),
   stock("TASA4",  "Taurus Armas S.A.",                                   "Taurus",         "Bens de Capital",        "Defesa e Segurança",             CA, false, true),
   stock("LEVE3",  "Metal Leve S.A.",                                     "Metal Leve",     "Bens de Capital",        "Autopeças",                      CA, false, true),
-  stock("AERI3",  "Aeris Energy S.A.",                                   "Aeris",          "Bens de Capital",        "Energia Renovável",              QO),
+  stock("AERI3",  "Aeris Energy S.A.",                                   "Aeris",          "Bens de Capital",        "Energia Renovável",              CA, false, true),
 
   // ── Petróleo, Gás e Biocombustíveis ─────────────────────────────────────────
   stock("PETR4",  "Petróleo Brasileiro S.A.",                            "Petrobras PN",   "Petróleo e Gás",         "Exploração e Refino",            CA,  false, true),
@@ -61,8 +61,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("PRIO3",  "PRIO S.A.",                                           "PRIO",           "Petróleo e Gás",         "Exploração e Produção",          CA,  false, true),
   stock("VBBR3",  "Vibra Energia S.A.",                                  "Vibra",          "Petróleo e Gás",         "Distribuição de Combustíveis",   CA,  false, true),
   stock("RAIZ4",  "Raízen S.A.",                                         "Raízen",         "Petróleo e Gás",         "Biocombustíveis",                CA,  false, true),
-  stock("RECV3",  "PetroRecôncavo S.A.",                                 "PetroRecôncavo", "Petróleo e Gás",         "Exploração e Produção",          QO),
-  stock("RRRP3",  "3R Petroleum Óleo e Gás S.A.",                       "3R Petroleum",   "Petróleo e Gás",         "Exploração e Produção",          QO),
+  stock("RECV3",  "PetroRecôncavo S.A.",                                 "PetroRecôncavo", "Petróleo e Gás",         "Exploração e Produção",          CA, false, true),
+  stock("RRRP3",  "3R Petroleum Óleo e Gás S.A.",                       "3R Petroleum",   "Petróleo e Gás",         "Exploração e Produção",          "unavailable"), // obsolete ticker: renamed Brava Energia (BRAV3), same CNPJ 12.091.809/0001-55
   stock("CSAN3",  "Cosan S.A.",                                          "Cosan",          "Petróleo e Gás",         "Distribuição e Energia",         CA, false, true),
   stock("UGPA3",  "Ultrapar Participações S.A.",                         "Ultrapar",       "Petróleo e Gás",         "Distribuição de Combustíveis",   CA, false, true),
 
@@ -138,7 +138,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("SIMH3",  "Simpar S.A.",                                         "Simpar",         "Transporte",             "Locação e Logística",            CA, false, true),
   stock("VAMO3",  "Vamos Locações S.A.",                                 "Vamos",          "Transporte",             "Locação de Veículos",            QO),
   stock("AZUL4",  "Azul S.A.",                                           "Azul",           "Transporte",             "Aviação Regional",               CA, false, true),
-  stock("GOLL4",  "Gol Linhas Aéreas Inteligentes S.A.",                 "GOL",            "Transporte",             "Aviação",                        QO),
+  stock("GOLL4",  "Gol Linhas Aéreas Inteligentes S.A.",                 "GOL",            "Transporte",             "Aviação",                        "unavailable"), // CVM 19569 CANCELADA 2026-04-01 (elisão por incorporação)
   stock("LOGN3",  "Log-In Logística Intermodal S.A.",                    "Log-In",         "Transporte",             "Logística Portuária",            QO),
   stock("STBP3",  "Santos Brasil Participações S.A.",                    "Santos Brasil",  "Transporte",             "Portuário",                      CA, false, true),
   stock("SEQL3",  "Sequoia Logística e Transportes S.A.",                "Sequoia",        "Transporte",             "Logística",                      QO),
@@ -148,15 +148,15 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("ASAI3",  "Assaí Atacadista S.A.",                               "Assaí",          "Varejo",                 "Atacado Alimentar",              CVM, false, true),
   stock("MGLU3",  "Magazine Luiza S.A.",                                 "Magalu",         "Varejo",                 "Varejo Eletroeletrônico",        CA, false, true),
   stock("PCAR3",  "Grupo Pão de Açúcar S.A.",                            "GPA",            "Varejo",                 "Supermercados",                  CA, false, true),
-  stock("CRFB3",  "Atacadão S.A.",                                       "Carrefour Brasil","Varejo",                "Hipermercados",                  QO),
-  stock("SOMA3",  "Grupo Soma S.A.",                                     "Grupo Soma",     "Varejo",                 "Vestuário e Moda",               QO),
-  stock("SBFG3",  "SBF Group S.A.",                                      "SBF / Centauro", "Varejo",                 "Artigos Esportivos",             QO),
+  stock("CRFB3",  "Atacadão S.A.",                                       "Carrefour Brasil","Varejo",                "Hipermercados",                  "unavailable"), // CVM 24171 CANCELADA 2025-12-22 (cancelamento voluntário)
+  stock("SOMA3",  "Grupo Soma S.A.",                                     "Grupo Soma",     "Varejo",                 "Vestuário e Moda",               "unavailable"), // CVM 25011 CANCELADA 2024-07-31 (incorporada; grupo hoje AZZA3)
+  stock("SBFG3",  "Grupo SBF S.A.",                                      "SBF / Centauro", "Varejo",                 "Artigos Esportivos",             CA, false, true),
   stock("ARZZ3",  "Arezzo Indústria e Comércio S.A.",                    "Arezzo",         "Varejo",                 "Calçados e Acessórios",          CA, false, true),
   stock("GRND3",  "Grendene S.A.",                                       "Grendene",       "Varejo",                 "Calçados",                       CA, false, true),
   stock("VULC3",  "Vulcabras S.A.",                                      "Vulcabras",      "Varejo",                 "Calçados",                       CA, false, true),
-  stock("PETZ3",  "Petz S.A.",                                           "Petz",           "Varejo",                 "Pet e Animais",                  QO),
-  stock("GMAT3",  "Grupo Mateus S.A.",                                   "Grupo Mateus",   "Varejo",                 "Supermercados",                  QO),
-  stock("VVAR3",  "Casas Bahia S.A.",                                    "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        QO),
+  stock("PETZ3",  "Petz S.A.",                                           "Petz",           "Varejo",                 "Pet e Animais",                  "unavailable"), // obsolete: trading ended 2026-01-02 (→ AUAU3, União Pet); CVM 25089 CANCELADA 2026-05-14
+  stock("GMAT3",  "Grupo Mateus S.A.",                                   "Grupo Mateus",   "Varejo",                 "Supermercados",                  CA, false, true),
+  stock("VVAR3",  "Casas Bahia S.A.",                                    "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        "unavailable"), // obsolete ticker: VVAR3 → VIIA3 → BHIA3, same CNPJ 33.041.260/0652-90
   stock("ALPA4",  "Alpargatas S.A.",                                     "Alpargatas",     "Varejo",                 "Calçados e Acessórios",          CA, false, true),
   stock("LJQQ3",  "Quero-Quero S.A.",                                    "Quero-Quero",    "Varejo",                 "Materiais de Construção",        QO),
   stock("PTBL3",  "Portobello S.A.",                                     "Portobello",     "Varejo",                 "Revestimentos Cerâmicos",        QO),
@@ -177,7 +177,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("ALOS3",  "Allos S.A.",                                          "Allos",          "Imóveis Comerciais",     "Shopping Centers",               QO),
   stock("IGTI11", "Iguatemi S.A.",                                       "Iguatemi",       "Imóveis Comerciais",     "Shopping Centers",               CA, false, true, "unit"),
   stock("JHSF3",  "JHSF Participações S.A.",                             "JHSF",           "Imóveis Comerciais",     "Shopping e Real Estate",         CA, false, true),
-  stock("BRPR3",  "BR Properties S.A.",                                  "BR Properties",  "Imóveis Comerciais",     "Escritórios e Galpões",          QO),
+  stock("BRPR3",  "BR Properties S.A.",                                  "BR Properties",  "Imóveis Comerciais",     "Escritórios e Galpões",          "unavailable"), // CVM 19925 CANCELADA 2023-12-20 (cancelamento voluntário)
 
   // ── Bancário ─────────────────────────────────────────────────────────────────
   stock("ITUB4",  "Itaú Unibanco Holding S.A.",                          "Itaú Unibanco",  "Bancário",               "Banco Múltiplo",                 SS),
@@ -211,7 +211,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("FLRY3",  "Fleury S.A.",                                         "Fleury",         "Saúde",                  "Diagnósticos",                   CA, false, true),
   stock("ODPV3",  "Odontoprev S.A.",                                     "Odontoprev",     "Saúde",                  "Planos Odontológicos",           CA, false, true),
   stock("QUAL3",  "Qualicorp Consultoria e Corretora de Benefícios S.A.","Qualicorp",      "Saúde",                  "Benefícios Corporativos",        CA, false, true),
-  stock("BLAU3",  "Blau Farmacêutica S.A.",                              "Blau Farma",     "Saúde",                  "Medicamentos",                   QO),
+  stock("BLAU3",  "Blau Farmacêutica S.A.",                              "Blau Farma",     "Saúde",                  "Medicamentos",                   CA, false, true),
 
   // ── Educação ─────────────────────────────────────────────────────────────────
   stock("COGN3",  "Cogna Educação S.A.",                                 "Cogna",          "Educação",               "Ensino Superior",                CA, false, true),
@@ -222,10 +222,10 @@ export const B3_UNIVERSE: B3Asset[] = [
 
   // ── Consumo Pessoal e Serviços ───────────────────────────────────────────────
   stock("NTCO3",  "Natura & Co Holding S.A.",                            "Natura &Co",     "Consumo Pessoal",        "Cosméticos e Higiene",           CA, false, true),
-  stock("SMFT3",  "SmartFit Escola de Ginástica e Dança S.A.",           "SmartFit",       "Consumo Pessoal",        "Academias e Fitness",            QO),
+  stock("SMFT3",  "SmartFit Escola de Ginástica e Dança S.A.",           "SmartFit",       "Consumo Pessoal",        "Academias e Fitness",            CA, false, true),
   stock("AMBP3",  "Ambipar Participações e Franquias S.A.",              "Ambipar",        "Serviços",               "Gestão Ambiental",               QO),
   stock("CVCB3",  "CVC Brasil Operadora e Agência de Viagens S.A.",      "CVC",            "Serviços",               "Turismo e Viagens",              CA, false, true),
-  stock("VLID3",  "Valid Soluções S.A.",                                  "Valid",          "Serviços",               "Documentos e Soluções Digitais", QO),
+  stock("VLID3",  "Valid Soluções S.A.",                                  "Valid",          "Serviços",               "Documentos e Soluções Digitais", CA, false, true),
   stock("PRNR3",  "Priner Serviços Industriais S.A.",                    "Priner",         "Serviços",               "Serviços Industriais",           QO),
 
   // ── Tecnologia ───────────────────────────────────────────────────────────────
@@ -233,7 +233,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("INTB3",  "Intelbras S.A.",                                      "Intelbras",      "Tecnologia",             "Telec. Eletrônica",              CA, false, true),
   stock("LWSA3",  "Locaweb Serviços de Internet S.A.",                   "Locaweb",        "Tecnologia",             "Hospedagem e SaaS",              CA, false, true),
   stock("CASH3",  "Méliuz S.A.",                                         "Méliuz",         "Tecnologia",             "Fintech e Cashback",             QO),
-  stock("POSI3",  "Positivo Tecnologia S.A.",                            "Positivo",       "Tecnologia",             "Hardware e Dispositivos",        QO),
+  stock("POSI3",  "Positivo Tecnologia S.A.",                            "Positivo",       "Tecnologia",             "Hardware e Dispositivos",        CA, false, true),
 
   // ── FIIs (sector_specific_model_required) ─────────────────────────────────────
   stock("MXRF11", "Maxi Renda FII",                                      "MXRF11",         "FII",                    "Papel (CRI/CRA)",                SS, false, false, "fii"),

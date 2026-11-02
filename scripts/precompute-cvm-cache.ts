@@ -4,6 +4,7 @@
  *
  * Usage:
  *   npm run cvm:precompute
+ *   CVM_PRECOMPUTE_TICKERS=AERI3,RECV3 npm run cvm:precompute   # subset only
  *
  * Files written:
  *   src/data/cvm-cache/financials/<TICKER>.json
@@ -24,6 +25,7 @@ import { getCvmCompanyByTicker } from "../src/lib/cvm/company-map";
 import { getAnnualDfpFinancials } from "../src/lib/cvm/dfp-client";
 import { fetchCvmDocuments } from "../src/lib/cvm/documents-client";
 import type { CoverageStatus } from "../src/data/coverage-types";
+import { readTickerFilter } from "./ticker-filter";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -115,8 +117,10 @@ async function main(): Promise<void> {
   mkdirSync(join(CACHE_ROOT, "documents"), { recursive: true });
 
   const skipExisting = process.argv.includes("--skip-existing");
+  const tickerFilter = readTickerFilter("CVM_PRECOMPUTE_TICKERS");
   const allTickers = B3_UNIVERSE
     .filter(a => a.hasCvmMapping && ELIGIBLE_STATUSES.has(a.coverageStatus))
+    .filter(a => !tickerFilter || tickerFilter.has(a.ticker))
     .map(a => a.ticker);
   const tickers = skipExisting
     ? allTickers.filter(t => {

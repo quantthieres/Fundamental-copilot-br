@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolveAssetCoverage } from "./coverage-resolver";
 import type { CoverageResolverInput } from "./coverage-resolver";
+import { B3_UNIVERSE } from "@/data/b3-universe";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,73 @@ describe("unavailable — no data at all", () => {
     const p = resolveAssetCoverage({ ticker: "ZZZZ3", assetType: "unknown", ...NO_DATA });
     expect(p.coverageLevel).toBe("sector_specific_model_required");
     expect(p.reasonCode).toBe("UNKNOWN_ASSET_TYPE");
+  });
+});
+
+// ─── declared unavailable precedence ─────────────────────────────────────────
+
+describe("declaredStatus unavailable — authoritative over cache-derived resolution", () => {
+  it("obsolete stock with market data → unavailable (PETZ3-like)", () => {
+    const p = resolveAssetCoverage({
+      ticker: "PETZ3", assetType: "common_stock", ...MARKET_ONLY, declaredStatus: "unavailable",
+    });
+    expect(p.coverageLevel).toBe("unavailable");
+    expect(p.reasonCode).toBe("DECLARED_UNAVAILABLE");
+    expect(p.isIndustrialModelEligible).toBe(false);
+    expect(p.isForecastEligible).toBe(false);
+  });
+
+  it("incorporated insurer → unavailable, not sector-specific (SULA11-like)", () => {
+    const p = resolveAssetCoverage({
+      ticker: "SULA11", assetType: "insurance", ...MARKET_ONLY, declaredStatus: "unavailable",
+    });
+    expect(p.coverageLevel).toBe("unavailable");
+    expect(p.reasonCode).toBe("DECLARED_UNAVAILABLE");
+  });
+
+  it("wins even when every cache is present", () => {
+    const p = resolveAssetCoverage({
+      ticker: "XXXX3", assetType: "common_stock", ...ALL_CACHES, declaredStatus: "unavailable",
+    });
+    expect(p.coverageLevel).toBe("unavailable");
+    expect(p.isForecastEligible).toBe(false);
+    // Cache flags are still reported as-is.
+    expect(p.hasAnnualFinancials).toBe(true);
+  });
+
+  it("declared quote_only stays quote_only", () => {
+    const p = resolveAssetCoverage({
+      ticker: "BRAP4", assetType: "common_stock", ...MARKET_ONLY, declaredStatus: "quote_only",
+    });
+    expect(p.coverageLevel).toBe("quote_only");
+    expect(p.reasonCode).toBe("NO_CVM_MAPPING");
+  });
+
+  it("declared sector-specific bank keeps sector-specific resolution", () => {
+    const p = resolveAssetCoverage({
+      ticker: "ITUB4", assetType: "bank", ...MARKET_ONLY, declaredStatus: "sector_specific_model_required",
+    });
+    expect(p.coverageLevel).toBe("sector_specific_model_required");
+    expect(p.reasonCode).toBe("BANK_MODEL_REQUIRED");
+  });
+
+  it("declared cvm_analysis with all caches still resolves to full_analysis", () => {
+    const p = resolveAssetCoverage({
+      ticker: "AERI3", assetType: "common_stock", ...ALL_CACHES, declaredStatus: "cvm_analysis",
+    });
+    expect(p.coverageLevel).toBe("full_analysis");
+    expect(p.isForecastEligible).toBe(true);
+  });
+
+  it("every B3_UNIVERSE asset declared unavailable resolves to unavailable", () => {
+    const declared = B3_UNIVERSE.filter(a => a.coverageStatus === "unavailable");
+    expect(declared.map(a => a.ticker)).toEqual(expect.arrayContaining(["PETZ3", "SULA11"]));
+    for (const a of declared) {
+      const p = resolveAssetCoverage({
+        ticker: a.ticker, assetType: "common_stock", ...MARKET_ONLY, declaredStatus: a.coverageStatus,
+      });
+      expect(p.coverageLevel, a.ticker).toBe("unavailable");
+    }
   });
 });
 

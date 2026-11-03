@@ -291,6 +291,71 @@ Para o design técnico completo do Forecast Layer, consulte [`docs/forecast-laye
 
 ---
 
+## Mapa Macro — camada de dados (v1)
+
+Fase 1 do Mapa Macro: contratos, cache e API. A interface (mapa, ranking, legenda) ainda
+não existe; os protótipos em `.claude/reference/macro-designer/` são apenas referência
+visual e seus números são fictícios.
+
+| Indicador (`id`) | Rótulo | Unidade | Fonte | Código |
+|---|---|---|---|---|
+| `inflation` | Inflação | % | IMF WEO | `PCPIPCH` (IPC, média anual, variação %) |
+| `policy_rate` | Taxa básica | % a.a. | BIS | `WS_CBPOL`, mensal (fim do mês) |
+| `real_gdp_growth` | Crescimento real do PIB | % | IMF WEO | `NGDP_RPCH` |
+| `unemployment` | Desemprego | % | IMF WEO | `LUR` |
+| `gov_debt_gdp` | Dívida pública / PIB | % do PIB | IMF WEO | `GGXWDG_NGDP` |
+
+- **Fontes oficiais via SDMX, sem autenticação:** IMF Data Portal
+  (`api.imf.org/external/sdmx/2.1`, dataflow `IMF.RES:WEO`) e BIS
+  (`stats.bis.org/api/v2`, dataflow `BIS:WS_CBPOL(1.0)`).
+- **Países:** chave interna ISO 3166-1 alfa-3 (`src/lib/macro/country-metadata.ts`). O BIS usa
+  alfa-2, com mapeamento explícito. Os códigos WEO `KOS`→`XKX` e `WBG`→`PSE` também são
+  explícitos. Não há busca por nome. Agregados (WEO `G***`, BIS `XM` = área do euro) não
+  viram países; `XM` fica guardado em `aggregates` como área de referência.
+- **Status (WEO):**
+  - `observed` até `LATEST_ACTUAL_ANNUAL_DATA` do FMI (ano fiscal `FY2024/25` conta como 2024).
+  - `estimated` em todos os anos seguintes, inclusive o ano da edição e os posteriores. O FAQ do
+    WEO define os anos após o último dado efetivo como estimativas da equipe do FMI, e avisa que
+    o período sombreado de previsão do relatório não necessariamente coincide com esse metadado.
+  - Sem `LATEST_ACTUAL_ANNUAL_DATA` (ausente ou zero), tudo é `estimated`.
+  - `projected` existe no tipo, mas não é emitido para o WEO, porque o FMI não marca projeções
+    por observação.
+  - `no_data` com `value: null` quando não há observação.
+  - A regra não usa o ano da edição nem a data atual, e está registrada em `statusMethodology`
+    em cada cache.
+- **Taxa básica:** para cada ano, vale a última observação mensal disponível naquele ano
+  (no ano corrente, o mês mais recente). `referencePeriod` mostra o mês (ex.: `2026-09`) e
+  `sourceArea` indica a área BIS usada.
+- **Área do euro:** `src/lib/macro/euro-area.ts` lista os 21 membros com a data de adoção
+  (fonte: BCE, lista de países "Euro since"; todas as adoções em 1º de janeiro, ex.: Decisão
+  do Conselho (UE) 2025/1407 para a Bulgária em 2026).
+  - Antes da adoção, o membro usa a própria série nacional do BIS, quando existe.
+  - A partir do mês de adoção, usa a taxa do BCE (BIS `XM`) com `sourceArea: "XM"` e
+    `sourceAreaName: "Área do euro (BCE)"`, mantendo o ISO-3 do país como geografia.
+  - `XM` nunca é aplicado antes da adoção nem a países fora do euro (ex.: POL, GBR, DNK,
+    SWE); a validação do cache rejeita esses casos.
+- **Cache:** `src/data/macro-cache/<indicador>.json`, normalizado e determinístico. O WEO
+  começa em 2000; a taxa básica começa em 1990, para preservar as séries nacionais
+  anteriores ao euro. Inclui fonte, edição (`vintage`), `generatedAt`, anos disponíveis e
+  último período.
+- **Geração:** `npm run macro:precompute`.
+  - Os dados baixados ficam só em memória.
+  - Cada cache é validado e comparado com o anterior antes de qualquer gravação: queda de
+    cobertura, encurtamento de anos, valores todos nulos, edição retrocedendo, ISO inválido
+    ou duplicatas abortam sem gravar nada (exit 1).
+  - A escrita é atômica (arquivo temporário + rename).
+  - A atualização automática ainda não faz parte do workflow semanal.
+- **API:** `GET /api/macro/[indicator]?year=YYYY` lê apenas o cache estático.
+  - Indicador desconhecido retorna 404, ano inválido 400 e cache ausente 503.
+  - Sem `year`, usa o ano da edição da fonte.
+  - Para o painel de país, use `getMacroCountrySnapshot(iso3, ano)` em `src/lib/macro/macro-cache.ts`.
+- **Atribuição:** "IMF — World Economic Outlook, Oct/2026" e "BIS — Central bank policy
+  rates", disponíveis em `source.attribution`. Os dados seguem os termos de uso do FMI
+  (imf.org/external/terms.htm) e do BIS (bis.org/terms_conditions.htm), que pedem
+  citação da fonte.
+
+---
+
 ## Scripts disponíveis
 
 ### Validação
@@ -339,6 +404,7 @@ npm run forecast:precompute:baseline   # gera cache de previsões baseline (loca
 npm run bank:precompute                # gera cache bancário anual via CVM DFP
 npm run fii:precompute                 # gera cache de FII via CVM informe mensal
 npm run insurance:precompute           # gera cache de seguradora anual via CVM DFP
+npm run macro:precompute               # gera caches do Mapa Macro (IMF WEO + BIS), com guarda de regressão
 ```
 
 ### Atualização automática de caches
@@ -418,6 +484,7 @@ src/
 │   │   │   ├── company/[ticker]/
 │   │   │   ├── documents/[ticker]/
 │   │   │   └── financials/[ticker]/
+│   │   ├── macro/[indicator]/  ← Mapa Macro: um indicador × ano (cache estático)
 │   │   └── market-data/[ticker]/
 │   ├── cobertura/
 │   ├── dashboard/
@@ -436,6 +503,7 @@ src/
 ├── data/
 │   ├── companies/        ← dados mock para tickers full_analysis
 │   ├── cvm-cache/        ← cache pré-computado (financials + documents)
+│   ├── macro-cache/      ← caches normalizados do Mapa Macro (IMF WEO + BIS)
 │   ├── b3-universe.ts
 │   └── coverage-types.ts
 │
@@ -444,6 +512,7 @@ src/
 │   ├── cvm/              ← pipeline CVM, cache, parser, normalizer
 │   ├── forecasting/      ← modelos baseline, backtesting, séries temporais
 │   ├── fundamentals/     ← cálculo de indicadores
+│   ├── macro/            ← Mapa Macro: contratos, clientes IMF/BIS, normalização, cache
 │   ├── market-data/      ← cliente brapi
 │   └── formatters.ts
 │

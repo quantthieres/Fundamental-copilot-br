@@ -8,6 +8,7 @@ import { COVERAGE_BADGE } from "@/data/coverage-types";
 
 const NAV_LINKS = [
   { label: "Painel",      href: "/dashboard"   },
+  { label: "Macro",       href: "/macro"       },
   { label: "Metodologia", href: "/metodologia" },
   { label: "Cobertura",   href: "/cobertura"   },
   { label: "Sobre",       href: "/sobre"        },
@@ -63,7 +64,7 @@ export default function AppHeader({
   }
 
   return (
-    <header style={styles.header}>
+    <header className="app-header" style={styles.header}>
       {/* Brand — links to landing */}
       <Link href="/" style={styles.brand}>
         <img
@@ -72,7 +73,7 @@ export default function AppHeader({
           aria-hidden="true"
           style={styles.brandIcon}
         />
-        <span style={styles.brandText}>Fundamental Copilot</span>
+        <span className="app-header-brand-text" style={styles.brandText}>Fundamental Copilot</span>
         <span style={styles.brandBadge}>BR</span>
       </Link>
 
@@ -137,7 +138,7 @@ export default function AppHeader({
       )}
 
       {/* Nav links */}
-      <nav style={styles.navLinks}>
+      <nav className="app-header-nav" aria-label="Navegação principal" style={styles.navLinks}>
         {NAV_LINKS.map(({ label, href }) => {
           const isActive = href !== "#" && (
             href === "/" ? pathname === "/" : pathname.startsWith(href)
@@ -146,6 +147,7 @@ export default function AppHeader({
             <Link
               key={label}
               href={href}
+              aria-current={isActive ? "page" : undefined}
               style={{ ...styles.navLink, ...(isActive ? styles.navLinkActive : {}) }}
             >
               {label}

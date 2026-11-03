@@ -38,3 +38,11 @@ button:hover { opacity: 0.88; }
 @media (max-width: 900px) {
   .main-grid { grid-template-columns: 1fr !important; }
 }
+
+/* Shared header on narrow screens: keep every nav link reachable (horizontal
+   scroll) instead of overflowing the page; the logo icon stays visible. */
+@media (max-width: 720px) {
+  .app-header { padding: 0 12px !important; gap: 10px !important; }
+  .app-header-brand-text { display: none; }
+  .app-header-nav { flex-shrink: 1 !important; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+}

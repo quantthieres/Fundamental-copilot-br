@@ -254,6 +254,22 @@ function toCountry([iso3, iso2, namePt, region, subregion]: Row): MacroCountry {
   return country;
 }
 
+/** Display order and Portuguese labels for regions (ranking filter, panels). */
+export const MACRO_REGIONS: ReadonlyArray<{ id: MacroRegionId; labelPt: string }> = [
+  { id: "north_america", labelPt: "América do Norte" },
+  { id: "latin_america", labelPt: "América Latina e Caribe" },
+  { id: "europe", labelPt: "Europa" },
+  { id: "asia", labelPt: "Ásia e Oriente Médio" },
+  { id: "africa", labelPt: "África" },
+  { id: "oceania", labelPt: "Oceania" },
+];
+
+const REGION_LABELS = new Map(MACRO_REGIONS.map(r => [r.id, r.labelPt]));
+
+export function getRegionLabelPt(region: MacroRegionId): string {
+  return REGION_LABELS.get(region) ?? region;
+}
+
 export const MACRO_COUNTRIES: readonly MacroCountry[] = [...ROWS, KOSOVO]
   .map(toCountry)
   .sort((a, b) => a.iso3.localeCompare(b.iso3));

@@ -180,3 +180,36 @@ export function getMacroCountrySnapshot(
   });
   return { iso3: country.iso3, countryName: country.namePt, region: country.region, selectedYear: year, indicators };
 }
+
+/** Per-indicator metadata the /macro page needs before fetching any data. */
+export interface MacroIndicatorPageMeta {
+  id: MacroIndicatorId;
+  label: string;
+  unit: string;
+  conceptPt: string;
+  frequency: MacroIndicatorDataset["indicator"]["frequency"];
+  source: { id: MacroIndicatorDataset["source"]["id"]; vintage: string };
+  availableYears: number[];
+  latestReferencePeriod: string;
+  /** False when the cache file is missing or unreadable. */
+  available: boolean;
+}
+
+/** Reads every indicator cache once (build/render time) for the page shell. */
+export function getMacroPageMeta(dir: string = MACRO_CACHE_DIR): MacroIndicatorPageMeta[] {
+  return MACRO_INDICATOR_IDS.map(id => {
+    const meta = MACRO_INDICATORS[id];
+    const ds = readMacroDataset(id, dir);
+    return {
+      id,
+      label: meta.labelPt,
+      unit: meta.unit,
+      conceptPt: meta.conceptPt,
+      frequency: meta.frequency,
+      source: { id: meta.source, vintage: ds?.source.vintage ?? "" },
+      availableYears: ds?.availableYears ?? [],
+      latestReferencePeriod: ds?.latestReferencePeriod ?? "",
+      available: ds !== null,
+    };
+  });
+}

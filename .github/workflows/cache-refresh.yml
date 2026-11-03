@@ -49,12 +49,12 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
 
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -68,10 +68,15 @@ jobs:
       # ── Source data (network: dados.cvm.gov.br) ────────────────────────────
       # Annual must precede quarterly: Q4 is derived from the annual DFP cache.
 
+      # One ticker, one DFP year and one statement CSV at a time; company
+      # caches are released after each ticker. Memory is logged per ticker
+      # (heap stayed under ~150 MB for all 119 tickers in testing).
       - name: Annual CVM financials and documents
         if: env.SCOPE == 'all' || env.SCOPE == 'industrial'
         env:
           CVM_CONCURRENCY: "1"
+          CVM_DFP_INNER_CONCURRENCY: "1"
+          CVM_MEMORY_LOG: "1"
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: npm run cvm:precompute
 

@@ -7,6 +7,13 @@
  *   CVM_PRECOMPUTE_TICKERS=AERI3,RECV3 npm run cvm:precompute   # subset only
  *   CVM_DFP_END_YEAR=2024 npm run cvm:precompute                 # DFP year window (default 2020..current−1)
  *
+ * Memory (full-universe runs, e.g. the scheduled refresh):
+ *   CVM_CONCURRENCY=1             one ticker at a time
+ *   CVM_DFP_INNER_CONCURRENCY=1   one DFP year / statement CSV at a time
+ *   CVM_MEMORY_LOG=1              log process memory after each ticker
+ * Company-level DFP/document cache entries are released after every ticker
+ * (success or error); the shared yearly ZIP buffers stay cached.
+ *
  * Files written:
  *   src/data/cvm-cache/financials/<TICKER>.json
  *   src/data/cvm-cache/documents/<TICKER>.json
@@ -26,11 +33,13 @@ import { getCvmCompanyByTicker } from "../src/lib/cvm/company-map";
 import { getAnnualDfpFinancials } from "../src/lib/cvm/dfp-client";
 import { fetchCvmDocuments } from "../src/lib/cvm/documents-client";
 import type { CoverageStatus } from "../src/data/coverage-types";
+import { formatMemoryUsage, runWithCompanyCacheRelease } from "../src/lib/cvm/precompute-batch";
 import { readTickerFilter } from "./ticker-filter";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const CONCURRENCY = Number(process.env.CVM_CONCURRENCY ?? 2);
+const MEMORY_LOG = process.env.CVM_MEMORY_LOG === "1";
 const CACHE_ROOT = join(process.cwd(), "src/data/cvm-cache");
 
 const ELIGIBLE_STATUSES = new Set<CoverageStatus>([
@@ -135,15 +144,21 @@ async function main(): Promise<void> {
 
   console.log(`\nPrecomputing CVM cache for ${tickers.length} tickers (concurrency=${CONCURRENCY})${skipExisting ? " [skip-existing]" : ""}...\n`);
 
+  let done = 0;
   const tasks = tickers.map(ticker => async () => {
     process.stdout.write(`  [${ticker}] fetching...`);
-    const result = await processTicker(ticker);
+    const cvmCode = getCvmCompanyByTicker(ticker)?.cvmCode;
+    const result = cvmCode
+      ? await runWithCompanyCacheRelease(ticker, cvmCode, () => processTicker(ticker))
+      : await processTicker(ticker);
     const tag = result.status === "ok" ? "OK" : result.status === "empty" ? "EMPTY" : "ERROR";
     const detail =
       result.status === "error"
         ? ` — ${result.error}`
         : ` (${result.financialsYears} years, ${result.documentsCount} docs)`;
     console.log(`\r  [${ticker}] ${tag}${detail}`);
+    done++;
+    if (MEMORY_LOG) console.log(`  [mem] ${done}/${tickers.length} ${formatMemoryUsage()}`);
     return result;
   });
 

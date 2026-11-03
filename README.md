@@ -352,7 +352,7 @@ em `src/data/` toda semana e só faz commit quando o conteúdo gerado mudou de f
   `sector-models` ou `forecasts`. Execuções agendadas usam sempre `all`.
   Só roda a partir de `main`.
 - **Ordem de atualização:**
-  1. CVM anual — DFP e documentos (`cvm:precompute`, `CVM_CONCURRENCY=1`) — rede.
+  1. CVM anual — DFP e documentos (`cvm:precompute`, `CVM_CONCURRENCY=1`, `CVM_DFP_INNER_CONCURRENCY=1`, memória registrada por ticker com `CVM_MEMORY_LOG=1`) — rede.
      Exercícios fechados de 2020 até o ano anterior (ex.: 2020–2025 durante 2026),
      ajustáveis com `CVM_DFP_START_YEAR`/`CVM_DFP_END_YEAR`; o mesmo vale para bancos
   2. CVM trimestral — ITR (`cvm:precompute:quarterly`, heap de 4 GB) — rede; o Q4

@@ -10,6 +10,18 @@ const GRUPO_TO_STMT: Record<string, string> = {
   "DF Consolidado - Demonstração do Fluxo de Caixa (Método Direto)":   "DFC_MD",
 };
 
+/**
+ * Returns a copy of `s` that does not reference the string it was sliced from.
+ *
+ * V8 represents substrings (split/slice/trim results of 13+ chars) as views
+ * into the parent string. A row keeping `accountName` or `companyName` would
+ * otherwise keep the whole decoded CSV (tens of MB) alive for as long as the
+ * row is cached. Concatenation + slice forces a flat, independent copy.
+ */
+export function detachString(s: string): string {
+  return (" " + s).slice(1);
+}
+
 // Pads a CVM code to 6 digits for consistent comparison.
 function padCvmCode(code: string): string {
   return code.trim().padStart(6, "0");
@@ -160,11 +172,11 @@ export function parseDfpCsv(
     })
     .map(row => ({
       cvmCode:       targetCode,
-      companyName:   row.denomCia,
-      statementType: row.statementType,
-      accountCode:   row.accountCode,
-      accountName:   row.accountName,
-      periodEndDate: row.dtFim,
+      companyName:   detachString(row.denomCia),
+      statementType: detachString(row.statementType),
+      accountCode:   detachString(row.accountCode),
+      accountName:   detachString(row.accountName),
+      periodEndDate: detachString(row.dtFim),
       fiscalYear:    new Date(row.dtFim).getFullYear(),
       value:         row.value,
     }));
@@ -296,11 +308,11 @@ export function parseDfpCsvForCompanies(
         })
         .map(row => ({
           cvmCode:       code,
-          companyName:   row.denomCia,
-          statementType: row.statementType,
-          accountCode:   row.accountCode,
-          accountName:   row.accountName,
-          periodEndDate: row.dtFim,
+          companyName:   detachString(row.denomCia),
+          statementType: detachString(row.statementType),
+          accountCode:   detachString(row.accountCode),
+          accountName:   detachString(row.accountName),
+          periodEndDate: detachString(row.dtFim),
           fiscalYear:    new Date(row.dtFim).getFullYear(),
           value:         row.value,
         })),

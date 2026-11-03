@@ -13,6 +13,7 @@
 
 import { unzipSync } from "fflate";
 import { fetchYearZip } from "./dfp-client";
+import { detachString } from "./dfp-parser";
 import type { CvmDocument, EnetHit, EnetResponse } from "./documents-types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -128,16 +129,17 @@ export function parseCatalogCsv(text: string, cvmCode: string): CatalogRow[] {
     const csvCode = parseInt(p[4].trim(), 10);
     if (isNaN(csvCode) || csvCode !== targetCode) continue;
 
+    // detachString: cached documents must not keep the whole catalog CSV alive.
     rows.push({
-      cnpjCia:  p[0].trim(),
-      dtRefer:  p[1].trim(),
+      cnpjCia:  detachString(p[0].trim()),
+      dtRefer:  detachString(p[1].trim()),
       versao:   parseInt(p[2].trim(), 10) || 1,
-      nomCia:   p[3].trim(),
-      cdCvm:    p[4].trim(),
-      categDoc: p[5].trim(),
-      idDoc:    p[6].trim(),
-      dtReceb:  p[7].trim(),
-      linkDoc:  p[8].trim(),
+      nomCia:   detachString(p[3].trim()),
+      cdCvm:    detachString(p[4].trim()),
+      categDoc: detachString(p[5].trim()),
+      idDoc:    detachString(p[6].trim()),
+      dtReceb:  detachString(p[7].trim()),
+      linkDoc:  detachString(p[8].trim()),
     });
   }
 
@@ -265,6 +267,15 @@ export async function fetchCvmDocuments(
   const docs = sortDocumentsDesc(docArrays.flat()).slice(0, MAX_RESULTS);
   docCache.set(cvmCode, { docs, loadedAt: Date.now() });
   return docs;
+}
+
+/**
+ * Drops the cached documents for one company. Used by batch precompute after a
+ * ticker has been written; the server keeps its 1 h cache. Returns whether an
+ * entry was removed.
+ */
+export function releaseCvmDocumentsCache(cvmCode: string): boolean {
+  return docCache.delete(cvmCode);
 }
 
 // Re-export raw type for route layer

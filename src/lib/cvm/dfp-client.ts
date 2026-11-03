@@ -4,6 +4,7 @@ import type { RawCvmStatementRow, NormalizedFinancials } from "./types";
 import { parseDfpCsv } from "./dfp-parser";
 import { normalizeCvmRows } from "./normalizer";
 import { getDfpYears } from "./dfp-years";
+import { mapWithConcurrency } from "./concurrency";
 
 const DFP_BASE = "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS";
 
@@ -37,6 +38,29 @@ const financialsCache = new Map<string, { data: NormalizedFinancials[]; loadedAt
 
 // In-flight dedup: concurrent requests for the same ticker share one pipeline.
 const financialsInflight = new Map<string, Promise<NormalizedFinancials[]>>();
+
+// ─── Inner concurrency ────────────────────────────────────────────────────────
+// Unset (server default): all years and statement types run concurrently.
+// CVM_DFP_INNER_CONCURRENCY=N (batch precompute): at most N years in flight,
+// and statement types one at a time, so only one large statement CSV is
+// unzipped/decoded at any moment.
+
+function readInnerConcurrency(): number | null {
+  const raw = process.env.CVM_DFP_INNER_CONCURRENCY;
+  if (raw === undefined || raw.trim() === "") return null;
+  if (!/^\d+$/.test(raw.trim()) || Number(raw) < 1) {
+    throw new Error(`CVM_DFP_INNER_CONCURRENCY must be a positive integer, got "${raw}"`);
+  }
+  return Number(raw);
+}
+
+function mapBounded<T, R>(
+  items: readonly T[],
+  limit: number | null,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  return limit === null ? Promise.all(items.map(fn)) : mapWithConcurrency(items, limit, fn);
+}
 
 // ─── Zip download ─────────────────────────────────────────────────────────────
 
@@ -103,10 +127,13 @@ async function processYear(
   ticker: string,
   cvmCode: string,
 ): Promise<NormalizedFinancials | null> {
-  // All 5 statement types for this year are fetched concurrently.
-  // fetchYearZip in-flight dedup ensures the zip is only downloaded once.
-  const statementRows = await Promise.all(
-    STATEMENT_TYPES.map(stmtType => getDfpRows(year, stmtType, cvmCode)),
+  // All 5 statement types are fetched concurrently unless an inner
+  // concurrency limit is set (then sequentially). fetchYearZip in-flight dedup
+  // ensures the zip is only downloaded once.
+  const statementRows = await mapBounded(
+    STATEMENT_TYPES,
+    readInnerConcurrency() === null ? null : 1,
+    stmtType => getDfpRows(year, stmtType, cvmCode),
   );
 
   const allRows = statementRows.flat();
@@ -130,8 +157,8 @@ async function processYear(
  * In-flight deduplication is applied at both the zip (L1) and ticker (L3)
  * levels, so concurrent requests for the same ticker share a single run.
  *
- * All DFP years are processed concurrently; results are sorted ascending
- * by fiscal year.
+ * All DFP years are processed concurrently (bounded by
+ * CVM_DFP_INNER_CONCURRENCY when set); results are sorted ascending by fiscal year.
  */
 export async function getAnnualDfpFinancials(
   ticker: string,
@@ -164,11 +191,13 @@ export async function getAnnualDfpFinancials(
       console.log(`[dfp] ${ticker}: pipeline start — years [${years.join(",")}]`);
     }
 
-    // All years are processed concurrently. Each year's 5 statement types are
-    // also concurrent. The zip in-flight dedup in fetchYearZip ensures each
-    // yearly zip is downloaded exactly once even with concurrent statement fetches.
-    const yearResults = await Promise.all(
-      years.map(year => processYear(year, ticker, cvmCode)),
+    // Years (and each year's statement types) run concurrently unless
+    // CVM_DFP_INNER_CONCURRENCY bounds them. The zip in-flight dedup in
+    // fetchYearZip ensures each yearly zip is downloaded exactly once.
+    const yearResults = await mapBounded(
+      years,
+      readInnerConcurrency(),
+      year => processYear(year, ticker, cvmCode),
     );
 
     const data = yearResults
@@ -185,6 +214,66 @@ export async function getAnnualDfpFinancials(
   })();
 
   financialsInflight.set(key, p);
-  p.finally(() => financialsInflight.delete(key));
+  // Cleanup on both outcomes without creating a second, unhandled rejection;
+  // callers still receive p's rejection.
+  const cleanup = () => { financialsInflight.delete(key); };
+  p.then(cleanup, cleanup);
   return p;
+}
+
+// ─── Cache management ─────────────────────────────────────────────────────────
+
+export interface DfpCacheStats {
+  zipYears: number[];
+  rowEntries: number;
+  financialsEntries: number;
+  inflightTickers: number;
+}
+
+export function getDfpCacheStats(): DfpCacheStats {
+  return {
+    zipYears: [...zipCache.keys()].sort((a, b) => a - b),
+    rowEntries: rowCache.size,
+    financialsEntries: financialsCache.size,
+    inflightTickers: financialsInflight.size,
+  };
+}
+
+/**
+ * Releases company-specific DFP cache entries once a batch job has written
+ * the ticker: the normalized financials for `ticker:cvmCode` and every parsed
+ * row-cache entry for `cvmCode`. Shared yearly ZIP buffers are kept.
+ *
+ * Never touches in-flight work: nothing is released while this ticker's
+ * pipeline is running, and row entries are kept while another ticker with the
+ * same CVM code (e.g. ITUB3/ITUB4) is still in flight.
+ */
+export function releaseDfpCompanyCache(
+  ticker: string,
+  cvmCode: string,
+): { released: boolean; rowEntries: number } {
+  const key = `${ticker}:${cvmCode}`;
+  if (financialsInflight.has(key)) return { released: false, rowEntries: 0 };
+
+  const released = financialsCache.delete(key);
+
+  const suffix = `:${cvmCode}`;
+  const sharedInFlight = [...financialsInflight.keys()].some(k => k.endsWith(suffix));
+  let rowEntries = 0;
+  if (!sharedInFlight) {
+    for (const k of [...rowCache.keys()]) {
+      if (k.endsWith(suffix)) {
+        rowCache.delete(k);
+        rowEntries++;
+      }
+    }
+  }
+  return { released: released || rowEntries > 0, rowEntries };
+}
+
+/** Clears every DFP cache level (tests and long-running batch jobs). */
+export function clearDfpCaches(): void {
+  zipCache.clear();
+  rowCache.clear();
+  financialsCache.clear();
 }

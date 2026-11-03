@@ -69,6 +69,19 @@ describe("classifyAssetReadiness — bucket assignment", () => {
     expect(fii(null).readiness).toBe("analysis_ready");
   });
 
+  it("FII readiness needs 12/12 coverage AND a fresh distribution (lag ≤ 1 month vs NAV)", () => {
+    const fii = (months: number, lag: number | null) =>
+      classifyAssetReadiness(input({ richType: "fii", route: "fii", fiiDistributionMonths: months, fiiDistributionLagMonths: lag }));
+    expect(fii(12, 0).readiness).toBe("analysis_ready");
+    expect(fii(12, 1).readiness).toBe("analysis_ready");      // NAV 2026-10 / dist 2026-09
+    expect(fii(12, -1).readiness).toBe("analysis_ready");     // dist newer than NAV
+    expect(fii(12, 2)).toMatchObject({                         // NAV 2026-11 / dist 2026-09
+      readiness: "analysis_limited",
+      reason: "FII latest distribution is 2 months behind the latest NAV month (max 1)",
+    });
+    expect(fii(11, 0).readiness).toBe("analysis_limited");
+  });
+
   it("FII rule measures availability, not positivity: a stored zero distribution counts", async () => {
     const { computeFiiIndicators } = await import("@/lib/fiis/fii-indicators");
     const rec = (m: number, d: number | null) => ({
@@ -138,14 +151,14 @@ describe("current universe (stable, decision/lifecycle-driven expectations)", ()
     expect(r("ITSA4")).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
   });
 
-  it("BCFF11 placeholder is historical; BTHF11 is limited by its distribution coverage", () => {
+  it("BCFF11 placeholder is historical; BTHF11 is ready once Fundos.Net fills its distributions", () => {
     expect(r("BCFF11")).toMatchObject({ readiness: "historical_or_unavailable", successorTicker: "BTHF11" });
-    expect(r("BTHF11")).toMatchObject({ readiness: "analysis_limited", reason: "FII cache has usable distributions in 6 of the latest 12 months (needs 12)" });
+    expect(r("BTHF11").readiness).toBe("analysis_ready");
     expect(r("BTHF11").fundamentalsTicker).toBeUndefined();
   });
 
-  it("FIIs with 12/12 distribution months stay analysis_ready", () => {
-    for (const t of ["MXRF11", "XPML11", "HGLG11", "KNRI11", "VISC11", "KNCR11", "HGRE11"]) {
+  it("FIIs with 12/12 distribution months are analysis_ready", () => {
+    for (const t of ["MXRF11", "XPML11", "HGLG11", "KNRI11", "VISC11", "KNCR11", "HGRE11", "BTHF11", "IRIM11"]) {
       expect(r(t).readiness, t).toBe("analysis_ready");
     }
   });

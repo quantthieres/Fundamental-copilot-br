@@ -202,7 +202,7 @@ export default function CoberturaPage() {
     {
       badge: FII_BADGE,
       count: FII_CACHE_COUNT,
-      desc:  "FIIs com modelo inicial disponível — patrimônio e rendimentos mensais baseados no informe mensal CVM.",
+      desc:  "FIIs com modelo inicial disponível — patrimônio do informe mensal CVM e rendimentos dos avisos estruturados da B3 (Fundos.Net).",
     },
     {
       badge: INSURANCE_BADGE,
@@ -291,7 +291,7 @@ export default function CoberturaPage() {
               {[
                 { label: "Bancos",       desc: "Modelo bancário inicial disponível para os principais bancos. Indicadores específicos de instituições financeiras baseados em dados CVM." },
                 { label: "Seguradoras",  desc: "Modelo específico para seguradoras." },
-                { label: "FIIs",         desc: "Modelo de FII com patrimônio e rendimentos mensais baseados no informe mensal CVM. Indicadores industriais não se aplicam." },
+                { label: "FIIs",         desc: "Modelo de FII com patrimônio do informe mensal CVM e rendimentos dos avisos estruturados da B3 (Fundos.Net). Indicadores industriais não se aplicam." },
                 { label: "ETFs",         desc: "Fundo/índice listado em bolsa — exibição informativa disponível. Não utiliza demonstrações corporativas tradicionais." },
                 { label: "BDRs",         desc: "Recibo de ativo estrangeiro — exibição informativa disponível. A empresa subjacente não reporta pela estrutura CVM brasileira." },
               ].map(item => (

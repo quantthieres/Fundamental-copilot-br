@@ -115,6 +115,41 @@ export async function buildFiiRegistry(referenceYear: number): Promise<FiiCvmReg
   return results;
 }
 
+// CNPJ (as written in the CSV) → Codigo_ISIN from the most recent geral row
+// across `years`. Used to match Fundos.Net notices by exact ISIN.
+export async function buildFiiIsinIndex(years: number[]): Promise<Map<string, string>> {
+  const latest = new Map<string, { date: string; isin: string }>();
+  for (const year of years) {
+    const zip = await getYearZip(year);
+    if (!zip) continue;
+    const filename = `inf_mensal_fii_geral_${year}.csv`;
+    let extracted: Record<string, Uint8Array>;
+    try {
+      extracted = unzipSync(zip, { filter: f => f.name === filename });
+    } catch { continue; }
+    const fileBytes = extracted[filename];
+    if (!fileBytes) continue;
+
+    const lines   = new TextDecoder("latin1").decode(fileBytes).split(/\r?\n/);
+    const headers = (lines[0] ?? "").split(";").map(h => h.trim());
+    const cnpjIdx = headers.indexOf("CNPJ_Fundo_Classe");
+    const dateIdx = headers.indexOf("Data_Referencia");
+    const isinIdx = headers.indexOf("Codigo_ISIN");
+    if (cnpjIdx < 0 || dateIdx < 0 || isinIdx < 0) continue;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(";");
+      const cnpj = cols[cnpjIdx]?.trim();
+      const date = cols[dateIdx]?.trim() ?? "";
+      const isin = cols[isinIdx]?.trim();
+      if (!cnpj || !isin || !/^BR[A-Z0-9]{10}$/.test(isin)) continue;
+      const prev = latest.get(cnpj);
+      if (!prev || date >= prev.date) latest.set(cnpj, { date, isin });
+    }
+  }
+  return new Map([...latest].map(([cnpj, v]) => [cnpj, v.isin]));
+}
+
 export function findFundCnpj(
   ticker: string,
   companyName: string,

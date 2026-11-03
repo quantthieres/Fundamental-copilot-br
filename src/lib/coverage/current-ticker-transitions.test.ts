@@ -8,6 +8,12 @@ import { getCvmCompanyByTicker } from "@/lib/cvm/company-map";
 import { getPrecomputedFinancials, getPrecomputedQuarterlyFinancials } from "@/lib/cvm/precomputed-cache";
 import { hasFiiAnalysisCache } from "@/lib/fiis/fii-coverage";
 import { readFiiCache } from "@/lib/fiis/fii-cache";
+import {
+  computeFiiIndicators,
+  distributionWindowMonths,
+  latestDistributionReferenceMonth,
+  latestRecordWithNav,
+} from "@/lib/fiis/fii-indicators";
 import { assessAssetReadiness, fiiDistributionMonths } from "./asset-readiness-inputs";
 import { getFundamentalsAlias, resolveFundamentalsTicker } from "./fundamentals-alias";
 import { getIssuerCvmCode, isSameIssuer } from "./issuer-identity";
@@ -107,17 +113,27 @@ describe("BTHF11 (BTG Pactual Real Estate Hedge Fund — not BCFF11)", () => {
     expect(new Set(dates).size).toBe(dates.length);
   });
 
-  it("routes to the FII model; analysis_limited (not cache_pending) while distributions are unreported", () => {
+  it("routes to the FII model; readiness follows the generic distribution-coverage rule", () => {
     expect(hasFiiAnalysisCache("BTHF11")).toBe(true);
     expect(resolveModelRoute(asset("BTHF11"))).toBe("fii");
-    expect(fiiDistributionMonths("BTHF11")).toBe(6);
-    expect(readiness("BTHF11").readiness).toBe("analysis_limited");
+    const months = fiiDistributionMonths("BTHF11")!;
+    expect(readiness("BTHF11").readiness).toBe(months >= FII_MIN_DISTRIBUTION_MONTHS ? "analysis_ready" : "analysis_limited");
   });
 
-  it("unreported months stay null in the cache — never zero", () => {
-    const recent = readFiiCache("BTHF11")!.records.filter(r => r.referenceDate >= "2026-04-01");
+  it("months the CVM informe left blank are filled from Fundos.Net notices for the traded quota", () => {
+    const cache = readFiiCache("BTHF11")!;
+    expect(cache.distributionEnrichment).toMatchObject({ status: "ok", isin: "BRBTHFCTF000" });
+    const recent = cache.records.filter(r => r.referenceDate >= "2026-04-01");
     expect(recent.length).toBeGreaterThan(0);
-    expect(recent.every(r => r.monthlyDistributionPerShare === null)).toBe(true);
+    for (const r of recent) {
+      expect(r.cvmDerivedDistributionEstimate ?? null, r.referenceDate).toBeNull();
+      expect(r, r.referenceDate).toMatchObject({ distributionSource: "fnet_structured", monthlyDistributionPerShare: expect.any(Number) });
+      expect(r.fnetDocumentIds?.length, r.referenceDate).toBeGreaterThan(0);
+    }
+    // Dec-2025 was refiled (reapresentação 1077704 replaced 1077689: 0.092 → 0.10599).
+    expect(cache.records.find(r => r.referenceDate === "2025-12-01")).toMatchObject({
+      monthlyDistributionPerShare: 0.10599, fnetDocumentIds: [1077704],
+    });
   });
 });
 
@@ -153,6 +169,35 @@ describe("IRDM11 → IRIM11 (fund wound up, portfolio moved to a different fund)
     expect(resolveModelRoute(asset("IRIM11"))).toBe("fii");
     const months = fiiDistributionMonths("IRIM11")!;
     expect(readiness("IRIM11").readiness).toBe(months >= FII_MIN_DISTRIBUTION_MONTHS ? "analysis_ready" : "analysis_limited");
+  });
+
+  it("IRIM11 distributions come from its own Fundos.Net notices (CVM informe reported 0%)", () => {
+    const cache = readFiiCache("IRIM11")!;
+    expect(cache.distributionEnrichment).toMatchObject({ status: "ok", isin: "BRIRIMCTF003" });
+    // Sep-2026: notice 1344822, R$0.75/cota, data base 2026-10-09, paid 2026-10-19.
+    expect(cache.records.find(r => r.referenceDate === "2026-09-01")).toMatchObject({
+      monthlyDistributionPerShare: 0.75,
+      distributionSource: "fnet_structured",
+      cvmDerivedDistributionEstimate: null,
+      distributionBaseDate: "2026-10-09",
+      distributionPaymentDate: "2026-10-19",
+      fnetDocumentIds: [1344822],
+    });
+  });
+
+  it("BTHF11 and IRIM11: separate NAV and distribution freshness; full 12-month Fundos.Net window", () => {
+    for (const t of ["BTHF11", "IRIM11"]) {
+      const records = readFiiCache(t)!.records;
+      const ind = computeFiiIndicators(records, null)!;
+      expect(ind.navReferenceDate, t).toBe(latestRecordWithNav(records)!.referenceDate);
+      expect(ind.distributionReferenceDate, t).toBe(`${latestDistributionReferenceMonth(records)}-01`);
+      const byMonth = new Map(records.map(r => [r.referenceDate.slice(0, 7), r]));
+      const window = distributionWindowMonths(records);
+      expect(window, t).toHaveLength(12);
+      expect(window.at(-1), t).toBe(latestDistributionReferenceMonth(records));
+      for (const m of window) expect(byMonth.get(m)?.distributionSource, `${t} ${m}`).toBe("fnet_structured");
+      expect(ind.distributionCoverageMonths, t).toBe(12);
+    }
   });
 
   it("IRDM11's historical cache cannot make it current-ready", () => {

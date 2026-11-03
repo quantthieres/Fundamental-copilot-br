@@ -20,7 +20,12 @@ const CACHED_TICKERS = new Set([
   "IRIM11",
 ]);
 
-export const FII_CACHE_COUNT = [...CACHED_TICKERS].filter(t => !getTickerLifecycle(t)).length;
+/** Current (non-historical) tickers with an FII cache, in registry order. */
+export function getCurrentFiiCacheTickers(): string[] {
+  return [...CACHED_TICKERS].filter(t => !getTickerLifecycle(t));
+}
+
+export const FII_CACHE_COUNT = getCurrentFiiCacheTickers().length;
 
 export const FII_BADGE = {
   label: "Modelo de FII",
@@ -34,7 +39,7 @@ export function hasFiiAnalysisCache(ticker: string): boolean {
 
 export function getFiiCoverageReason(ticker: string): string {
   return hasFiiAnalysisCache(ticker)
-    ? "Modelo de fundos imobiliários disponível — indicadores mensais baseados no informe mensal CVM."
+    ? "Modelo de fundos imobiliários disponível — patrimônio do informe mensal CVM e rendimentos dos avisos estruturados da B3 (Fundos.Net)."
     : "Modelo específico para fundos imobiliários em desenvolvimento.";
 }
 

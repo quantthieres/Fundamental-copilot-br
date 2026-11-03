@@ -186,4 +186,14 @@ describe("detectCacheRegression", () => {
     expect(detectCacheRegression(p, s(old), s({ available: true, records: [{ referenceDate: "2026-08-01" }] }))).not.toEqual([]);
     expect(detectCacheRegression(p, s(old), s({ available: false, records: [] }))).not.toEqual([]);
   });
+
+  it("FII: a Fundos.Net month may not fall back to the CVM estimate", () => {
+    const p = "src/data/fii-cache/monthly/BTHF11.json";
+    const rec = (m: string, src: string | null) => ({ referenceDate: m, distributionSource: src });
+    const old = { available: true, records: [rec("2026-08-01", "fnet_structured"), rec("2026-09-01", "fnet_structured")] };
+    const failed = { available: true, records: [rec("2026-08-01", null), rec("2026-09-01", null)] };
+    const rolled = { available: true, records: [rec("2026-09-01", "fnet_structured"), rec("2026-10-01", null)] };
+    expect(detectCacheRegression(p, s(old), s(failed))).toEqual(["Fundos.Net distribution lost for 2026-08-01, 2026-09-01"]);
+    expect(detectCacheRegression(p, s(old), s(rolled))).toEqual([]);
+  });
 });

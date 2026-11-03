@@ -167,6 +167,21 @@ function checkLatestNotOlder(
   }
 }
 
+// A month whose distribution came from a Fundos.Net notice must keep it: a
+// refresh where Fundos.Net failed would otherwise silently fall back to the
+// CVM estimate (see docs/fii-distribution-source.md).
+function checkFnetMonthsKept(problems: string[], oldJson: Json, newJson: Json): void {
+  const fnetMonths = (j: Json) => new Map(
+    (Array.isArray(j.records) ? j.records : [])
+      .filter((r): r is Json => !!r && typeof r === "object")
+      .map(r => [String(r.referenceDate), r.distributionSource === "fnet_structured"] as const),
+  );
+  const before = fnetMonths(oldJson);
+  const after = fnetMonths(newJson);
+  const lost = [...before].filter(([m, fnet]) => fnet && after.has(m) && !after.get(m)).map(([m]) => m);
+  if (lost.length > 0) problems.push(`Fundos.Net distribution lost for ${lost.sort().join(", ")}`);
+}
+
 function checkStillAvailable(problems: string[], oldJson: Json, newJson: Json): void {
   if (oldJson.available !== false && newJson.available === false) {
     problems.push(`"available" flipped from true to false`);
@@ -227,6 +242,7 @@ export function detectCacheRegression(
     // FII records are a rolling 24-month window, so the count may vary.
     checkStillAvailable(problems, oldJson, newJson);
     checkLatestNotOlder(problems, oldJson, newJson, "records", "referenceDate");
+    checkFnetMonthsKept(problems, oldJson, newJson);
   }
 
   return problems;

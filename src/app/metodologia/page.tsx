@@ -160,7 +160,7 @@ const MODEL_MINI_CARDS: ModelMiniCard[] = [
     label: "FIIs",
     color: "#6d28d9", bg: "#f5f3ff",
     items: [
-      "Informe Mensal CVM",
+      "Informe Mensal CVM + avisos de rendimentos B3 (Fundos.Net)",
       "Patrimônio, P/VP, DY 12m quando confiável",
       "Distribuições ausentes não tratadas como zero",
       "Sem classificação barato/caro",
@@ -582,13 +582,17 @@ export default function MetodologiaPage() {
           <Label>E · Fundos de Investimento Imobiliário (FIIs)</Label>
           <Card title="Modelo de FII" accent="#6d28d9">
             <Prose>
-              FIIs utilizam o Informe Mensal CVM como fonte primária, quando disponível. O
-              modelo extrai indicadores específicos do segmento imobiliário.
+              FIIs utilizam o Informe Mensal CVM para patrimônio e cotas, e os avisos
+              estruturados de rendimentos publicados pela B3 (Fundos.Net) para os rendimentos
+              por cota. O modelo extrai indicadores específicos do segmento imobiliário.
             </Prose>
             <BulletList items={[
               "Patrimônio Líquido (NAV) e NAV por cota.",
               "P/VP (Preço sobre Valor Patrimonial) como referência relativa — sem classificação barato/caro.",
               "DY 12m (Dividend Yield dos últimos 12 meses) calculado apenas quando há distribuições suficientes para cobertura confiável.",
+              "Rendimentos por cota vêm só do aviso estruturado da B3; mês sem aviso fica sem rendimento — não é estimado a partir do informe CVM.",
+              "VP/cota e rendimentos podem ter meses de referência diferentes: o aviso da B3 costuma sair antes do informe mensal CVM.",
+              "Amortizações são registradas à parte e não entram no rendimento nem no DY 12m.",
               "Distribuições ausentes não são tratadas como zero — o sistema distingue dado ausente de distribuição zero.",
               "Indicadores industriais (receita, EBIT, FCL, dívida corporativa) não são aplicados.",
             ]} />

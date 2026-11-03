@@ -13,6 +13,7 @@ import type { ModelRoute } from "./model-routing";
 import type { AssetType } from "./coverage-types";
 import type { TickerLifecycle } from "./ticker-lifecycle";
 import type { FundamentalsAlias } from "./fundamentals-alias";
+import { FII_MAX_DISTRIBUTION_LAG_MONTHS } from "../fiis/fii-indicators";
 
 export type AssetReadiness =
   /** Operational model with sufficient data. */
@@ -158,12 +159,17 @@ export interface ReadinessInput {
    * records (computeFiiIndicators' distributionCoverageMonths); null = no FII cache.
    */
   fiiDistributionMonths?: number | null;
+  // Latest NAV month minus latest distribution month (FII caches only).
+  fiiDistributionLagMonths?: number | null;
   decision: ReadinessDecision | null;
 }
 
 /**
  * Distribution is a material FII metric: the 12-month yield is only complete
  * (the panel stops warning "DY 12m pode estar subestimado") with all 12 months.
+ * An FII is analysis_ready only with 12/12 covered months AND a latest
+ * distribution no more than FII_MAX_DISTRIBUTION_LAG_MONTHS behind its latest
+ * NAV month (fii-indicators.ts).
  */
 export const FII_MIN_DISTRIBUTION_MONTHS = 12;
 
@@ -226,7 +232,12 @@ export function classifyAssetReadiness(input: ReadinessInput): ReadinessResult {
       if (input.fiiDistributionMonths != null && input.fiiDistributionMonths < FII_MIN_DISTRIBUTION_MONTHS) {
         return { ...base, readiness: "analysis_limited",
           reason: `FII cache has usable distributions in ${input.fiiDistributionMonths} of the latest 12 months (needs ${FII_MIN_DISTRIBUTION_MONTHS})`,
-          nextAction: "Re-run fii:precompute once the fund reports distribution yield again" };
+          nextAction: "Re-run fii:precompute once Fundos.Net has the missing distribution notices" };
+      }
+      if (input.fiiDistributionLagMonths != null && input.fiiDistributionLagMonths > FII_MAX_DISTRIBUTION_LAG_MONTHS) {
+        return { ...base, readiness: "analysis_limited",
+          reason: `FII latest distribution is ${input.fiiDistributionLagMonths} months behind the latest NAV month (max ${FII_MAX_DISTRIBUTION_LAG_MONTHS})`,
+          nextAction: "Re-run fii:precompute once Fundos.Net has the newer distribution notices" };
       }
     // falls through
     case "bank":

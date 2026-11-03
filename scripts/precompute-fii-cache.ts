@@ -8,24 +8,39 @@
  *   FII_PRECOMPUTE_CONCURRENCY=2 npm run fii:precompute            # parallel
  *   npm run fii:precompute -- --skip-existing
  *
- * Data source: CVM FII informe mensal (annual ZIPs, complemento CSV).
+ * Data sources:
+ *   CVM FII informe mensal (annual ZIPs, complemento CSV) — NAV, quotas,
+ *     NAV/share, and a diagnostic distribution estimate (DY × NAV/share).
+ *   B3 Fundos.Net structured notices ("Rendimentos e Amortizações") — the
+ *     only source of distributions per share. The CVM estimate is kept as a
+ *     diagnostic field, never as a distribution. If Fundos.Net fails for a
+ *     ticker, its fresh CVM NAV data is still written and the distributions
+ *     of the committed cache are carried over unchanged ("preserved"); no new
+ *     distribution is added. The run continues with the other tickers.
+ *     See docs/fii-distribution-source.md.
  * FIIs do NOT file company DFPs — the industrial/bank DFP pipeline is not used.
+ * Historical codes (TICKER_LIFECYCLE, e.g. IRDM11) are skipped: their caches
+ * are frozen.
  *
  * After a successful run:
  *   Update CACHED_TICKERS in src/lib/fiis/fii-coverage.ts with the OK tickers.
  */
 
-import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 
 import { B3_UNIVERSE } from "../src/data/b3-universe";
 import { classifyAsset } from "../src/lib/coverage/asset-classifier";
+import { getTickerLifecycle } from "../src/lib/coverage/ticker-lifecycle";
 import {
   buildFiiRegistry,
+  buildFiiIsinIndex,
   findFundCnpj,
   fetchAllMonthlyRows,
   clearZipCache,
 } from "../src/lib/fiis/fii-cvm-client";
+import { refreshFiiDistributions } from "../src/lib/fiis/fii-distribution-refresh";
+import type { FiiFundIdentity } from "../src/lib/fiis/fii-distributions";
 import type { FiiAnalysisResponse, FiiFinancialRecord } from "../src/lib/fiis/fii-types";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -59,11 +74,20 @@ const FII_CNPJ_OVERRIDES: Record<string, string> = {
   IRIM11: "41.076.564/0001-95",
 };
 
+// Traded-quota ISIN overrides, used when the CVM informe geral ISIN is not the
+// one B3 trades. Every Fundos.Net notice for CNPJ 45.188.176/0001-57 lists
+// BTHF11 as BRBTHFCTF000; the informe still carries BR0EI9CTF007, which
+// appears only in a notice (874862, code 4770023FII) the administrator later
+// cancelled. Verified 2026-11-03.
+const FII_ISIN_OVERRIDES: Record<string, string> = {
+  BTHF11: "BRBTHFCTF000",
+};
+
 // ─── Per-ticker processing ────────────────────────────────────────────────────
 
 interface TickerResult {
   ticker: string;
-  status: "ok" | "no_cnpj" | "no_data" | "skipped" | "error";
+  status: "ok" | "no_cnpj" | "no_data" | "skipped" | "preserved" | "error";
   monthsFound: number;
   error?: string;
   warnings: string[];
@@ -73,8 +97,14 @@ async function processTicker(
   ticker: string,
   companyName: string,
   registry: Awaited<ReturnType<typeof buildFiiRegistry>>,
+  isinIndex: Map<string, string>,
 ): Promise<TickerResult> {
   const outPath = join(CACHE_DIR, `${ticker}.json`);
+
+  if (getTickerLifecycle(ticker)) {
+    console.log(`  [${ticker}] historical code — cache left unchanged`);
+    return { ticker, status: "skipped", monthsFound: 0, warnings: [] };
+  }
 
   if (SKIP_EXISTING && existsSync(outPath)) {
     return { ticker, status: "skipped", monthsFound: 0, warnings: [] };
@@ -115,7 +145,8 @@ async function processTicker(
       netAssetValue:               r.netAssetValue,
       quotaCount:                  r.quotaCount,
       netAssetValuePerShare:       r.netAssetValuePerShare,
-      monthlyDistributionPerShare: r.monthlyDistributionPerShare,
+      // Diagnostic only — distributions come from Fundos.Net.
+      cvmDerivedDistributionEstimate: r.monthlyDistributionPerShare,
       source: "fii_cvm_cache",
     });
   }
@@ -124,7 +155,21 @@ async function processTicker(
   );
 
   // Keep last 24 months (sufficient for 12m distribution sum + history table)
-  const trimmed = records.slice(-24);
+  const cvmRecords = records.slice(-24);
+
+  const identity: FiiFundIdentity = {
+    ticker,
+    cnpj,
+    isin: FII_ISIN_OVERRIDES[ticker] ?? isinIndex.get(cnpj) ?? null,
+  };
+  const refresh = await refreshFiiDistributions({ identity, cvmRecords, previous: readPreviousCache(outPath) });
+  const { records: trimmed, enrichment, warnings } = refresh;
+  // GitHub Actions annotations; plain log lines elsewhere.
+  if (enrichment.status === "preserved") {
+    console.log(`::warning title=FII ${ticker} distributions preserved::${enrichment.issues[0]}`);
+  } else if (enrichment.status === "failed") {
+    console.log(`::warning title=FII ${ticker} without distributions::Fundos.Net failed and no earlier Fundos.Net data: ${enrichment.issues[0]}`);
+  }
 
   const response: FiiAnalysisResponse = {
     ticker,
@@ -134,13 +179,28 @@ async function processTicker(
     fund: { ticker, name: companyName, cnpj },
     records: trimmed,
     indicators: null, // market-dependent indicators computed at render time
+    distributionEnrichment: enrichment,
     updatedAt: new Date().toISOString(),
-    warnings: [],
+    warnings,
   };
 
   writeFileSync(outPath, JSON.stringify(response, null, 2), "utf-8");
-  console.log(`  [${ticker}] OK — ${trimmed.length} months`);
-  return { ticker, status: "ok", monthsFound: trimmed.length, warnings: [] };
+  const fnetMonths = trimmed.filter(r => r.distributionSource === "fnet_structured").length;
+  const navMonths = trimmed.filter(r => r.netAssetValuePerShare != null).length;
+  console.log(`  [${ticker}] OK — ${trimmed.length} months (NAV ${navMonths}; Fundos.Net ${enrichment.status}: ${fnetMonths} distribution months, ISIN ${identity.isin ?? "unknown"})`);
+  for (const issue of enrichment.issues) console.log(`  [${ticker}]   ${issue}`);
+  if (enrichment.status === "preserved") {
+    return { ticker, status: "preserved", monthsFound: trimmed.length, error: enrichment.issues[0], warnings };
+  }
+  return { ticker, status: "ok", monthsFound: trimmed.length, warnings };
+}
+
+function readPreviousCache(path: string): FiiAnalysisResponse | null {
+  try {
+    return JSON.parse(readFileSync(path, "utf-8")) as FiiAnalysisResponse;
+  } catch {
+    return null;
+  }
 }
 
 function writeUnavailable(
@@ -213,11 +273,13 @@ async function main(): Promise<void> {
 
   console.log(`Building FII registry from ${REGISTRY_YEAR} informe mensal...`);
   const registry = await buildFiiRegistry(REGISTRY_YEAR);
-  console.log(`Registry: ${registry.length} unique FII CNPJs\n`);
+  console.log(`Registry: ${registry.length} unique FII CNPJs`);
+  const isinIndex = await buildFiiIsinIndex(FETCH_YEARS);
+  console.log(`ISIN index: ${isinIndex.size} CNPJs\n`);
 
   const tasks = targets.map(a => async () => {
     process.stdout.write(`\n[${a.ticker}] ${a.companyName}\n`);
-    return processTicker(a.ticker, a.companyName, registry);
+    return processTicker(a.ticker, a.companyName, registry, isinIndex);
   });
 
   const results = await runWithConcurrency(tasks, CONCURRENCY);
@@ -227,6 +289,7 @@ async function main(): Promise<void> {
   const noData  = results.filter(r => r.status === "no_data");
   const skipped = results.filter(r => r.status === "skipped");
   const errors  = results.filter(r => r.status === "error");
+  const preserved = results.filter(r => r.status === "preserved");
 
   console.log("\n─────────────────────────────────────────");
   console.log(`  Total FIIs:   ${results.length}`);
@@ -235,6 +298,12 @@ async function main(): Promise<void> {
   console.log(`  No data:      ${noData.length}`);
   console.log(`  Skipped:      ${skipped.length}`);
   console.log(`  Error:        ${errors.length}`);
+  console.log(`  Preserved:    ${preserved.length}`);
+
+  if (preserved.length > 0) {
+    console.log("\n  Fundos.Net failed — NAV refreshed, previous distributions kept, nothing new added (re-run later):");
+    for (const r of preserved) console.log(`    ${r.ticker}: ${r.error}`);
+  }
 
   if (noCode.length > 0) {
     console.log("\n  Tickers without CNPJ match — add to FII_CNPJ_OVERRIDES if known:");

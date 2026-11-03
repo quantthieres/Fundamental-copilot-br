@@ -9,8 +9,8 @@ import type { B3Asset } from "../../data/b3-universe";
 import { B3_UNIVERSE } from "../../data/b3-universe";
 import { classifyAsset } from "./asset-classifier";
 import { countUsableAnnualYears } from "../cvm/annual-years";
-import { computeFiiIndicators } from "../fiis/fii-indicators";
-import type { FiiAnalysisResponse } from "../fiis/fii-types";
+import { computeFiiIndicators, distributionLagMonths } from "../fiis/fii-indicators";
+import type { FiiAnalysisResponse, FiiFinancialRecord } from "../fiis/fii-types";
 import { resolveModelRoute } from "./model-routing";
 import { getTickerLifecycle } from "./ticker-lifecycle";
 import { getFundamentalsAlias, resolveFundamentalsTicker } from "./fundamentals-alias";
@@ -39,17 +39,28 @@ export function hasQuarterlyCache(ticker: string): boolean {
   return existsSync(join(CVM_ROOT, "quarterly", `${resolveFundamentalsTicker(ticker)}.json`));
 }
 
-/** Usable distribution months in the latest 12 records of an available FII cache; null otherwise. */
-export function fiiDistributionMonths(ticker: string): number | null {
+// Records of an available FII cache (alias-resolved); null when missing/unavailable.
+function availableFiiRecords(ticker: string): FiiFinancialRecord[] | null {
   const p = join(process.cwd(), "src/data/fii-cache/monthly", `${resolveFundamentalsTicker(ticker)}.json`);
   if (!existsSync(p)) return null;
   try {
     const cache = JSON.parse(readFileSync(p, "utf-8")) as FiiAnalysisResponse;
-    if (!cache.available) return null;
-    return computeFiiIndicators(cache.records ?? [], null)?.distributionCoverageMonths ?? 0;
+    return cache.available ? cache.records ?? [] : null;
   } catch {
     return null;
   }
+}
+
+/** Covered months in the 12-month distribution window of an available FII cache; null otherwise. */
+export function fiiDistributionMonths(ticker: string): number | null {
+  const records = availableFiiRecords(ticker);
+  return records === null ? null : computeFiiIndicators(records, null)?.distributionCoverageMonths ?? 0;
+}
+
+/** Latest NAV month minus latest distribution month; null without both. */
+export function fiiDistributionLagMonths(ticker: string): number | null {
+  const records = availableFiiRecords(ticker);
+  return records === null ? null : distributionLagMonths(records);
 }
 
 export function buildReadinessInput(asset: B3Asset, universe: readonly B3Asset[] = B3_UNIVERSE): ReadinessInput {
@@ -71,6 +82,7 @@ export function buildReadinessInput(asset: B3Asset, universe: readonly B3Asset[]
     annualYears: annualCacheYears(asset.ticker),
     hasQuarterly: hasQuarterlyCache(asset.ticker),
     fiiDistributionMonths: fiiDistributionMonths(asset.ticker),
+    fiiDistributionLagMonths: fiiDistributionLagMonths(asset.ticker),
     decision: READINESS_DECISIONS[asset.ticker] ?? null,
   };
 }

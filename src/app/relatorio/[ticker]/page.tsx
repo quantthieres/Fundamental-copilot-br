@@ -3,6 +3,7 @@ import { B3_UNIVERSE } from "@/data/b3-universe";
 import { resolveModelRoute } from "@/lib/coverage/model-routing";
 import { readBankCache } from "@/lib/banks/bank-cache";
 import { readFiiCache } from "@/lib/fiis/fii-cache";
+import { fiiDisplayIndicators, fiiSourceLabel } from "@/lib/fiis/fii-indicators";
 import { readInsuranceCache } from "@/lib/insurance/insurance-cache";
 import { getInstrumentInfo } from "@/lib/instruments/instrument-info";
 import { getPrecomputedFinancials } from "@/lib/cvm/precomputed-cache";
@@ -355,12 +356,14 @@ function BankReport({ data, quote }: { data: BankAnalysisResponse; quote: Market
 
 function FiiReport({ data, quote }: { data: FiiAnalysisResponse; quote: MarketDataQuote | null }) {
   const name = data.fund?.name ?? data.ticker;
-  const ind  = data.indicators;
+  // The cache stores indicators: null (market-dependent) — never read it.
+  const ind  = fiiDisplayIndicators(data, quote?.price ?? null);
   const hasEnoughData = (ind?.distributionCoverageMonths ?? 0) >= 6;
+  const monthYear = (d: string | null | undefined) => (d ? `${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
   const indicatorCards = [
-    { label: "VP por Cota",   value: fmtBRLPerShare(ind?.netAssetValuePerShare),        note: "Valor patrimonial" },
-    { label: "Últ. Rendim.", value: fmtBRLPerShare(ind?.lastDistributionPerShare),      note: "Por cota" },
+    { label: "VP por Cota",   value: fmtBRLPerShare(ind?.netAssetValuePerShare),        note: `Ref. ${monthYear(ind?.navReferenceDate)}` },
+    { label: "Últ. Rendim.", value: fmtBRLPerShare(ind?.lastDistributionPerShare),      note: `Por cota · ref. ${monthYear(ind?.distributionReferenceDate)}` },
     { label: "DY 12m",        value: hasEnoughData ? fmtPct(ind?.dividendYield12m) : "—",
       note: hasEnoughData ? "Dist. / preço" : "Dados insuficientes" },
     { label: "P/VP",          value: ind?.priceToBookValuePerShare != null ? ind.priceToBookValuePerShare.toFixed(2).replace(".", ",") + "×" : "—",
@@ -368,12 +371,12 @@ function FiiReport({ data, quote }: { data: FiiAnalysisResponse; quote: MarketDa
   ];
 
   return (
-    <ReportShell ticker={data.ticker} modelLabel="Modelo FII" sourceLabel="CVM — Informe Mensal">
+    <ReportShell ticker={data.ticker} modelLabel="Modelo FII" sourceLabel={fiiSourceLabel(data.records)}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
           {name} ({data.ticker})
         </div>
-        <div style={{ fontSize: 13, color: "#64748b" }}>Relatório de FII — Informes mensais CVM</div>
+        <div style={{ fontSize: 13, color: "#64748b" }}>Relatório de FII — Informe mensal CVM e avisos de rendimentos B3</div>
       </div>
 
       {!hasEnoughData && (
@@ -398,7 +401,7 @@ function FiiReport({ data, quote }: { data: FiiAnalysisResponse; quote: MarketDa
             {
               label: "Meses com dados",
               value: String(ind.distributionCoverageMonths),
-              note: "Dos últimos 12 informes mensais",
+              note: `12 meses até ${monthYear(ind.distributionWindowEnd)}`,
             },
           ]} />
         </ReportSection>

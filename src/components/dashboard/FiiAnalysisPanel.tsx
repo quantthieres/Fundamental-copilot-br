@@ -3,7 +3,7 @@
 import React from "react";
 import SectionCard from "./SectionCard";
 import type { FiiAnalysisResponse, FiiFinancialRecord } from "@/lib/fiis/fii-types";
-import { computeFiiIndicators } from "@/lib/fiis/fii-indicators";
+import { fiiDisplayIndicators, fiiSourceLabel } from "@/lib/fiis/fii-indicators";
 import type { FiiIndicators } from "@/lib/fiis/fii-types";
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
@@ -69,17 +69,17 @@ function IndicatorsGrid({ ind }: { ind: FiiIndicators }) {
       <KpiCard
         label="Valor Patrimonial / Cota"
         value={brl(ind.netAssetValuePerShare)}
-        description="Último valor patrimonial por cota"
+        description="Último informe mensal CVM"
       />
       <KpiCard
         label="Último Rendimento / Cota"
         value={brl(ind.lastDistributionPerShare)}
-        description="Rendimento do último mês disponível"
+        description="Último mês com aviso de rendimento"
       />
       <KpiCard
         label="Rendimentos 12m / Cota"
         value={brl(ind.twelveMonthDistributionPerShare)}
-        description="Soma dos últimos 12 meses disponíveis"
+        description="Soma dos 12 meses até o último rendimento"
       />
       <KpiCard
         label="DY 12m"
@@ -121,10 +121,11 @@ function MonthlyTable({ records }: { records: FiiFinancialRecord[] }) {
               <td style={{ padding: "7px 10px", fontWeight: 600, color: "#0f172a", textAlign: "right" }}>
                 {fmtDate(r.referenceDate)}
               </td>
-              <td style={tdStyle}>{brlB(r.netAssetValue)}</td>
-              <td style={tdStyle}>{fmtQuota(r.quotaCount)}</td>
-              <td style={tdStyle}>{brl(r.netAssetValuePerShare)}</td>
-              <td style={tdStyle}>{(r.monthlyDistributionPerShare != null && r.monthlyDistributionPerShare > 0) ? brl(r.monthlyDistributionPerShare) : "—"}</td>
+              {/* A Fundos.Net-only month has no informe yet: no NAV, not "N/D". */}
+              <td style={tdStyle}>{r.netAssetValue != null ? brlB(r.netAssetValue) : "—"}</td>
+              <td style={tdStyle}>{r.quotaCount != null ? fmtQuota(r.quotaCount) : "—"}</td>
+              <td style={tdStyle}>{r.netAssetValuePerShare != null ? brl(r.netAssetValuePerShare) : "—"}</td>
+              <td style={tdStyle}>{r.monthlyDistributionPerShare != null ? brl(r.monthlyDistributionPerShare) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -161,11 +162,12 @@ export default function FiiAnalysisPanel({ data, marketPrice }: Props) {
     );
   }
 
-  const indicators = computeFiiIndicators(data.records, marketPrice);
-  const sorted     = [...data.records].sort((a, b) =>
-    a.referenceDate < b.referenceDate ? 1 : -1,
-  );
-  const latestDate = sorted[0]?.referenceDate ?? "";
+  const indicators = fiiDisplayIndicators(data, marketPrice);
+  // NAV (CVM) and distributions (Fundos.Net) can have different latest months.
+  const periods = [
+    indicators?.navReferenceDate ? `VP: ${fmtDate(indicators.navReferenceDate)}` : null,
+    indicators?.distributionReferenceDate ? `Rendimentos até: ${fmtDate(indicators.distributionReferenceDate)}` : null,
+  ].filter(Boolean).join(" · ");
 
   return (
     <>
@@ -182,7 +184,7 @@ export default function FiiAnalysisPanel({ data, marketPrice }: Props) {
       {indicators && (
         <SectionCard
           title="Indicadores de FII"
-          subtitle={`Último período: ${fmtDate(latestDate)} · Fonte: CVM Informe Mensal`}
+          subtitle={`${periods || "Sem período"} · Fonte: ${fiiSourceLabel(data.records)}`}
         >
           {indicators.distributionCoverageMonths < 6 && (
             <div style={{
@@ -200,13 +202,21 @@ export default function FiiAnalysisPanel({ data, marketPrice }: Props) {
               Série de rendimentos incompleta: {indicators.distributionCoverageMonths} de 12 meses disponíveis. DY 12m pode estar subestimado.
             </div>
           )}
+          {indicators.distributionCoverageMonths > 0 && !indicators.distributionFresh && (
+            <div style={{
+              marginBottom: 10, padding: "8px 12px", background: "#fefce8",
+              border: "1px solid #fde68a", borderRadius: 6, fontSize: 12, color: "#92400e",
+            }}>
+              Último rendimento publicado ({fmtDate(indicators.distributionReferenceDate ?? "")}) defasado em relação ao último informe ({fmtDate(indicators.navReferenceDate ?? "")}).
+            </div>
+          )}
           <IndicatorsGrid ind={indicators} />
         </SectionCard>
       )}
 
       <SectionCard
         title="Patrimônio e Rendimentos — Mensais"
-        subtitle="Fonte: CVM Informe Mensal"
+        subtitle={`Fonte: ${fiiSourceLabel(data.records)}`}
       >
         <MonthlyTable records={data.records} />
       </SectionCard>

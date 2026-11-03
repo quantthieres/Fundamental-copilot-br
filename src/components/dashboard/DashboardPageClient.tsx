@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import NavBar from "@/components/dashboard/NavBar";
+import { revealInStrip } from "@/lib/ui/scroll-into-strip";
 import CompanyHeader from "@/components/dashboard/CompanyHeader";
 import MetricsRow from "@/components/dashboard/MetricsRow";
 import HistoricalChart from "@/components/dashboard/HistoricalChart";
@@ -85,13 +86,28 @@ function buildPreliminaryCompany(b3Entry: B3Asset, quote: MarketDataQuote | null
 const TABS = ["Visão Geral", "Financeiros", "Indicadores", "Projeções", "Comparáveis", "Notícias e documentos"];
 
 function TabBar({ activeTab, onTabChange }: { activeTab: string; onTabChange: (t: string) => void }) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    revealInStrip(stripRef.current, stripRef.current?.querySelector<HTMLElement>('[aria-selected="true"]') ?? null);
+  }, [activeTab]);
   return (
-    <div style={{ display: "flex", gap: 0, padding: "0 24px", background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
+    // Scrolls horizontally inside its own container on narrow screens; the page
+    // never widens. The active tab is kept in view.
+    <div
+      ref={stripRef}
+      className="dash-tabbar"
+      role="tablist"
+      aria-label="Seções do painel"
+      style={{ display: "flex", gap: 0, padding: "0 24px", background: "#fff", borderBottom: "1px solid #e2e8f0", overflowX: "auto", scrollbarWidth: "thin" }}
+    >
       {TABS.map(tab => (
         <button
           key={tab}
+          role="tab"
+          aria-selected={activeTab === tab}
           onClick={() => onTabChange(tab)}
           style={{
+            whiteSpace: "nowrap", flexShrink: 0,
             padding: "10px 16px", fontSize: 13, fontWeight: 500,
             color: activeTab === tab ? "#2563eb" : "#64748b",
             background: "none", border: "none",
@@ -711,7 +727,7 @@ export default function DashboardPageClient() {
           <SourceBanner variant={fullDashboardBanner} cvmLoading={cvmLoading} />
           <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-          <div style={{ padding: "18px 24px" }}>
+          <div className="dash-content" style={{ padding: "18px 24px" }}>
             {activeTab === "Visão Geral" && (
               <div
                 className="main-grid"

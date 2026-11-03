@@ -76,9 +76,9 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
       <div className="report-outer" style={{ minHeight: "100vh", background: "#f0f2f5", padding: "24px 16px" }}>
 
         {/* ── Top bar (hidden in print) ── */}
-        <div className="no-print" style={{
+        <div className="no-print report-topbar" style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          maxWidth: 900, margin: "0 auto 20px",
+          maxWidth: 900, margin: "0 auto 20px", gap: 10, flexWrap: "wrap",
         }}>
           <Link
             href={`/dashboard?ticker=${encodeURIComponent(ticker)}`}
@@ -86,9 +86,9 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
           >
             ← Voltar ao Dashboard
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="report-topbar-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {sourceLabel && (
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>{sourceLabel}</span>
+              <span className="report-topbar-source" style={{ fontSize: 11, color: "#94a3b8" }}>{sourceLabel}</span>
             )}
             <ReportCopyLinkButton />
             <ReportPrintButton />
@@ -103,9 +103,9 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
         }}>
 
           {/* Brand header — visible in print */}
-          <div style={{
+          <div className="report-brand" style={{
             display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-            marginBottom: 18,
+            marginBottom: 18, gap: 12,
           }}>
             <div>
               <div style={{
@@ -118,7 +118,7 @@ export default function ReportShell({ ticker, modelLabel, sourceLabel, children 
                 {modelLabel} · Uso educacional e demonstrativo
               </div>
             </div>
-            <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.8 }}>
+            <div className="report-brand-meta" style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.8 }}>
               <div>Gerado em {generatedAt}</div>
               {sourceLabel && (
                 <div>Fonte: <strong style={{ fontWeight: 600, color: "#374151" }}>{sourceLabel}</strong></div>

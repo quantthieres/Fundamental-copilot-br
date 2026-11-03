@@ -30,6 +30,7 @@ import type {
   MacroObservationStatus,
 } from "@/lib/macro/macro-types";
 import type { MacroIndicatorPageMeta } from "@/lib/macro/macro-cache";
+import { revealInStrip } from "@/lib/ui/scroll-into-strip";
 import WorldMap from "./WorldMap";
 import RankingPanel from "./RankingPanel";
 import CountrySearch from "./CountrySearch";
@@ -164,6 +165,12 @@ export default function MacroExplorer({
     }
   }, [indicator, year, selected]);
 
+  // Keep the active indicator tab visible inside its horizontally scrolling strip.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    revealInStrip(tabsRef.current, tabsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? null);
+  }, [indicator]);
+
   // ── Actions ───────────────────────────────────────────────────────────────
   const pickIndicator = useCallback((id: MacroIndicatorId) => {
     setIndicator(id);
@@ -253,7 +260,7 @@ export default function MacroExplorer({
   return (
     <>
       <div className={styles.toolbar}>
-        <div className={styles.tabs} role="group" aria-label="Indicador">
+        <div className={styles.tabs} role="group" aria-label="Indicador" ref={tabsRef}>
           {metas.map(m => (
             <button
               key={m.id}

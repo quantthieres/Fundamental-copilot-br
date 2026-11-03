@@ -1,18 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useId } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { B3_UNIVERSE, type B3Company } from "@/data/b3-universe";
 import { COVERAGE_BADGE } from "@/data/coverage-types";
-
-const NAV_LINKS = [
-  { label: "Painel",      href: "/dashboard"   },
-  { label: "Macro",       href: "/macro"       },
-  { label: "Metodologia", href: "/metodologia" },
-  { label: "Cobertura",   href: "/cobertura"   },
-  { label: "Sobre",       href: "/sobre"        },
-];
+import { NAV_LINKS, isNavLinkActive } from "@/lib/ui/nav";
 
 interface AppHeaderProps {
   /** When true, renders the live-search typeahead in the centre of the bar. */
@@ -32,6 +25,37 @@ export default function AppHeader({
   const [query, setQuery] = useState("");
   const [open, setOpen]   = useState(false);
   const wrapRef           = useRef<HTMLDivElement>(null);
+  // Mobile navigation menu (hamburger). CSS decides which navigation is
+  // visible (globals.css: .app-header-nav vs .app-header-menu-btn).
+  const [menuOpen, setMenuOpen] = useState(false);
+  const headerRef               = useRef<HTMLElement>(null);
+  const menuBtnRef              = useRef<HTMLButtonElement>(null);
+  const menuId                  = useId();
+
+  // Close on navigation.
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+
+  // Close on Escape (focus back to the button) and on outside click.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        menuBtnRef.current?.focus();
+      }
+    }
+    function onPointerDown(e: MouseEvent) {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onPointerDown);
+    };
+  }, [menuOpen]);
+
+  const isActiveHref = (href: string) => isNavLinkActive(pathname, href);
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,7 +88,11 @@ export default function AppHeader({
   }
 
   return (
-    <header className="app-header" style={styles.header}>
+    <header
+      ref={headerRef}
+      className={`app-header${showSearch && onSelectCompany ? " app-header--search" : ""}`}
+      style={styles.header}
+    >
       {/* Brand — links to landing */}
       <Link href="/" style={styles.brand}>
         <img
@@ -79,7 +107,7 @@ export default function AppHeader({
 
       {/* Centre slot: search typeahead OR flex spacer */}
       {showSearch && onSelectCompany ? (
-        <div ref={wrapRef} style={styles.searchWrap}>
+        <div ref={wrapRef} className="app-header-search" style={styles.searchWrap}>
           <svg style={styles.searchIcon} width="15" height="15" viewBox="0 0 16 16" fill="none">
             <circle cx="6.5" cy="6.5" r="5" stroke="#64748b" strokeWidth="1.5" />
             <path d="M10.5 10.5L14 14" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
@@ -100,7 +128,7 @@ export default function AppHeader({
               ×
             </button>
           ) : (
-            <kbd style={styles.kbdHint}>⌘K</kbd>
+            <kbd className="app-header-kbd" style={styles.kbdHint}>⌘K</kbd>
           )}
 
           {open && suggestions.length > 0 && (
@@ -137,18 +165,59 @@ export default function AppHeader({
         <div style={{ flex: 1 }} />
       )}
 
-      {/* Nav links */}
+      {/* Nav links (desktop/tablet) */}
       <nav className="app-header-nav" aria-label="Navegação principal" style={styles.navLinks}>
         {NAV_LINKS.map(({ label, href }) => {
-          const isActive = href !== "#" && (
-            href === "/" ? pathname === "/" : pathname.startsWith(href)
-          );
+          const isActive = isActiveHref(href);
           return (
             <Link
               key={label}
               href={href}
               aria-current={isActive ? "page" : undefined}
               style={{ ...styles.navLink, ...(isActive ? styles.navLinkActive : {}) }}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Mobile navigation: hamburger + compact dropdown below the header */}
+      <button
+        ref={menuBtnRef}
+        type="button"
+        className="app-header-menu-btn"
+        style={styles.menuBtn}
+        aria-label={menuOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
+        aria-expanded={menuOpen}
+        aria-controls={menuId}
+        onClick={() => setMenuOpen(o => !o)}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          {menuOpen ? (
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          ) : (
+            <path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          )}
+        </svg>
+      </button>
+      <nav
+        id={menuId}
+        className="app-header-menu"
+        aria-label="Navegação principal (menu)"
+        hidden={!menuOpen}
+        style={styles.menu}
+      >
+        {NAV_LINKS.map(({ label, href }) => {
+          const isActive = isActiveHref(href);
+          return (
+            <Link
+              key={label}
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              className="app-header-menu-link"
+              style={{ ...styles.menuLink, ...(isActive ? styles.menuLinkActive : {}) }}
+              onClick={() => setMenuOpen(false)}
             >
               {label}
             </Link>
@@ -163,6 +232,8 @@ export default function AppHeader({
 
 const styles: Record<string, React.CSSProperties> = {
   header: {
+    position: "relative",
+    zIndex: 60,
     display: "flex",
     alignItems: "center",
     height: 58,
@@ -334,6 +405,47 @@ const styles: Record<string, React.CSSProperties> = {
   },
   navLinkActive: {
     color: "#f1f5f9",
+    background: "#1e293b",
+  },
+  menuBtn: {
+    marginLeft: "auto",
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    background: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: 8,
+    color: "#cbd5e1",
+    cursor: "pointer",
+    padding: 0,
+  },
+  menu: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    background: "#0f172a",
+    borderTop: "1px solid #1e293b",
+    borderBottom: "1px solid #1e293b",
+    boxShadow: "0 12px 24px rgba(15, 23, 42, 0.28)",
+    padding: "6px 12px 10px",
+    zIndex: 60,
+  },
+  menuLink: {
+    display: "flex",
+    alignItems: "center",
+    minHeight: 44,
+    padding: "0 12px",
+    borderRadius: 6,
+    color: "#94a3b8",
+    fontSize: 15,
+    fontWeight: 500,
+    textDecoration: "none",
+  },
+  menuLinkActive: {
+    color: "#f8fafc",
     background: "#1e293b",
   },
 };

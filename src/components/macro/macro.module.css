@@ -42,7 +42,7 @@
 .sources a:hover { text-decoration: underline; }
 
 /* ── Toolbar ────────────────────────────────────────────────────────────── */
-.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; min-width: 0; }
 .tabs {
   display: flex;
   padding: 3px;
@@ -51,8 +51,11 @@
   border-radius: 8px;
   gap: 2px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   max-width: 100%;
+  min-width: 0;
 }
 .tab {
   background: none;

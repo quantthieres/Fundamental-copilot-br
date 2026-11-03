@@ -15,9 +15,9 @@ const MONO = "'JetBrains Mono', 'Courier New', monospace";
 
 export default function ReportMetricGrid({ items, columns = 3 }: Props) {
   return (
-    <div style={{
+    <div className="report-metric-grid" style={{
       display: "grid",
-      gridTemplateColumns: `repeat(${columns}, 1fr)`,
+      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
       gap: 0,
     }}>
       {items.map((item, i) => (

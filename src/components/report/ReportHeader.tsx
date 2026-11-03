@@ -17,14 +17,14 @@ export default function ReportHeader({ company, source, quoteSource, generatedAt
   return (
     <div style={{ marginBottom: 28 }}>
       {/* Brand + meta */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+      <div className="report-brand" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, gap: 12 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#2563eb", letterSpacing: "-0.3px", marginBottom: 2 }}>
             Fundamental Copilot BR
           </div>
           <div style={{ fontSize: 11, color: "#94a3b8" }}>Relatório fundamentalista · Uso educacional e demonstrativo</div>
         </div>
-        <div style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.8 }}>
+        <div className="report-brand-meta" style={{ textAlign: "right", fontSize: 11, color: "#64748b", lineHeight: 1.8 }}>
           <div>Gerado em {generatedAt}</div>
           <div>Financeiros: <strong style={{ fontWeight: 600, color: "#374151" }}>{financialsLabel}</strong></div>
           <div>Cotação: <strong style={{ fontWeight: 600, color: "#374151" }}>{quoteLabel}</strong></div>
@@ -41,7 +41,7 @@ export default function ReportHeader({ company, source, quoteSource, generatedAt
         }}>
           {company.ticker.slice(0, 3)}
         </div>
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h1 style={{ margin: "0 0 5px", fontSize: 24, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.5px" }}>
             {company.name}
           </h1>

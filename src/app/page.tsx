@@ -40,7 +40,7 @@ export default function LandingPage() {
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <main style={{ flex: 1, display: "flex", alignItems: "center", padding: "64px 0 48px" }}>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "0 28px", width: "100%", textAlign: "center" }}>
+        <div className="landing-hero" style={{ maxWidth: 980, margin: "0 auto", padding: "0 28px", width: "100%", textAlign: "center" }}>
 
           <h1 style={{
             fontSize: 38, lineHeight: 1.1, letterSpacing: "-1px", fontWeight: 700,
@@ -82,7 +82,7 @@ export default function LandingPage() {
           </div>
 
           {/* Feature cards */}
-          <div style={{ marginTop: 56, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+          <div className="landing-features" style={{ marginTop: 56, display: "grid", gap: 14 }}>
             {FEATURES.map(f => (
               <div
                 key={f.title}

@@ -26,7 +26,7 @@ function MetricCard({ label, value, trend, suffix }: Metric) {
 
 export default function MetricsRow({ metrics }: { metrics: Metric[] }) {
   return (
-    <div style={styles.row}>
+    <div className="metrics-row" style={styles.row}>
       {metrics.map(m => <MetricCard key={m.label} {...m} />)}
     </div>
   );
@@ -34,7 +34,7 @@ export default function MetricsRow({ metrics }: { metrics: Metric[] }) {
 
 const styles: Record<string, React.CSSProperties> = {
   row: {
-    display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 1,
+    display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 1,
     background: "#e2e8f0", borderBottom: "1px solid #e2e8f0",
   },
   card: { background: "#fff", padding: "14px 18px", cursor: "default" },

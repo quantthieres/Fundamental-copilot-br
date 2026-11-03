@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import { readInsuranceCache } from "@/lib/insurance/insurance-cache";
+import { withRequestedTicker } from "@/lib/coverage/fundamentals-alias";
 import type { InsuranceAnalysisResponse } from "@/lib/insurance/insurance-types";
 
 export async function GET(
@@ -19,7 +20,7 @@ export async function GET(
   const cached  = readInsuranceCache(ticker);
 
   if (cached) {
-    return NextResponse.json(cached);
+    return NextResponse.json(withRequestedTicker(cached, ticker));
   }
 
   const unavailable: InsuranceAnalysisResponse = {

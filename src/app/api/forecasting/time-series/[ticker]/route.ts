@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withRequestedTicker } from "@/lib/coverage/fundamentals-alias";
 import { getPrecomputedTickerTimeSeries } from "@/lib/forecasting/time-series-cache";
 
 export async function GET(
@@ -21,5 +22,6 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(cache);
+  // Same-issuer aliases (e.g. EMBJ3 → EMBR3 cache) keep the requested ticker.
+  return NextResponse.json(withRequestedTicker(cache, upper));
 }

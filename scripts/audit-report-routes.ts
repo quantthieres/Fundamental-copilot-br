@@ -2,6 +2,10 @@
  * Report Routes Audit — verifies that every B3 asset would produce a valid
  * report page rather than an error/unavailable state.
  *
+ * Scope: RENDERING SAFETY only. A fallback page (quote-only / model pending)
+ * renders safely but is NOT product coverage — use
+ * `npm run coverage:audit:readiness` for product completeness.
+ *
  * Usage:
  *   npm run report:audit
  *
@@ -16,6 +20,8 @@ import { join } from "path";
 import { B3_UNIVERSE } from "../src/data/b3-universe";
 import type { B3Asset } from "../src/data/b3-universe";
 import { resolveModelRoute, type ModelRoute } from "../src/lib/coverage/model-routing";
+import { resolveFundamentalsTicker } from "../src/lib/coverage/fundamentals-alias";
+import { countUsableAnnualYears } from "../src/lib/cvm/annual-years";
 import { hasBankAnalysisCache } from "../src/lib/banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../src/lib/fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../src/lib/insurance/insurance-coverage";
@@ -35,18 +41,18 @@ function hasFinancialsCache(ticker: string): boolean {
   return existsSync(join(FINANCIALS_DIR, `${ticker.toUpperCase()}.json`));
 }
 
+// Same counter as coverage:audit:readiness (countUsableAnnualYears).
 function getFinancialsYearCount(ticker: string): number {
   const raw = readFinancialsCache(ticker);
   if (!raw) return 0;
-  const parsed = parseFinancialsCache(raw);
-  return parsed?.length ?? 0;
+  return countUsableAnnualYears(parseFinancialsCache(raw));
 }
 
 // ─── Result types ─────────────────────────────────────────────────────────────
 
 type ReportStatus =
   | "ok_industrial_full"        // ≥2 years CVM data
-  | "ok_industrial_limited"     // 1 year CVM data (growth indicators absent, but page renders)
+  | "ok_industrial_limited"     // 0–1 usable years (growth indicators absent, but page renders)
   | "ok_industrial_legacy"      // no CVM cache, falls to ReportPageClient (mock data)
   | "ok_bank"
   | "ok_fii"
@@ -73,18 +79,21 @@ interface AuditEntry {
 function auditAsset(asset: B3Asset): AuditEntry {
   const route = resolveModelRoute(asset);
   const t = asset.ticker;
+  // Same-issuer aliases (ITUB3 → ITUB4, AXIA3 → ELET3) render from the
+  // canonical ticker's caches — check the cache the page will actually read.
+  const ft = resolveFundamentalsTicker(t);
 
   switch (route) {
     case "industrial": {
-      if (hasFinancialsCache(t)) {
-        const years = getFinancialsYearCount(t);
+      if (hasFinancialsCache(ft)) {
+        const years = getFinancialsYearCount(ft);
         return {
           ticker: t, route,
           status: years >= 2 ? "ok_industrial_full" : "ok_industrial_limited",
           detail: `${years} year(s) in cache`,
         };
       }
-      if (MOCK_REGISTRY.has(t)) {
+      if (MOCK_REGISTRY.has(ft)) {
         return { ticker: t, route, status: "ok_industrial_legacy", detail: "mock registry" };
       }
       return {
@@ -97,22 +106,22 @@ function auditAsset(asset: B3Asset): AuditEntry {
     case "bank":
       return {
         ticker: t, route,
-        status: hasBankAnalysisCache(t) ? "ok_bank" : "fail_bank_no_cache",
-        detail: hasBankAnalysisCache(t) ? undefined : "no bank cache",
+        status: hasBankAnalysisCache(ft) ? "ok_bank" : "fail_bank_no_cache",
+        detail: hasBankAnalysisCache(ft) ? undefined : "no bank cache",
       };
 
     case "fii":
       return {
         ticker: t, route,
-        status: hasFiiAnalysisCache(t) ? "ok_fii" : "fail_fii_no_cache",
-        detail: hasFiiAnalysisCache(t) ? undefined : "no FII cache",
+        status: hasFiiAnalysisCache(ft) ? "ok_fii" : "fail_fii_no_cache",
+        detail: hasFiiAnalysisCache(ft) ? undefined : "no FII cache",
       };
 
     case "insurance":
       return {
         ticker: t, route,
-        status: hasInsuranceAnalysisCache(t) ? "ok_insurance" : "fail_insurance_no_cache",
-        detail: hasInsuranceAnalysisCache(t) ? undefined : "no insurance cache",
+        status: hasInsuranceAnalysisCache(ft) ? "ok_insurance" : "fail_insurance_no_cache",
+        detail: hasInsuranceAnalysisCache(ft) ? undefined : "no insurance cache",
       };
 
     case "informational_instrument":
@@ -134,14 +143,14 @@ function auditAsset(asset: B3Asset): AuditEntry {
 
 const STATUS_LABEL: Record<ReportStatus, string> = {
   ok_industrial_full:       "✓ Industrial — dados completos (≥2 anos)",
-  ok_industrial_limited:    "⚠ Industrial — dados limitados (1 ano)",
+  ok_industrial_limited:    "⚠ Industrial — dados limitados (≤ 1 ano utilizável)",
   ok_industrial_legacy:     "~ Industrial — fallback mock",
   ok_bank:                  "✓ Banco",
   ok_fii:                   "✓ FII",
   ok_insurance:             "✓ Seguradora",
   ok_informational:         "✓ Informativo (ETF/BDR)",
   ok_unavailable:           "✓ Indisponível/descontinuado",
-  ok_fallback:              "✓ Fallback (cotação apenas)",
+  ok_fallback:              "✓ Fallback seguro (renderiza; NÃO é cobertura)",
   fail_industrial_no_cache: "✗ FALHA — Industrial sem cache CVM",
   fail_bank_no_cache:       "✗ FALHA — Banco sem cache",
   fail_fii_no_cache:        "✗ FALHA — FII sem cache",
@@ -208,12 +217,13 @@ function main(): void {
   console.log("\n──────────────────────────────────────────────────────────────────");
 
   if (warnings.length > 0) {
-    console.log(`  ⚠ ${warnings.length} ticker(s) have only 1 year of CVM data (limited indicators):`);
-    console.log(`    ${warnings.map(e => e.ticker).join("  ")}`);
+    console.log(`  ⚠ ${warnings.length} ticker(s) have ≤ 1 usable year of CVM data (limited indicators):`);
+    console.log(`    ${warnings.map(e => `${e.ticker} (${e.detail})`).join("  ")}`);
   }
 
   if (failures.length === 0) {
     console.log("  ✓ No unexpected report failures. All routes produce valid pages.");
+    console.log("    (Rendering safety only — product coverage: npm run coverage:audit:readiness)");
     console.log("──────────────────────────────────────────────────────────────────\n");
     process.exit(0);
   } else {

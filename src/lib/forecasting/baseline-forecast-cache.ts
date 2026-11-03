@@ -4,6 +4,7 @@
 
 import { readFileSync } from "fs";
 import { join } from "path";
+import { resolveFundamentalsTicker } from "../coverage/fundamentals-alias";
 import type { BaselineForecastCache } from "./forecast-types";
 
 const CACHE_DIR = join(
@@ -32,12 +33,14 @@ export function parseBaselineForecastCache(raw: string): BaselineForecastCache |
   return obj as unknown as BaselineForecastCache;
 }
 
+// Aliased tickers (same issuer, see coverage/fundamentals-alias.ts) read the
+// canonical cache; callers keep the requested ticker in their responses.
 export function getPrecomputedBaselineForecast(
   ticker: string,
 ): BaselineForecastCache | null {
   try {
     const raw = readFileSync(
-      join(CACHE_DIR, `${normalizeTicker(ticker)}.json`),
+      join(CACHE_DIR, `${resolveFundamentalsTicker(normalizeTicker(ticker))}.json`),
       "utf-8",
     );
     return parseBaselineForecastCache(raw);

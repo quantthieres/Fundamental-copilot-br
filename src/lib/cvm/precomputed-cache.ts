@@ -4,6 +4,7 @@
 
 import { readFileSync } from "fs";
 import { join } from "path";
+import { resolveFundamentalsTicker } from "../coverage/fundamentals-alias";
 import type { NormalizedFinancials, QuarterlyFinancialRecord } from "./types";
 import type { CvmDocument } from "./documents-types";
 
@@ -13,9 +14,11 @@ function normalizeTicker(ticker: string): string {
   return ticker.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
+// Aliased tickers (same issuer, see coverage/fundamentals-alias.ts) read the
+// canonical cache; callers keep the requested ticker in their responses.
 function readCacheFile(subdir: string, ticker: string): string | null {
   try {
-    return readFileSync(join(CACHE_ROOT, subdir, `${normalizeTicker(ticker)}.json`), "utf-8");
+    return readFileSync(join(CACHE_ROOT, subdir, `${resolveFundamentalsTicker(normalizeTicker(ticker))}.json`), "utf-8");
   } catch {
     return null;
   }

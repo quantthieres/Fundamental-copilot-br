@@ -17,6 +17,8 @@
  * or always when run from npm run coverage:audit:quote-only.
  */
 
+import { getTickerLifecycle } from "../src/lib/coverage/ticker-lifecycle";
+import { READINESS_DECISIONS } from "../src/lib/coverage/asset-readiness";
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import { B3_UNIVERSE } from "../src/data/b3-universe";
@@ -81,51 +83,24 @@ function hasPlaceholderModelCache(ticker: string): boolean {
 
 // ─── Known metadata ───────────────────────────────────────────────────────────
 
-// Tickers whose CVM entity was CANCELADA at time of last registry audit.
-// Source: comments in src/lib/cvm/company-map.ts.
-const KNOWN_CANCELLED = new Set(["GOLL4", "CRFB3", "SOMA3", "BRPR3"]);
-
-// Obsolete ticker codes: the trading code itself is no longer listed in the
-// CVM FCA valor_mobiliario file (renamed or replaced). Verified 2026-11-02.
-//   RRRP3 → BRAV3 (3R Petroleum renamed Brava Energia, same CNPJ)
-//   VVAR3 → VIIA3 → BHIA3 (Grupo Casas Bahia, same CNPJ)
-//   PETZ3 → AUAU3 (Petz/Cobasi combination; Pet Center CVM 25089 CANCELADA)
-const KNOWN_OBSOLETE_TICKERS = new Set(["RRRP3", "VVAR3", "PETZ3"]);
-
-// Tickers that are pure financial holdings without a matching industrial model.
-// They hold stakes in other companies rather than operating directly.
-const FINANCIAL_HOLDING = new Set(["BRAP4"]);
-
-// Explicit review decisions for quote-only operating companies that were
-// checked during mapping rounds and deliberately NOT mapped. Verified
-// 2026-11-02 against cad_cia_aberta, FCA valor_mobiliario and IPE filings.
-const REVIEW_DECISIONS: Record<string, { action: SuggestedAction; note: string }> = {
-  VAMO3: {
-    action: "manual_review",
-    note: "Reorganização estratégica consumada em 2024-11-30 (concessionárias segregadas → AMOB3); compra de frota no FCO distorce FCF industrial",
-  },
-  SEQL3: {
-    action: "manual_review",
-    note: "Recuperação extrajudicial homologada 2024-10, grupamentos de ações, mudança de controle 2026-02 e repactuação de dívida 2026",
-  },
-  ALOS3: {
-    action: "needs_sector_specific_model",
-    note: "Shopping centers: exige modelo imobiliário (NOI/FFO/NAV); DFP extraído tem dívida total = 0 em todos os anos e EBIT 2023 > receita (ganho de combinação)",
-  },
-  AMBP3: {
-    action: "keep_quote_only",
-    note: "Em recuperação judicial desde 2025-10-30",
-  },
-  CASH3: {
-    action: "keep_quote_only",
-    note: "Modelo de negócio pivotado para tesouraria em Bitcoin (2025–2026) — modelo industrial inadequado",
-  },
-};
+// Historical codes (renamed / incorporated / cancelled / delisted) come from
+// the verified lifecycle table; methodological decisions (holding, real
+// estate, manual review, intentionally limited) from READINESS_DECISIONS.
+// Single sources of truth shared with `npm run coverage:audit:readiness`.
+function decisionAction(ticker: string): SuggestedAction | null {
+  const d = READINESS_DECISIONS[ticker];
+  if (!d) return null;
+  if (d.readiness === "model_pending") return "needs_sector_specific_model";
+  if (d.readiness === "manual_review") return "manual_review";
+  return "keep_quote_only";
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SuggestedAction =
   | "candidate_for_cvm_mapping"
+  | "sector_model_available"
+  | "informational_layer"
   | "keep_quote_only"
   | "needs_sector_specific_model"
   | "manual_review"
@@ -176,31 +151,27 @@ function getModelCacheFile(asset: B3Asset): boolean {
 }
 
 function suggestAction(asset: B3Asset, hasCvmCache: boolean, hasCvmMapping: boolean): SuggestedAction {
-  // A cache file already exists for this ticker despite being QO/SS.
+  // Historical code (verified lifecycle) or declared unavailable — authoritative,
+  // even when a cache is retained (it may back a same-issuer alias).
+  if (getTickerLifecycle(asset.ticker) || asset.coverageStatus === "unavailable") return "mark_unavailable_or_discontinued";
+
+  // A CVM cache already exists for this ticker despite being QO/SS.
   if (hasCvmCache) return "already_has_cache_but_status_mismatch";
 
-  // Declared unavailable in B3_UNIVERSE is authoritative (mirrors the coverage resolver).
-  if (asset.coverageStatus === "unavailable") return "mark_unavailable_or_discontinued";
+  // Explicit methodological decision (holding / real estate / manual review / limited).
+  const decided = decisionAction(asset.ticker);
+  if (decided) return decided;
 
-  // Known discontinued/cancelled in CVM registry, or obsolete ticker code.
-  if (KNOWN_CANCELLED.has(asset.ticker)) return "mark_unavailable_or_discontinued";
-  if (KNOWN_OBSOLETE_TICKERS.has(asset.ticker)) return "mark_unavailable_or_discontinued";
-
-  // Pure financial holding — no operating industrial model makes sense.
-  if (FINANCIAL_HOLDING.has(asset.ticker)) return "keep_quote_only";
-
-  // Explicit decision from a mapping-round review.
-  const decision = REVIEW_DECISIONS[asset.ticker];
-  if (decision) return decision.action;
+  const route = resolveModelRoute(asset);
+  if (route === "bank" || route === "fii" || route === "insurance") return "sector_model_available";
+  if (route === "informational_instrument") return "informational_layer";
 
   const richType = getRichType(asset);
 
-  // Asset type implies a sector-specific model that hasn't been implemented yet.
+  // Asset type implies a sector-specific model that has no cache for this ticker.
   if (richType === "bank"     ) return "needs_sector_specific_model";
   if (richType === "fii"      ) return "needs_sector_specific_model";
   if (richType === "insurance") return "needs_sector_specific_model";
-  if (richType === "etf"      ) return "needs_sector_specific_model";
-  if (richType === "bdr"      ) return "needs_sector_specific_model";
 
   // Sector flags a non-industrial structure.
   const fin = ["Financeiro", "Holding Financeira", "Bancário"];
@@ -216,17 +187,12 @@ function suggestAction(asset: B3Asset, hasCvmCache: boolean, hasCvmMapping: bool
 function buildNotes(asset: B3Asset, entry: Omit<AuditEntry, "notes">): string {
   const notes: string[] = [];
 
-  if (KNOWN_CANCELLED.has(asset.ticker)) {
-    notes.push(asset.coverageStatus === "unavailable"
-      ? "CVM entity CANCELADA per registry audit — already marked unavailable"
-      : "CVM entity CANCELADA per registry audit — consider marking unavailable");
+  const lifecycle = getTickerLifecycle(asset.ticker);
+  if (lifecycle) {
+    notes.push(`Código histórico (${lifecycle.status}${lifecycle.successorTicker ? ` → ${lifecycle.successorTicker}` : ""})` +
+      (lifecycle.verification === "needs_manual_verification" ? " — verificação manual pendente" : ""));
   }
-  if (KNOWN_OBSOLETE_TICKERS.has(asset.ticker)) {
-    notes.push(asset.coverageStatus === "unavailable"
-      ? "Obsolete ticker code (renamed/replaced) — already marked unavailable"
-      : "Obsolete ticker code (renamed/replaced) — consider marking unavailable");
-  }
-  if (entry.hasCvmCache) {
+  if (entry.hasCvmCache && !lifecycle) {
     notes.push(`CVM financials cache exists (${entry.cvmCacheYears} year(s)) but coverageStatus is still "${asset.coverageStatus}"`);
   }
   if (entry.hasModelCache && !getModelCache(asset)) {
@@ -235,12 +201,9 @@ function buildNotes(asset: B3Asset, entry: Omit<AuditEntry, "notes">): string {
   if (hasPlaceholderModelCache(asset.ticker)) {
     notes.push("Sector cache file is an available:false placeholder — not model coverage");
   }
-  if (FINANCIAL_HOLDING.has(asset.ticker)) {
-    notes.push("Pure holding company — industrial DFP model may not reflect underlying value");
-  }
-  const decision = REVIEW_DECISIONS[asset.ticker];
-  if (decision && asset.coverageStatus === "quote_only") {
-    notes.push(`Revisado: ${decision.note}`);
+  const decision = READINESS_DECISIONS[asset.ticker];
+  if (decision) {
+    notes.push(`Revisado: ${decision.reason}`);
   }
 
   return notes.join("; ") || "—";
@@ -335,6 +298,8 @@ function main(): void {
 
   const ACTION_ORDER: SuggestedAction[] = [
     "candidate_for_cvm_mapping",
+    "sector_model_available",
+    "informational_layer",
     "needs_sector_specific_model",
     "keep_quote_only",
     "manual_review",
@@ -344,6 +309,8 @@ function main(): void {
 
   const ACTION_LABEL: Record<SuggestedAction, string> = {
     candidate_for_cvm_mapping:           "Candidate for CVM mapping",
+    sector_model_available:              "Sector model available (bank/FII/insurer cache)",
+    informational_layer:                 "Informational layer (ETF/BDR — by design)",
     needs_sector_specific_model:         "Needs sector-specific model",
     keep_quote_only:                     "Keep quote-only (holding/financial/not industrial)",
     manual_review:                       "Manual review (identity OK, restructuring/fit pending)",
@@ -386,8 +353,10 @@ function main(): void {
 
   console.log("\n  Summary:");
   console.log(`    CVM mapping candidates (QO operating):  ${qoCandidates.length}`);
+  console.log(`    Sector model available:                 ${(byAction.get("sector_model_available") ?? []).length}`);
+  console.log(`    Informational layer (ETF/BDR):          ${(byAction.get("informational_layer") ?? []).length}`);
   console.log(`    Sector-specific model pending:          ${ssNeedsModel.length}`);
-  console.log(`    Likely discontinued (CANCELADA):        ${discontinued.length}`);
+  console.log(`    Historical codes (lifecycle):           ${discontinued.length}`);
   console.log(`    Keep quote-only (holding/financial):    ${(byAction.get("keep_quote_only") ?? []).length}`);
   console.log(`    Manual review:                          ${(byAction.get("manual_review") ?? []).length}`);
   console.log(`    Status mismatch (cache exists):         ${(byAction.get("already_has_cache_but_status_mismatch") ?? []).length}`);
@@ -426,6 +395,8 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
 
   const counts: Record<string, number> = {
     "Candidato mapeamento CVM": entries.filter(e => e.suggestedAction === "candidate_for_cvm_mapping").length,
+    "Modelo setorial disponível": entries.filter(e => e.suggestedAction === "sector_model_available").length,
+    "Camada informativa (ETF/BDR)": entries.filter(e => e.suggestedAction === "informational_layer").length,
     "Modelo setorial pendente":  entries.filter(e => e.suggestedAction === "needs_sector_specific_model").length,
     "Manter quote-only":         entries.filter(e => e.suggestedAction === "keep_quote_only").length,
     "Revisão manual":            entries.filter(e => e.suggestedAction === "manual_review").length,
@@ -452,7 +423,7 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
   }
 
   lines.push(`\n## Modelo Setorial Pendente\n`);
-  lines.push(`Ativos que exigem modelo setorial (\`sector_specific_model_required\`, ou \`quote_only\` revisados como inadequados ao modelo industrial).\n`);
+  lines.push(`Ativos ativos que exigem um modelo ainda inexistente ou sem cache para este código. ETFs/BDRs (camada informativa) e ativos com modelo setorial disponível não entram aqui.\n`);
   lines.push(`| Ticker | Empresa | Status | Tipo | Rota | Notas |`);
   lines.push(`|---|---|---|---|---|---|`);
   for (const e of entries.filter(e => e.suggestedAction === "needs_sector_specific_model")) {
@@ -460,13 +431,13 @@ function writeMarkdown(entries: AuditEntry[], suspicious: SuspiciousCase[], docs
   }
 
   lines.push(`\n## Prováveis Descontinuados\n`);
-  lines.push(`Entidade CVM CANCELADA no registro ou código de negociação obsoleto. Recomendação: \`coverageStatus\` = \`"unavailable"\`.\n`);
+  lines.push(`Códigos históricos verificados (\`TICKER_LIFECYCLE\`): renomeados, convertidos, incorporados, deslistados ou cancelados.\n`);
   for (const e of entries.filter(e => e.suggestedAction === "mark_unavailable_or_discontinued")) {
     lines.push(`- **${e.ticker}** — ${e.companyName} (status atual: \`${e.coverageStatus}\`)`);
   }
 
   lines.push(`\n## Manter Quote-Only\n`);
-  lines.push(`Holdings financeiras ou estruturas sem modelo industrial aplicável.\n`);
+  lines.push(`Limitados por decisão metodológica (\`READINESS_DECISIONS\`) ou estruturas financeiras sem modelo aplicável.\n`);
   for (const e of entries.filter(e => e.suggestedAction === "keep_quote_only")) {
     lines.push(`- **${e.ticker}** — ${e.companyName} (${e.sector})${e.notes !== "—" ? ` — ${e.notes}` : ""}`);
   }

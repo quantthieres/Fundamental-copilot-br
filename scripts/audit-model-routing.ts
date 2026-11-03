@@ -15,6 +15,7 @@ import { classifyAsset } from "../src/lib/coverage/asset-classifier";
 import { hasBankAnalysisCache } from "../src/lib/banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../src/lib/fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../src/lib/insurance/insurance-coverage";
+import { resolveFundamentalsTicker } from "../src/lib/coverage/fundamentals-alias";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,17 +67,17 @@ function buildGroups(): Map<ModelRoute, RouteGroup> {
     }
 
     // Cache available but not using that model route.
-    if (type === "bank" && hasBankAnalysisCache(asset.ticker) && route !== "bank") {
+    if (type === "bank" && hasBankAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "bank") {
       group.suspicious.push(
         `${asset.ticker}: bank cache available but routed to "${route}"`,
       );
     }
-    if (type === "fii" && hasFiiAnalysisCache(asset.ticker) && route !== "fii") {
+    if (type === "fii" && hasFiiAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "fii") {
       group.suspicious.push(
         `${asset.ticker}: FII cache available but routed to "${route}"`,
       );
     }
-    if (type === "insurance" && hasInsuranceAnalysisCache(asset.ticker) && route !== "insurance") {
+    if (type === "insurance" && hasInsuranceAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "insurance") {
       group.suspicious.push(
         `${asset.ticker}: insurance cache available but routed to "${route}"`,
       );
@@ -97,6 +98,11 @@ function buildGroups(): Map<ModelRoute, RouteGroup> {
       group.suspicious.push(
         `${asset.ticker}: coverageStatus=sector_specific_model_required but in industrial route`,
       );
+    }
+
+    // Holding companies must never use a bank model (ITSA is not ITUB).
+    if (route === "bank" && /holding/i.test(asset.sector + " " + asset.subsector) && !/banco|bank/i.test(asset.companyName)) {
+      group.suspicious.push(`${asset.ticker}: holding routed to the bank model`);
     }
 
     // ETF or BDR routed to industrial (should never happen).

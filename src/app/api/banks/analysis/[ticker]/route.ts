@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import { readBankCache } from "@/lib/banks/bank-cache";
+import { withRequestedTicker } from "@/lib/coverage/fundamentals-alias";
 import type { BankAnalysisResponse } from "@/lib/banks/bank-types";
 
 export async function GET(
@@ -19,7 +20,7 @@ export async function GET(
   const cached  = readBankCache(ticker);
 
   if (cached) {
-    return NextResponse.json(cached);
+    return NextResponse.json(withRequestedTicker(cached, ticker));
   }
 
   const unavailable: BankAnalysisResponse = {

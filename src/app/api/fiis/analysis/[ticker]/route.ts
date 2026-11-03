@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFiiCache } from "@/lib/fiis/fii-cache";
+import { withRequestedTicker } from "@/lib/coverage/fundamentals-alias";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import type { FiiAnalysisResponse } from "@/lib/fiis/fii-types";
 
@@ -11,7 +12,7 @@ export async function GET(
   const ticker = rawTicker.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   const cached = readFiiCache(ticker);
-  if (cached) return NextResponse.json(cached);
+  if (cached) return NextResponse.json(withRequestedTicker(cached, ticker));
 
   const b3Entry = B3_UNIVERSE.find(a => a.ticker === ticker);
 

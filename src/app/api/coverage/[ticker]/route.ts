@@ -1,6 +1,12 @@
 // Read-only coverage profile endpoint. Returns AssetCoverageProfile for any
 // ticker. Checks local cache file existence — never calls live CVM pipelines
 // or computes forecasts. Always returns 200 (even when coverage is unavailable).
+//
+// Response: { coverage, lifecycle, readiness, fundamentalsAlias }
+//   coverage          — unchanged AssetCoverageProfile (existing consumers)
+//   lifecycle         — ticker lifecycle (active / renamed / … + successor)
+//   readiness         — product readiness (null for tickers outside the universe)
+//   fundamentalsAlias — set when fundamentals come from a same-issuer ticker
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -10,6 +16,9 @@ import { B3_UNIVERSE } from "@/data/b3-universe";
 import { getCvmCompanyByTicker } from "@/lib/cvm/company-map";
 import { classifyAsset } from "@/lib/coverage/asset-classifier";
 import { resolveAssetCoverage } from "@/lib/coverage/coverage-resolver";
+import { fundamentalsAliasMeta, resolveFundamentalsTicker } from "@/lib/coverage/fundamentals-alias";
+import { getTickerLifecycle } from "@/lib/coverage/ticker-lifecycle";
+import { assessAssetReadiness } from "@/lib/coverage/asset-readiness-inputs";
 
 const CWD = process.cwd();
 
@@ -36,12 +45,14 @@ export async function GET(
   }
 
   const b3Entry    = B3_UNIVERSE.find(a => a.ticker === ticker);
-  const cvmCompany = getCvmCompanyByTicker(ticker);
+  // Same-issuer aliases read the canonical ticker's CVM mapping and caches.
+  const fundamentalsTicker = resolveFundamentalsTicker(ticker);
+  const cvmCompany = getCvmCompanyByTicker(fundamentalsTicker);
 
-  const hasAnnualFinancials    = cacheExists("src/data/cvm-cache/financials",              ticker);
-  const hasQuarterlyFinancials = cacheExists("src/data/cvm-cache/quarterly",               ticker);
-  const hasTimeSeries          = cacheExists("src/data/forecast-cache/time-series",        ticker);
-  const hasBaselineForecast    = cacheExists("src/data/forecast-cache/baseline-forecasts", ticker);
+  const hasAnnualFinancials    = cacheExists("src/data/cvm-cache/financials",              fundamentalsTicker);
+  const hasQuarterlyFinancials = cacheExists("src/data/cvm-cache/quarterly",               fundamentalsTicker);
+  const hasTimeSeries          = cacheExists("src/data/forecast-cache/time-series",        fundamentalsTicker);
+  const hasBaselineForecast    = cacheExists("src/data/forecast-cache/baseline-forecasts", fundamentalsTicker);
 
   const assetType = classifyAsset(ticker, {
     b3AssetType: b3Entry?.assetType,
@@ -64,5 +75,11 @@ export async function GET(
     declaredStatus: b3Entry?.coverageStatus,
   });
 
-  return NextResponse.json({ coverage });
+  const lifecycle = getTickerLifecycle(ticker);
+  return NextResponse.json({
+    coverage,
+    lifecycle: lifecycle ?? { ticker, status: "active" },
+    readiness: b3Entry ? assessAssetReadiness(b3Entry) : null,
+    fundamentalsAlias: fundamentalsAliasMeta(ticker),
+  });
 }

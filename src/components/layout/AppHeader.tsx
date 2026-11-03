@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useMemo, useId } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { B3_UNIVERSE, type B3Company } from "@/data/b3-universe";
-import { COVERAGE_BADGE } from "@/data/coverage-types";
+import { searchBadgeFor } from "@/lib/coverage/search-badge";
 import { NAV_LINKS, isNavLinkActive } from "@/lib/ui/nav";
 
 interface AppHeaderProps {
@@ -150,10 +150,10 @@ export default function AppHeader({
                     <span style={styles.dropdownSector}>{c.sector}</span>
                     <span style={{
                       ...styles.dropdownBadge,
-                      background: COVERAGE_BADGE[c.coverageStatus].bg,
-                      color:      COVERAGE_BADGE[c.coverageStatus].color,
+                      background: searchBadgeFor(c).bg,
+                      color:      searchBadgeFor(c).color,
                     }}>
-                      {COVERAGE_BADGE[c.coverageStatus].label}
+                      {searchBadgeFor(c).label}
                     </span>
                   </div>
                 </button>

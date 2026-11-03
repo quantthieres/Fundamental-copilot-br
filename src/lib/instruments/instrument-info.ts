@@ -39,7 +39,7 @@ const BDR_DESCRIPTIONS: Record<string, string> = {
   AMZO34:  "BDR que representa ações da Amazon.com Inc. (AMZN), listada na Nasdaq (EUA). Exposição ao setor de comércio eletrônico e nuvem.",
   GOGL34:  "BDR que representa ações da Alphabet Inc. (GOOGL), listada na Nasdaq (EUA). Exposição ao setor de tecnologia e publicidade digital.",
   NVDC34:  "BDR que representa ações da NVIDIA Corporation (NVDA), listada na Nasdaq (EUA). Exposição ao setor de semicondutores e IA.",
-  GOOGL34: "BDR que representa ações da Alphabet Inc. (GOOGL), listada na Nasdaq (EUA). Exposição ao setor de tecnologia e publicidade digital.",
+  GOGL35:  "Segundo BDR da Alphabet Inc. listado na B3 (código GOGL35, mesmo emissor do GOGL34). Exposição ao setor de tecnologia e publicidade digital.",
 };
 
 function bdrDescription(asset: B3Asset): string {

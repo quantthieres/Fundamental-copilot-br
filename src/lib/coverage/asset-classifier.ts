@@ -54,7 +54,7 @@ const EXPLICIT_TICKER_MAP: Record<string, AssetType> = {
   AMZO34:  "bdr",
   GOGL34:  "bdr",
   NVDC34:  "bdr",
-  GOOGL34: "bdr",
+  GOGL35:  "bdr",
 
   // ── Operating-company units (eligible for industrial model) ───────────────
   // These end in 11 but are NOT FIIs, ETFs, or bank units.

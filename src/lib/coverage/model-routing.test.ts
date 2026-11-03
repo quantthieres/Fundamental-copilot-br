@@ -49,8 +49,22 @@ describe("resolveModelRoute", () => {
     expect(resolveModelRoute(fromUniverse("IRDM11"))).toBe<ModelRoute>("fii");
   });
 
-  it("BCFF11 → sector_specific_pending (FII without model cache)", () => {
-    expect(resolveModelRoute(fromUniverse("BCFF11"))).toBe<ModelRoute>("sector_specific_pending");
+  it("BCFF11 → unavailable (incorporated into BTHF11; placeholder cache is not coverage)", () => {
+    expect(resolveModelRoute(fromUniverse("BCFF11"))).toBe<ModelRoute>("unavailable");
+  });
+
+  it("BTHF11 → sector_specific_pending (current FII without model cache)", () => {
+    expect(resolveModelRoute(fromUniverse("BTHF11"))).toBe<ModelRoute>("sector_specific_pending");
+  });
+
+  it("ITUB3/BBDC3 → bank via same-issuer fundamentals alias", () => {
+    expect(resolveModelRoute(fromUniverse("ITUB3"))).toBe<ModelRoute>("bank");
+    expect(resolveModelRoute(fromUniverse("BBDC3"))).toBe<ModelRoute>("bank");
+  });
+
+  it("ITSA3/ITSA4 are never routed to the bank model", () => {
+    expect(resolveModelRoute(fromUniverse("ITSA3"))).not.toBe<ModelRoute>("bank");
+    expect(resolveModelRoute(fromUniverse("ITSA4"))).not.toBe<ModelRoute>("bank");
   });
 
   // ── Insurance ───────────────────────────────────────────────────────────────

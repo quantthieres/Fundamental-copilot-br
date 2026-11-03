@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { B3_UNIVERSE, type B3Asset } from "@/data/b3-universe";
-import { COVERAGE_BADGE } from "@/data/coverage-types";
+import { searchBadgeFor } from "@/lib/coverage/search-badge";
 import {
   buildTickerSearchIndex,
   searchTickers,
@@ -119,7 +119,7 @@ export default function TickerSearchBox({
             <div style={styles.noResult}>Nenhum resultado para &ldquo;{query}&rdquo;</div>
           ) : (
             suggestions.map((asset, i) => {
-              const badge = COVERAGE_BADGE[asset.coverageStatus];
+              const badge = searchBadgeFor(asset);
               return (
                 <button
                   key={asset.ticker}

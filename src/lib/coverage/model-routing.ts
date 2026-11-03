@@ -3,6 +3,7 @@ import { classifyAsset } from "./asset-classifier";
 import { hasBankAnalysisCache } from "../banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../insurance/insurance-coverage";
+import { resolveFundamentalsTicker } from "./fundamentals-alias";
 
 export type ModelRoute =
   | "industrial"
@@ -44,10 +45,12 @@ export function resolveModelRoute(asset: B3Asset): ModelRoute {
 
   const type = richType(asset);
 
-  // Sector-specific models — check whether a cache exists.
-  if (type === "bank")      return hasBankAnalysisCache(ticker)      ? "bank"      : "sector_specific_pending";
-  if (type === "fii")       return hasFiiAnalysisCache(ticker)       ? "fii"       : "sector_specific_pending";
-  if (type === "insurance") return hasInsuranceAnalysisCache(ticker) ? "insurance" : "sector_specific_pending";
+  // Sector-specific models — check whether a cache exists. Same-issuer aliases
+  // (e.g. ITUB3 → ITUB4) use the canonical ticker's cache.
+  const fundamentalsTicker = resolveFundamentalsTicker(ticker);
+  if (type === "bank")      return hasBankAnalysisCache(fundamentalsTicker)      ? "bank"      : "sector_specific_pending";
+  if (type === "fii")       return hasFiiAnalysisCache(fundamentalsTicker)       ? "fii"       : "sector_specific_pending";
+  if (type === "insurance") return hasInsuranceAnalysisCache(fundamentalsTicker) ? "insurance" : "sector_specific_pending";
 
   // Informational layer: ETFs, BDRs, and funds never use industrial indicators.
   if (type === "etf" || type === "bdr" || type === "fund") return "informational_instrument";

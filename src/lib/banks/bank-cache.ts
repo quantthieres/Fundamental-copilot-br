@@ -3,12 +3,15 @@
 
 import fs from "fs";
 import path from "path";
+import { resolveFundamentalsTicker } from "../coverage/fundamentals-alias";
 import type { BankAnalysisResponse } from "./bank-types";
 
 const CACHE_DIR = path.join(process.cwd(), "src/data/bank-cache/annual");
 
+// Aliased tickers (same issuer, see coverage/fundamentals-alias.ts) read the
+// canonical cache; callers keep the requested ticker in their responses.
 export function readBankCache(ticker: string): BankAnalysisResponse | null {
-  const filePath = path.join(CACHE_DIR, `${ticker.toUpperCase()}.json`);
+  const filePath = path.join(CACHE_DIR, `${resolveFundamentalsTicker(ticker)}.json`);
   try {
     const raw = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(raw) as BankAnalysisResponse;

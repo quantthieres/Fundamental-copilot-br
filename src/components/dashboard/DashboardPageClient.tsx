@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { lifecycleHintPt } from "@/lib/coverage/ticker-lifecycle";
 import NavBar from "@/components/dashboard/NavBar";
 import { revealInStrip } from "@/lib/ui/scroll-into-strip";
 import CompanyHeader from "@/components/dashboard/CompanyHeader";
@@ -235,7 +236,9 @@ function EmptyStateView({
         )}
         {status === "unavailable" && (
           <p style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-            Este ticker não possui cobertura de dados ativa. O ativo pode ter sido descontinuado, incorporado ou ainda não integrado à plataforma.
+            {lifecycleHintPt(ticker)
+              ? `${lifecycleHintPt(ticker)}. Este código de negociação não é mais atual.`
+              : "Este ticker não possui cobertura de dados ativa. O ativo pode ter sido descontinuado, incorporado ou ainda não integrado à plataforma."}
           </p>
         )}
         {showQuote && (
@@ -626,7 +629,9 @@ export default function DashboardPageClient() {
 
   // ── CVM financials fetch ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedTicker || !b3Entry || isBank || isFii || isInsurance || isInformationalInstrument) {
+    // Historical codes (coverageStatus "unavailable") never render analysis, even
+    // when a CVM cache is retained to back a same-issuer alias (e.g. ELET3 → AXIA3).
+    if (!selectedTicker || !b3Entry || b3Entry.coverageStatus === "unavailable" || isBank || isFii || isInsurance || isInformationalInstrument) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;

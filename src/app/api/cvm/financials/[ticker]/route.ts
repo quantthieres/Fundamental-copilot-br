@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCvmCompanyByTicker } from "@/lib/cvm/company-map";
+import { resolveFundamentalsTicker } from "@/lib/coverage/fundamentals-alias";
 import { getAnnualDfpFinancials } from "@/lib/cvm/dfp-client";
 import { getPrecomputedFinancials } from "@/lib/cvm/precomputed-cache";
 
@@ -11,7 +12,9 @@ export async function GET(
   const upper = ticker.toUpperCase();
   const t0 = process.env.NODE_ENV === "development" ? Date.now() : 0;
 
-  const company = getCvmCompanyByTicker(upper);
+  // Same-issuer aliases (e.g. AXIA3 → ELET3 cache) resolve the CVM company and
+  // caches of the canonical ticker; the response keeps the requested ticker.
+  const company = getCvmCompanyByTicker(resolveFundamentalsTicker(upper));
 
   if (!company || !company.hasCvmMapping || !company.cvmCode) {
     return NextResponse.json({

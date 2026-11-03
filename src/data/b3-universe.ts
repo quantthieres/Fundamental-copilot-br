@@ -43,7 +43,8 @@ export const B3_UNIVERSE: B3Asset[] = [
 
   // ── Bens de Capital ──────────────────────────────────────────────────────────
   stock("WEGE3",  "WEG S.A.",                                           "WEG",            "Bens de Capital",        "Motores e Geradores",            FA,  true,  true),
-  stock("EMBR3",  "Embraer S.A.",                                        "Embraer",        "Bens de Capital",        "Aeronáutico",                    CA,  false, true),
+  stock("EMBR3",  "Embraer S.A.",                                        "Embraer",        "Bens de Capital",        "Aeronáutico", "unavailable",  false, true), // historical — see TICKER_LIFECYCLE (current: EMBJ3)
+  stock("EMBJ3", "Embraer S.A.",                                                       "Embraer",        "Bens de Capital",        "Aeronáutico",                    CA, false, true), // current code (added 2026-11-03)
   stock("TUPY3",  "Tupy S.A.",                                           "Tupy",           "Bens de Capital",        "Autopeças",                      CA,  false, true),
   stock("FRAS3",  "Frasle Mobility S.A.",                                "Frasle",         "Bens de Capital",        "Autopeças",                      CA,  false, true),
   stock("MYPK3",  "Iochpe-Maxion S.A.",                                  "Iochpe-Maxion",  "Bens de Capital",        "Autopeças",                      CA, false, true),
@@ -62,7 +63,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("VBBR3",  "Vibra Energia S.A.",                                  "Vibra",          "Petróleo e Gás",         "Distribuição de Combustíveis",   CA,  false, true),
   stock("RAIZ4",  "Raízen S.A.",                                         "Raízen",         "Petróleo e Gás",         "Biocombustíveis",                CA,  false, true),
   stock("RECV3",  "PetroRecôncavo S.A.",                                 "PetroRecôncavo", "Petróleo e Gás",         "Exploração e Produção",          CA, false, true),
-  stock("RRRP3",  "3R Petroleum Óleo e Gás S.A.",                       "3R Petroleum",   "Petróleo e Gás",         "Exploração e Produção",          "unavailable"), // obsolete ticker: renamed Brava Energia (BRAV3), same CNPJ 12.091.809/0001-55
+  stock("RRRP3",  "3R Petroleum Óleo e Gás S.A.",                       "3R Petroleum",   "Petróleo e Gás",         "Exploração e Produção",          "unavailable"), // historical — see TICKER_LIFECYCLE
+  stock("BRAV3", "Brava Energia S.A.",                                                 "Brava",          "Petróleo e Gás",         "Exploração e Produção",          QO, false, false), // current code (added 2026-11-03)
   stock("CSAN3",  "Cosan S.A.",                                          "Cosan",          "Petróleo e Gás",         "Distribuição e Energia",         CA, false, true),
   stock("UGPA3",  "Ultrapar Participações S.A.",                         "Ultrapar",       "Petróleo e Gás",         "Distribuição de Combustíveis",   CA, false, true),
 
@@ -91,20 +93,22 @@ export const B3_UNIVERSE: B3Asset[] = [
   // ── Energia Elétrica ─────────────────────────────────────────────────────────
   stock("EGIE3",  "Engie Brasil Energia S.A.",                           "Engie Brasil",   "Energia Elétrica",       "Geração de Energia",             FA,  true,  true),
   stock("CPFE3",  "CPFL Energia S.A.",                                   "CPFL Energia",   "Energia Elétrica",       "Distribuição de Energia",        FA,  true,  true),
-  stock("ELET3",  "Centrais Elétricas Brasileiras S.A.",                 "Eletrobras ON",  "Energia Elétrica",       "Geração e Transmissão",          CA,  false, true),
-  stock("ELET6",  "Centrais Elétricas Brasileiras S.A.",                 "Eletrobras PNB", "Energia Elétrica",       "Geração e Transmissão",          CA, false, true),
+  stock("ELET3",  "Centrais Elétricas Brasileiras S.A.",                 "Eletrobras ON",  "Energia Elétrica",       "Geração e Transmissão", "unavailable",  false, true), // historical — see TICKER_LIFECYCLE (current: AXIA3)
+  stock("ELET6",  "Centrais Elétricas Brasileiras S.A.",                 "Eletrobras PNB", "Energia Elétrica",       "Geração e Transmissão", "unavailable", false, true), // historical — see TICKER_LIFECYCLE
+  stock("AXIA3", "AXIA Energia S.A.",                                                  "AXIA Energia",   "Energia Elétrica",       "Geração e Transmissão",          CA, false, true), // current code (added 2026-11-03)
   stock("EQTL3",  "Equatorial Energia S.A.",                             "Equatorial",     "Energia Elétrica",       "Distribuição de Energia",        CA,  false, true),
   stock("ENEV3",  "Eneva S.A.",                                          "Eneva",          "Energia Elétrica",       "Geração Termelétrica",           CA,  false, true),
   stock("CMIG4",  "Cemig – Companhia Energética de Minas Gerais",        "CEMIG PN",       "Energia Elétrica",       "Geração e Distribuição",         CA,  false, true),
   stock("CMIG3",  "Cemig – Companhia Energética de Minas Gerais",        "CEMIG ON",       "Energia Elétrica",       "Geração e Distribuição",         CA,  false, true),
-  stock("CPLE6",  "Copel – Companhia Paranaense de Energia",             "Copel PNB",      "Energia Elétrica",       "Geração e Distribuição",         CA,  false, true),
+  stock("CPLE6",  "Copel – Companhia Paranaense de Energia",             "Copel PNB",      "Energia Elétrica",       "Geração e Distribuição", "unavailable",  false, true), // historical — see TICKER_LIFECYCLE (current: CPLE3)
   stock("CPLE3",  "Copel – Companhia Paranaense de Energia",             "Copel ON",       "Energia Elétrica",       "Geração e Distribuição",         CA,  false, true),
   stock("ALUP11", "Alupar Investimento S.A.",                            "Alupar",         "Energia Elétrica",       "Transmissão de Energia",         CA,  false, true,  "unit"),
   stock("TAEE11", "Taesa – Transmissora Aliança de Energia Elétrica S.A.", "Taesa",        "Energia Elétrica",       "Transmissão de Energia",         CA, false, true, "unit"),
-  stock("TRPL4",  "CTEEP – Cia. de Transmissão de Energia Elétrica Paulista", "ISA CTEEP","Energia Elétrica",       "Transmissão de Energia",         CA, false, true),
+  stock("TRPL4",  "CTEEP – Cia. de Transmissão de Energia Elétrica Paulista", "ISA CTEEP","Energia Elétrica",       "Transmissão de Energia", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: ISAE4)
+  stock("ISAE4", "ISA Energia Brasil S.A.",                                            "ISA Energia",    "Energia Elétrica",       "Transmissão de Energia",         CA, false, true), // current code (added 2026-11-03)
   stock("AURE3",  "Auren Energia S.A.",                                  "Auren Energia",  "Energia Elétrica",       "Geração de Energia",             CA, false, true),
-  stock("CESP6",  "CESP – Companhia Energética de São Paulo",            "CESP",           "Energia Elétrica",       "Geração de Energia",             CA, false, true),
-  stock("ENBR3",  "EDP Brasil S.A.",                                     "EDP Brasil",     "Energia Elétrica",       "Distribuição de Energia",        CA, false, true),
+  stock("CESP6",  "CESP – Companhia Energética de São Paulo",            "CESP",           "Energia Elétrica",       "Geração de Energia", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: AURE3)
+  stock("ENBR3",  "EDP Brasil S.A.",                                     "EDP Brasil",     "Energia Elétrica",       "Distribuição de Energia", "unavailable", false, true), // historical — see TICKER_LIFECYCLE
   stock("ENGI11", "Energisa S.A.",                                       "Energisa",       "Energia Elétrica",       "Distribuição de Energia",        CA, false, true, "unit"),
   stock("CGAS3",  "Comgás – Companhia de Gás de São Paulo",              "Comgás",         "Energia Elétrica",       "Distribuição de Gás",            CA, false, true),
 
@@ -121,9 +125,10 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("ABEV3",  "Ambev S.A.",                                          "Ambev",          "Bebidas",                "Cervejas e Bebidas",             FA,  true,  true),
 
   // ── Alimentos ────────────────────────────────────────────────────────────────
-  stock("BRFS3",  "BRF S.A.",                                            "BRF",            "Alimentos",              "Carnes e Derivados",             CA, false, true),
-  stock("JBSS3",  "JBS S.A.",                                            "JBS",            "Alimentos",              "Carnes e Derivados",             CA, false, true),
-  stock("MRFG3",  "Marfrig Global Foods S.A.",                           "Marfrig",        "Alimentos",              "Carnes e Derivados",             CA, false, true),
+  stock("BRFS3",  "BRF S.A.",                                            "BRF",            "Alimentos",              "Carnes e Derivados", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: MBRF3)
+  stock("JBSS3",  "JBS S.A.",                                            "JBS",            "Alimentos",              "Carnes e Derivados", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: JBSS32)
+  stock("MRFG3",  "Marfrig Global Foods S.A.",                           "Marfrig",        "Alimentos",              "Carnes e Derivados", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: MBRF3)
+  stock("MBRF3", "Marfrig Global Foods S.A. (MBRF)",                                   "MBRF",           "Alimentos",              "Carnes e Derivados",             CA, false, true), // current code (added 2026-11-03)
   stock("BEEF3",  "Minerva Foods S.A.",                                  "Minerva",        "Alimentos",              "Carnes e Derivados",             CA, false, true),
   stock("SMTO3",  "São Martinho S.A.",                                   "São Martinho",   "Alimentos",              "Açúcar e Álcool",                CA, false, true),
   stock("MDIA3",  "M. Dias Branco S.A.",                                 "M. Dias Branco", "Alimentos",              "Massas e Biscoitos",             CA, false, true),
@@ -137,10 +142,11 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("TGMA3",  "Tegma Gestão Logística S.A.",                         "Tegma",          "Transporte",             "Logística Rodoviária",           CA, false, true),
   stock("SIMH3",  "Simpar S.A.",                                         "Simpar",         "Transporte",             "Locação e Logística",            CA, false, true),
   stock("VAMO3",  "Vamos Locações S.A.",                                 "Vamos",          "Transporte",             "Locação de Veículos",            QO),
-  stock("AZUL4",  "Azul S.A.",                                           "Azul",           "Transporte",             "Aviação Regional",               CA, false, true),
-  stock("GOLL4",  "Gol Linhas Aéreas Inteligentes S.A.",                 "GOL",            "Transporte",             "Aviação",                        "unavailable"), // CVM 19569 CANCELADA 2026-04-01 (elisão por incorporação)
+  stock("AZUL4",  "Azul S.A.",                                           "Azul",           "Transporte",             "Aviação Regional", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: AZUL3)
+  stock("AZUL3", "Azul S.A.",                                                          "Azul",           "Transporte",             "Aviação Regional",               CA, false, true), // current code (added 2026-11-03)
+  stock("GOLL4",  "Gol Linhas Aéreas Inteligentes S.A.",                 "GOL",            "Transporte",             "Aviação",                        "unavailable"), // historical — see TICKER_LIFECYCLE
   stock("LOGN3",  "Log-In Logística Intermodal S.A.",                    "Log-In",         "Transporte",             "Logística Portuária",            CA, false, true),
-  stock("STBP3",  "Santos Brasil Participações S.A.",                    "Santos Brasil",  "Transporte",             "Portuário",                      CA, false, true),
+  stock("STBP3",  "Santos Brasil Participações S.A.",                    "Santos Brasil",  "Transporte",             "Portuário", "unavailable", false, true), // historical — see TICKER_LIFECYCLE
   stock("SEQL3",  "Sequoia Logística e Transportes S.A.",                "Sequoia",        "Transporte",             "Logística",                      QO),
 
   // ── Varejo ───────────────────────────────────────────────────────────────────
@@ -148,15 +154,18 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("ASAI3",  "Assaí Atacadista S.A.",                               "Assaí",          "Varejo",                 "Atacado Alimentar",              CVM, false, true),
   stock("MGLU3",  "Magazine Luiza S.A.",                                 "Magalu",         "Varejo",                 "Varejo Eletroeletrônico",        CA, false, true),
   stock("PCAR3",  "Grupo Pão de Açúcar S.A.",                            "GPA",            "Varejo",                 "Supermercados",                  CA, false, true),
-  stock("CRFB3",  "Atacadão S.A.",                                       "Carrefour Brasil","Varejo",                "Hipermercados",                  "unavailable"), // CVM 24171 CANCELADA 2025-12-22 (cancelamento voluntário)
-  stock("SOMA3",  "Grupo Soma S.A.",                                     "Grupo Soma",     "Varejo",                 "Vestuário e Moda",               "unavailable"), // CVM 25011 CANCELADA 2024-07-31 (incorporada; grupo hoje AZZA3)
+  stock("CRFB3",  "Atacadão S.A.",                                       "Carrefour Brasil","Varejo",                "Hipermercados",                  "unavailable"), // historical — see TICKER_LIFECYCLE
+  stock("SOMA3",  "Grupo Soma S.A.",                                     "Grupo Soma",     "Varejo",                 "Vestuário e Moda",               "unavailable"), // historical — see TICKER_LIFECYCLE
   stock("SBFG3",  "Grupo SBF S.A.",                                      "SBF / Centauro", "Varejo",                 "Artigos Esportivos",             CA, false, true),
-  stock("ARZZ3",  "Arezzo Indústria e Comércio S.A.",                    "Arezzo",         "Varejo",                 "Calçados e Acessórios",          CA, false, true),
+  stock("ARZZ3",  "Arezzo Indústria e Comércio S.A.",                    "Arezzo",         "Varejo",                 "Calçados e Acessórios", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: AZZA3)
+  stock("AZZA3", "Azzas 2154 S.A.",                                                    "Azzas 2154",     "Varejo",                 "Vestuário e Calçados",           CA, false, true), // current code (added 2026-11-03)
   stock("GRND3",  "Grendene S.A.",                                       "Grendene",       "Varejo",                 "Calçados",                       CA, false, true),
   stock("VULC3",  "Vulcabras S.A.",                                      "Vulcabras",      "Varejo",                 "Calçados",                       CA, false, true),
-  stock("PETZ3",  "Petz S.A.",                                           "Petz",           "Varejo",                 "Pet e Animais",                  "unavailable"), // obsolete: trading ended 2026-01-02 (→ AUAU3, União Pet); CVM 25089 CANCELADA 2026-05-14
+  stock("PETZ3",  "Petz S.A.",                                           "Petz",           "Varejo",                 "Pet e Animais",                  "unavailable"), // historical — see TICKER_LIFECYCLE
+  stock("AUAU3", "União Pet Participações S.A.",                                       "União Pet",      "Varejo",                 "Pet e Animais",                  QO, false, false), // current code (added 2026-11-03)
   stock("GMAT3",  "Grupo Mateus S.A.",                                   "Grupo Mateus",   "Varejo",                 "Supermercados",                  CA, false, true),
-  stock("VVAR3",  "Casas Bahia S.A.",                                    "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        "unavailable"), // obsolete ticker: VVAR3 → VIIA3 → BHIA3, same CNPJ 33.041.260/0652-90
+  stock("VVAR3",  "Casas Bahia S.A.",                                    "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        "unavailable"), // historical — see TICKER_LIFECYCLE
+  stock("BHIA3", "Grupo Casas Bahia S.A.",                                             "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        QO, false, false), // current code (added 2026-11-03)
   stock("ALPA4",  "Alpargatas S.A.",                                     "Alpargatas",     "Varejo",                 "Calçados e Acessórios",          CA, false, true),
   stock("LJQQ3",  "Lojas Quero-Quero S.A.",                              "Quero-Quero",    "Varejo",                 "Materiais de Construção",        CA, false, true),
   stock("PTBL3",  "PBG S.A. (Portobello)",                              "Portobello",     "Varejo",                 "Revestimentos Cerâmicos",        CA, false, true),
@@ -177,7 +186,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("ALOS3",  "Allos S.A.",                                          "Allos",          "Imóveis Comerciais",     "Shopping Centers",               QO),
   stock("IGTI11", "Iguatemi S.A.",                                       "Iguatemi",       "Imóveis Comerciais",     "Shopping Centers",               CA, false, true, "unit"),
   stock("JHSF3",  "JHSF Participações S.A.",                             "JHSF",           "Imóveis Comerciais",     "Shopping e Real Estate",         CA, false, true),
-  stock("BRPR3",  "BR Properties S.A.",                                  "BR Properties",  "Imóveis Comerciais",     "Escritórios e Galpões",          "unavailable"), // CVM 19925 CANCELADA 2023-12-20 (cancelamento voluntário)
+  stock("BRPR3",  "BR Properties S.A.",                                  "BR Properties",  "Imóveis Comerciais",     "Escritórios e Galpões",          "unavailable"), // historical — see TICKER_LIFECYCLE
 
   // ── Bancário ─────────────────────────────────────────────────────────────────
   stock("ITUB4",  "Itaú Unibanco Holding S.A.",                          "Itaú Unibanco",  "Bancário",               "Banco Múltiplo",                 SS),
@@ -195,7 +204,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   // ── Seguros ──────────────────────────────────────────────────────────────────
   stock("BBSE3",  "BB Seguridade Participações S.A.",                    "BB Seguridade",  "Seguros",                "Seguro Bancário",                SS),
   stock("PSSA3",  "Porto Seguro S.A.",                                   "Porto Seguro",   "Seguros",                "Seguro Diversificado",           SS),
-  stock("SULA11", "SulAmérica S.A.",                                     "SulAmérica",     "Seguros",                "Seguro Saúde e Vida",            "unavailable", false, false, "unit"),
+  stock("SULA11", "SulAmérica S.A.",                                     "SulAmérica",     "Seguros",                "Seguro Saúde e Vida",            "unavailable", false, false, "unit"), // historical — see TICKER_LIFECYCLE
   stock("IRBR3",  "IRB Brasil RE S.A.",                                  "IRB Brasil",     "Seguros",                "Resseguro",                      SS),
   stock("CXSE3",  "Caixa Seguridade Participações S.A.",                 "Caixa Seguridade","Seguros",               "Seguro Bancário",                SS),
 
@@ -209,7 +218,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("RADL3",  "Raia Drogasil S.A.",                                  "RD Saúde",       "Saúde",                  "Farmácias e Drogarias",          CA,  false, true),
   stock("HYPE3",  "Hypera S.A.",                                         "Hypera Pharma",  "Saúde",                  "Medicamentos",                   CA,  false, true),
   stock("FLRY3",  "Fleury S.A.",                                         "Fleury",         "Saúde",                  "Diagnósticos",                   CA, false, true),
-  stock("ODPV3",  "Odontoprev S.A.",                                     "Odontoprev",     "Saúde",                  "Planos Odontológicos",           CA, false, true),
+  stock("ODPV3",  "Odontoprev S.A.",                                     "Odontoprev",     "Saúde",                  "Planos Odontológicos", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: SAUD3)
+  stock("SAUD3", "Bradsaúde S.A. (ex-Odontoprev)",                                     "Bradsaúde",      "Saúde",                  "Planos Odontológicos",           CA, false, true), // current code (added 2026-11-03)
   stock("QUAL3",  "Qualicorp Consultoria e Corretora de Benefícios S.A.","Qualicorp",      "Saúde",                  "Benefícios Corporativos",        CA, false, true),
   stock("BLAU3",  "Blau Farmacêutica S.A.",                              "Blau Farma",     "Saúde",                  "Medicamentos",                   CA, false, true),
 
@@ -221,7 +231,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("ANIM3",  "Ânima Educação S.A.",                                 "Ânima",          "Educação",               "Ensino Superior",                CA, false, true),
 
   // ── Consumo Pessoal e Serviços ───────────────────────────────────────────────
-  stock("NTCO3",  "Natura & Co Holding S.A.",                            "Natura &Co",     "Consumo Pessoal",        "Cosméticos e Higiene",           CA, false, true),
+  stock("NTCO3",  "Natura & Co Holding S.A.",                            "Natura &Co",     "Consumo Pessoal",        "Cosméticos e Higiene", "unavailable", false, true), // historical — see TICKER_LIFECYCLE (current: NATU3)
+  stock("NATU3", "Natura Cosméticos S.A.",                                             "Natura",         "Consumo Pessoal",        "Cosméticos e Higiene",           CA, false, true), // current code (added 2026-11-03)
   stock("SMFT3",  "SmartFit Escola de Ginástica e Dança S.A.",           "SmartFit",       "Consumo Pessoal",        "Academias e Fitness",            CA, false, true),
   stock("AMBP3",  "Ambipar Participações e Franquias S.A.",              "Ambipar",        "Serviços",               "Gestão Ambiental",               QO),
   stock("CVCB3",  "CVC Brasil Operadora e Agência de Viagens S.A.",      "CVC",            "Serviços",               "Turismo e Viagens",              CA, false, true),
@@ -241,7 +252,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("HGLG11", "CSHG Logística FII",                                  "HGLG11",         "FII",                    "Logística e Galpões",            SS, false, false, "fii"),
   stock("KNRI11", "Kinea Renda Imobiliária FII",                         "KNRI11",         "FII",                    "Híbrido",                        SS, false, false, "fii"),
   stock("VISC11", "Vinci Shopping Centers FII",                          "VISC11",         "FII",                    "Shopping Centers",               SS, false, false, "fii"),
-  stock("BCFF11", "BTG Pactual Fundo de Fundos FII",                     "BCFF11",         "FII",                    "Fundo de Fundos",                SS, false, false, "fii"),
+  stock("BCFF11", "BTG Pactual Fundo de Fundos FII",                     "BCFF11",         "FII",                    "Fundo de Fundos", "unavailable", false, false, "fii"), // historical — see TICKER_LIFECYCLE (current: BTHF11)
+  stock("BTHF11","BTG Pactual Real Estate Hedge Fund FII",                             "BTG RE Hedge",   "FII",                    "Multiestratégia",                SS, false, false, "fii"), // current code (added 2026-11-03)
   stock("IRDM11", "Iridium Recebíveis Imobiliários FII",                 "IRDM11",         "FII",                    "Papel (CRI)",                    SS, false, false, "fii"),
   stock("KNCR11", "Kinea CRI Imobiliários FII",                          "KNCR11",         "FII",                    "Papel (CRI)",                    SS, false, false, "fii"),
   stock("HGRE11", "CSHG Real Estate FII",                                "HGRE11",         "FII",                    "Lajes Corporativas",             SS, false, false, "fii"),
@@ -260,6 +272,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("TSLA34",  "Tesla Inc.",                                          "TSLA34",         "BDR",                    "Veículos Elétricos (EUA)",       SS, false, false, "bdr"),
   stock("AMZO34",  "Amazon.com Inc.",                                     "AMZO34",         "BDR",                    "Comércio e Tecnologia (EUA)",    SS, false, false, "bdr"),
   stock("GOGL34",  "Alphabet Inc. (Google)",                              "GOGL34",         "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"),
+  stock("GOGL35",  "Alphabet Inc. (Google)",                              "GOGL35",         "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"), // second Alphabet BDR (B3 lists GOGL34, GOGL35)
   stock("NVDC34",  "NVIDIA Corporation",                                  "NVDC34",         "BDR",                    "Semicondutores (EUA)",           SS, false, false, "bdr"),
-  stock("GOOGL34", "Alphabet Inc. (Google)",                              "GOOGL34",        "BDR",                    "Tecnologia (EUA)",               SS, false, false, "bdr"),
+  stock("JBSS32","JBS N.V.",                                                           "JBS N.V.",       "BDR",                    "Alimentos (Holanda/EUA)",        SS, false, false, "bdr"), // current code (added 2026-11-03)
 ];

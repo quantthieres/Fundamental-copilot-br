@@ -1,0 +1,134 @@
+import { describe, it, expect } from "vitest";
+import { B3_UNIVERSE } from "@/data/b3-universe";
+import {
+  READINESS_DECISIONS,
+  classifyAssetReadiness,
+  groupModelProjects,
+  type ReadinessInput,
+} from "./asset-readiness";
+import { assessAssetReadiness } from "./asset-readiness-inputs";
+import { getIssuerKey } from "./issuer-identity";
+import { getTickerLifecycle } from "./ticker-lifecycle";
+import { getFundamentalsAlias } from "./fundamentals-alias";
+
+function input(over: Partial<ReadinessInput>): ReadinessInput {
+  return {
+    ticker: "TEST3", companyName: "Test S.A.", coverageStatus: "cvm_analysis",
+    richType: "common_stock", route: "industrial", lifecycle: null, successorInUniverse: false,
+    alias: null, annualYears: 6, hasQuarterly: true, decision: null, ...over,
+  };
+}
+
+describe("classifyAssetReadiness — bucket assignment", () => {
+  it("industrial with ≥2 years → analysis_ready", () => {
+    expect(classifyAssetReadiness(input({})).readiness).toBe("analysis_ready");
+  });
+
+  it("industrial with a one-year (or empty) cache → analysis_limited", () => {
+    expect(classifyAssetReadiness(input({ annualYears: 1 })).readiness).toBe("analysis_limited");
+    expect(classifyAssetReadiness(input({ annualYears: 0 })).readiness).toBe("analysis_limited");
+  });
+
+  it("industrial without any cache → cache_pending", () => {
+    expect(classifyAssetReadiness(input({ annualYears: null })).readiness).toBe("cache_pending");
+  });
+
+  it("a fallback route that renders is NOT analysis_ready", () => {
+    for (const route of ["quote_only", "sector_specific_pending"] as const) {
+      const r = classifyAssetReadiness(input({ route, coverageStatus: "quote_only", annualYears: null }));
+      expect(r.readiness).not.toBe("analysis_ready");
+    }
+  });
+
+  it("ETF/BDR → informational_ready", () => {
+    for (const richType of ["etf", "bdr"] as const) {
+      expect(classifyAssetReadiness(input({ richType, route: "informational_instrument" })).readiness).toBe("informational_ready");
+    }
+  });
+
+  it("bank/FII/insurance with cache → analysis_ready; without → cache_pending", () => {
+    expect(classifyAssetReadiness(input({ richType: "bank", route: "bank" })).readiness).toBe("analysis_ready");
+    expect(classifyAssetReadiness(input({ richType: "fii", route: "sector_specific_pending" })).readiness).toBe("cache_pending");
+  });
+
+  it("explicit decisions: manual review, intentionally limited, model pending", () => {
+    expect(classifyAssetReadiness(input({ route: "quote_only", decision: READINESS_DECISIONS.VAMO3 })).readiness).toBe("manual_review");
+    expect(classifyAssetReadiness(input({ route: "quote_only", decision: READINESS_DECISIONS.CASH3 })).readiness).toBe("intentionally_limited");
+    const holding = classifyAssetReadiness(input({ route: "sector_specific_pending", decision: READINESS_DECISIONS.ITSA4 }));
+    expect(holding).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
+  });
+
+  it("historical ticker → historical_or_unavailable, even with a cache or a decision", () => {
+    const lifecycle = { ticker: "OLD3", status: "renamed" as const, successorTicker: "NEW3", verification: "verified" as const, evidence: "x".repeat(30) };
+    const r = classifyAssetReadiness(input({ coverageStatus: "unavailable", route: "unavailable", lifecycle, successorInUniverse: true, decision: READINESS_DECISIONS.VAMO3 }));
+    expect(r).toMatchObject({ readiness: "historical_or_unavailable", successorTicker: "NEW3" });
+  });
+
+  it("historical ticker whose successor is missing → current_ticker_missing", () => {
+    const lifecycle = { ticker: "OLD3", status: "renamed" as const, successorTicker: "NEW3", verification: "verified" as const, evidence: "x".repeat(30) };
+    const r = classifyAssetReadiness(input({ coverageStatus: "unavailable", route: "unavailable", lifecycle, successorInUniverse: false }));
+    expect(r.readiness).toBe("current_ticker_missing");
+    expect(r.nextAction).toContain("NEW3");
+  });
+
+  it("industrial review flags never change the bucket", () => {
+    const r = classifyAssetReadiness(input({ ticker: "MULT3" }));
+    expect(r.readiness).toBe("analysis_ready");
+    expect(r.reviewFlag?.modelProject).toBe("real_estate");
+  });
+});
+
+describe("model projects are grouped by issuer, not ticker", () => {
+  it("Itaúsa ON/PN form one holding project", () => {
+    const results = ["ITSA3", "ITSA4", "BRAP4", "ALOS3", "B3SA3"].map(t =>
+      classifyAssetReadiness(input({ ticker: t, route: "quote_only", decision: READINESS_DECISIONS[t] })));
+    const projects = groupModelProjects(results, t => ({ key: getIssuerKey(t), name: t }));
+    const holding = [...projects.get("holding")!.values()];
+    expect(holding).toHaveLength(2);
+    expect(holding.find(e => e.tickers.includes("ITSA3"))!.tickers).toEqual(["ITSA3", "ITSA4"]);
+    expect(projects.get("real_estate")!.size).toBe(1);
+    expect(projects.get("market_infrastructure")!.size).toBe(1);
+  });
+});
+
+describe("current universe (stable, decision/lifecycle-driven expectations)", () => {
+  const r = (t: string) => assessAssetReadiness(B3_UNIVERSE.find(a => a.ticker === t)!);
+
+  it("bank share-class aliases are analysis-ready through the canonical cache", () => {
+    expect(r("ITUB3")).toMatchObject({ readiness: "analysis_ready", fundamentalsTicker: "ITUB4" });
+    expect(r("BBDC3")).toMatchObject({ readiness: "analysis_ready", fundamentalsTicker: "BBDC4" });
+    expect(r("ITUB4").fundamentalsTicker).toBeUndefined();
+  });
+
+  it("Itaúsa remains holding-model pending", () => {
+    expect(r("ITSA3")).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
+    expect(r("ITSA4")).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
+  });
+
+  it("BCFF11 placeholder is historical; BTHF11 is pending a cache", () => {
+    expect(r("BCFF11")).toMatchObject({ readiness: "historical_or_unavailable", successorTicker: "BTHF11" });
+    expect(r("BTHF11").readiness).toBe("cache_pending");
+  });
+
+  it("decision-driven buckets", () => {
+    expect(r("CASH3").readiness).toBe("intentionally_limited");
+    for (const t of ["VAMO3", "SEQL3", "AMBP3", "BHIA3", "AZUL3"]) expect(r(t).readiness, t).toBe("manual_review");
+    for (const t of ["BRAP4", "ALOS3", "B3SA3"]) expect(r(t).readiness, t).toBe("model_pending");
+  });
+
+  it("ETFs/BDRs are informational_ready and every asset gets exactly one bucket", () => {
+    expect(r("BOVA11").readiness).toBe("informational_ready");
+    expect(r("JBSS32").readiness).toBe("informational_ready");
+    const all = B3_UNIVERSE.map(a => assessAssetReadiness(a));
+    expect(all).toHaveLength(B3_UNIVERSE.length);
+    expect(all.filter(x => x.readiness === "current_ticker_missing")).toEqual([]);
+  });
+
+  it("decisions only target active, non-aliased universe tickers", () => {
+    for (const t of Object.keys(READINESS_DECISIONS)) {
+      expect(B3_UNIVERSE.some(a => a.ticker === t), t).toBe(true);
+      expect(getTickerLifecycle(t), t).toBeNull();
+      if (t !== "AZUL3") expect(getFundamentalsAlias(t), t).toBeNull();
+    }
+  });
+});

@@ -1,16 +1,18 @@
 # Coverage Audit — Quote-Only e Cobertura Incompleta
 
-_Gerado em 2026-11-02 por `npm run coverage:audit:quote-only`._
+_Gerado em 2026-11-03 por `npm run coverage:audit:quote-only`._
 
 ## Resumo
 
 | Categoria | Total |
 |---|---|
-| Candidato mapeamento CVM | 0 |
-| Modelo setorial pendente | 35 |
-| Manter quote-only | 6 |
-| Revisão manual | 2 |
-| Marcar descontinuado | 8 |
+| Candidato mapeamento CVM | 2 |
+| Modelo setorial disponível | 20 |
+| Camada informativa (ETF/BDR) | 14 |
+| Modelo setorial pendente | 6 |
+| Manter quote-only | 1 |
+| Revisão manual | 4 |
+| Marcar descontinuado | 24 |
 | Mismatch cache/status | 0 |
 
 ## Candidatos a Mapeamento CVM
@@ -19,79 +21,65 @@ Empresas operacionais com `quote_only` que provavelmente têm CNPJ ativo na CVM 
 
 | Ticker | Empresa | Setor | Notas |
 |---|---|---|---|
+| BRAV3 | Brava Energia S.A. | Petróleo e Gás | — |
+| AUAU3 | União Pet Participações S.A. | Varejo | — |
 
 ## Modelo Setorial Pendente
 
-Ativos que exigem modelo setorial (`sector_specific_model_required`, ou `quote_only` revisados como inadequados ao modelo industrial).
+Ativos ativos que exigem um modelo ainda inexistente ou sem cache para este código. ETFs/BDRs (camada informativa) e ativos com modelo setorial disponível não entram aqui.
 
 | Ticker | Empresa | Status | Tipo | Rota | Notas |
 |---|---|---|---|---|---|
-| ALOS3 | Allos S.A. | quote_only | common_stock | quote_only | Revisado: Shopping centers: exige modelo imobiliário (NOI/FFO/NAV); DFP extraído tem dívida total = 0 em todos os anos e EBIT 2023 > receita (ganho de combinação) |
-| ITUB4 | Itaú Unibanco Holding S.A. | sector_specific_model_required | bank | bank | — |
-| ITUB3 | Itaú Unibanco Holding S.A. | sector_specific_model_required | bank | sector_specific_pending | — |
-| BBDC4 | Banco Bradesco S.A. | sector_specific_model_required | bank | bank | — |
-| BBDC3 | Banco Bradesco S.A. | sector_specific_model_required | bank | sector_specific_pending | — |
-| BBAS3 | Banco do Brasil S.A. | sector_specific_model_required | bank | bank | — |
-| BPAC11 | BTG Pactual S.A. | sector_specific_model_required | bank | bank | — |
-| SANB11 | Banco Santander Brasil S.A. | sector_specific_model_required | bank | bank | — |
-| BRSR6 | Banrisul – Banco do Estado do Rio Grande do Sul S.A. | sector_specific_model_required | bank | bank | — |
-| BBSE3 | BB Seguridade Participações S.A. | sector_specific_model_required | insurance | insurance | — |
-| PSSA3 | Porto Seguro S.A. | sector_specific_model_required | insurance | insurance | — |
-| IRBR3 | IRB Brasil RE S.A. | sector_specific_model_required | insurance | insurance | — |
-| CXSE3 | Caixa Seguridade Participações S.A. | sector_specific_model_required | insurance | insurance | — |
-| MXRF11 | Maxi Renda FII | sector_specific_model_required | fii | fii | — |
-| XPML11 | XP Malls FII | sector_specific_model_required | fii | fii | — |
-| HGLG11 | CSHG Logística FII | sector_specific_model_required | fii | fii | — |
-| KNRI11 | Kinea Renda Imobiliária FII | sector_specific_model_required | fii | fii | — |
-| VISC11 | Vinci Shopping Centers FII | sector_specific_model_required | fii | fii | — |
-| BCFF11 | BTG Pactual Fundo de Fundos FII | sector_specific_model_required | fii | sector_specific_pending | Sector cache file is an available:false placeholder — not model coverage |
-| IRDM11 | Iridium Recebíveis Imobiliários FII | sector_specific_model_required | fii | fii | — |
-| KNCR11 | Kinea CRI Imobiliários FII | sector_specific_model_required | fii | fii | — |
-| HGRE11 | CSHG Real Estate FII | sector_specific_model_required | fii | fii | — |
-| BOVA11 | iShares Ibovespa FI Ações | sector_specific_model_required | etf | informational_instrument | — |
-| IVVB11 | iShares S&P 500 FI Ações | sector_specific_model_required | etf | informational_instrument | — |
-| SMAL11 | iShares Small Cap FI Ações | sector_specific_model_required | etf | informational_instrument | — |
-| HASH11 | Hashdex Nasdaq Crypto Index FI Ações | sector_specific_model_required | etf | informational_instrument | — |
-| SPXI11 | iShares S&P 500 BRL FI Ações | sector_specific_model_required | etf | informational_instrument | — |
-| GOLD11 | Trend ETF Ouro FI Ações | sector_specific_model_required | etf | informational_instrument | — |
-| AAPL34 | Apple Inc. | sector_specific_model_required | bdr | informational_instrument | — |
-| MSFT34 | Microsoft Corporation | sector_specific_model_required | bdr | informational_instrument | — |
-| TSLA34 | Tesla Inc. | sector_specific_model_required | bdr | informational_instrument | — |
-| AMZO34 | Amazon.com Inc. | sector_specific_model_required | bdr | informational_instrument | — |
-| GOGL34 | Alphabet Inc. (Google) | sector_specific_model_required | bdr | informational_instrument | — |
-| NVDC34 | NVIDIA Corporation | sector_specific_model_required | bdr | informational_instrument | — |
-| GOOGL34 | Alphabet Inc. (Google) | sector_specific_model_required | bdr | informational_instrument | — |
+| BRAP4 | Bradespar S.A. | quote_only | preferred_stock | quote_only | Revisado: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it |
+| ALOS3 | Allos S.A. | quote_only | common_stock | quote_only | Revisado: Shopping-center owner: needs NOI/FFO/NAV metrics; extracted DFP showed total debt = 0 and 2023 EBIT ≈ 2× revenue (combination gain) |
+| B3SA3 | B3 S.A. – Brasil, Bolsa, Balcão | quote_only | financial | quote_only | Revisado: Exchange/clearing operator — revenue and balance sheet (collateral, clearing) need a market-infrastructure model |
+| ITSA4 | Itaúsa S.A. | sector_specific_model_required | financial | sector_specific_pending | Revisado: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company |
+| ITSA3 | Itaúsa S.A. | sector_specific_model_required | financial | sector_specific_pending | Revisado: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company |
+| BTHF11 | BTG Pactual Real Estate Hedge Fund FII | sector_specific_model_required | fii | sector_specific_pending | — |
 
 ## Prováveis Descontinuados
 
-Entidade CVM CANCELADA no registro ou código de negociação obsoleto. Recomendação: `coverageStatus` = `"unavailable"`.
+Códigos históricos verificados (`TICKER_LIFECYCLE`): renomeados, convertidos, incorporados, deslistados ou cancelados.
 
+- **EMBR3** — Embraer S.A. (status atual: `unavailable`)
 - **RRRP3** — 3R Petroleum Óleo e Gás S.A. (status atual: `unavailable`)
+- **ELET3** — Centrais Elétricas Brasileiras S.A. (status atual: `unavailable`)
+- **ELET6** — Centrais Elétricas Brasileiras S.A. (status atual: `unavailable`)
+- **CPLE6** — Copel – Companhia Paranaense de Energia (status atual: `unavailable`)
+- **TRPL4** — CTEEP – Cia. de Transmissão de Energia Elétrica Paulista (status atual: `unavailable`)
+- **CESP6** — CESP – Companhia Energética de São Paulo (status atual: `unavailable`)
+- **ENBR3** — EDP Brasil S.A. (status atual: `unavailable`)
+- **BRFS3** — BRF S.A. (status atual: `unavailable`)
+- **JBSS3** — JBS S.A. (status atual: `unavailable`)
+- **MRFG3** — Marfrig Global Foods S.A. (status atual: `unavailable`)
+- **AZUL4** — Azul S.A. (status atual: `unavailable`)
 - **GOLL4** — Gol Linhas Aéreas Inteligentes S.A. (status atual: `unavailable`)
+- **STBP3** — Santos Brasil Participações S.A. (status atual: `unavailable`)
 - **CRFB3** — Atacadão S.A. (status atual: `unavailable`)
 - **SOMA3** — Grupo Soma S.A. (status atual: `unavailable`)
+- **ARZZ3** — Arezzo Indústria e Comércio S.A. (status atual: `unavailable`)
 - **PETZ3** — Petz S.A. (status atual: `unavailable`)
 - **VVAR3** — Casas Bahia S.A. (status atual: `unavailable`)
 - **BRPR3** — BR Properties S.A. (status atual: `unavailable`)
 - **SULA11** — SulAmérica S.A. (status atual: `unavailable`)
+- **ODPV3** — Odontoprev S.A. (status atual: `unavailable`)
+- **NTCO3** — Natura & Co Holding S.A. (status atual: `unavailable`)
+- **BCFF11** — BTG Pactual Fundo de Fundos FII (status atual: `unavailable`)
 
 ## Manter Quote-Only
 
-Holdings financeiras ou estruturas sem modelo industrial aplicável.
+Limitados por decisão metodológica (`READINESS_DECISIONS`) ou estruturas financeiras sem modelo aplicável.
 
-- **BRAP4** — Bradespar S.A. (Mineração) — Pure holding company — industrial DFP model may not reflect underlying value
-- **B3SA3** — B3 S.A. – Brasil, Bolsa, Balcão (Financeiro)
-- **ITSA4** — Itaúsa S.A. (Holding Financeira)
-- **ITSA3** — Itaúsa S.A. (Holding Financeira)
-- **AMBP3** — Ambipar Participações e Franquias S.A. (Serviços) — Revisado: Em recuperação judicial desde 2025-10-30
-- **CASH3** — Méliuz S.A. (Tecnologia) — Revisado: Modelo de negócio pivotado para tesouraria em Bitcoin (2025–2026) — modelo industrial inadequado
+- **CASH3** — Méliuz S.A. (Tecnologia) — Revisado: Business model pivoted to a Bitcoin treasury strategy (2025–2026) — industrial metrics would mislead
 
 ## Revisão Manual
 
 Identidade CVM verificada, mas reestruturação societária ou adequação ao modelo industrial ainda pendente.
 
-- **VAMO3** — Vamos Locações S.A. — Revisado: Reorganização estratégica consumada em 2024-11-30 (concessionárias segregadas → AMOB3); compra de frota no FCO distorce FCF industrial
-- **SEQL3** — Sequoia Logística e Transportes S.A. — Revisado: Recuperação extrajudicial homologada 2024-10, grupamentos de ações, mudança de controle 2026-02 e repactuação de dívida 2026
+- **VAMO3** — Vamos Locações S.A. — Revisado: 2024 reorganisation (dealerships segregated into Automob/AMOB3) breaks 2020–2023 comparability; fleet purchases in operating cash flow distort industrial FCF
+- **SEQL3** — Sequoia Logística e Transportes S.A. — Revisado: Extrajudicial recovery (2024), reverse splits, change of control and debt renegotiation (2026) — wait for stabilisation
+- **BHIA3** — Grupo Casas Bahia S.A. — Revisado: Grupo Casas Bahia is in judicial recovery; no CVM cache under the current code yet (VVAR3/VIIA3 history not cached)
+- **AMBP3** — Ambipar Participações e Franquias S.A. — Revisado: Judicial recovery (recuperação judicial) since 2025-10-30 — restructuring prevents normal model use
 
 ---
 _Para atualizar: `npm run coverage:audit:quote-only`_

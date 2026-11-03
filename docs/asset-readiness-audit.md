@@ -117,6 +117,7 @@ Verified 2026-11-03. Sources:
 | SULA11 | RDOR3 | incorporated by Rede D'Or | 2022-12-23 last trade | B3-OC 189/2022 |
 | CESP6 | AURE3 | CESP shares incorporated by Auren; AURE3 first session | 2022-03-28 | B3 (AURE3 company page), B3-NEWS (fractions auction notice 2022-04-07) |
 | BCFF11 | BTHF11 | FII incorporated; residual fractions auctioned | auction 2025-01-09 | B3-NEWS ("Edital – Incorporação – BTHF11"), CVM-FI |
+| IRDM11 | IRIM11 | FII wound up; portfolio moved to a different, pre-existing fund (`reorganized`) | 2025-11-28 (CVM cancellation) | CVM-FI, CVM informe mensal, FNET |
 | ENBR3 | — | listing cancelled after delisting tender offer | 2023-07-11 | B3-OC 100/2023-PRE, CVM-FCA, CVM-REG |
 | STBP3 | — | delisted, now CVM category B | 2025-10-03 (date per company notices) | CVM-REG, B3, B3-OC 034/2025 |
 | GOLL4 | — | registration cancelled (taken private by Abra) | 2026-04-01 | CVM-REG |
@@ -152,6 +153,97 @@ NATU3's issuer — a regression test fails if that stops being true.
 - **BHIA3** — manual review (judicial recovery; no cache under current code).
 - **AZUL3** — manual review (Chapter 11 conversion and new equity).
 - **CASH3** — intentionally limited (Bitcoin treasury strategy).
+- **AUAU3** — analysis limited with a comparability break (see below). An
+  `analysis_limited` decision only qualifies an existing industrial cache;
+  without one the asset falls back to `cache_pending`.
+
+### Derived rules (no ticker overrides)
+
+- **FII distribution coverage** — an FII with an `available:true` cache is
+  `analysis_ready` only when all of the latest 12 monthly records carry a
+  usable distribution (`FII_MIN_DISTRIBUTION_MONTHS = 12`, the same point at
+  which the panel stops warning "DY 12m pode estar subestimado"); otherwise
+  `analysis_limited`. Never `cache_pending` — the cache is valid. Re-running
+  `fii:precompute` after the fund resumes reporting restores readiness
+  automatically. Applied uniformly to every current FII: BTHF11 (6/12) and
+  IRIM11 (0/12) are limited; the other seven have 12/12. The rule counts
+  *available* observations (non-null), not positive ones — a stored 0 counts.
+  Zeros are nulled upstream: `fii-cvm-client` turns
+  `Percentual_Dividend_Yield_Mes = 0` into null because the CSV has no
+  "not reported" marker. Evidence that 0 means "not filled" here: in every
+  zero month of BTHF11 and IRIM11 the rentabilidade efetiva and patrimonial
+  fields are also exactly 0 although NAV per share moved, and FNET shows
+  IRIM11 paid R$0,75/cota for Sep/2026 (Aviso aos Cotistas 1344822). A genuine
+  zero-distribution month is therefore indistinguishable in this source; the
+  parser semantics are preserved.
+- **Comparability break** (`READINESS_DECISIONS[t].comparabilityBreak`,
+  `src/lib/coverage/comparability.ts`) — the dashboard, indicators and report
+  show the note, the current quote, market cap and all filed statements, but
+  withhold P/L, EV/EBIT, EV/Receita, Enterprise Value and FCF yield while the
+  latest annual year is ≤ `lastPreBreakFiscalYear`, and
+  `/api/forecasting/baseline` returns 409 until there are
+  `MIN_COMPARABLE_QUARTERS_FOR_FORECAST = 8` quarters from
+  `firstComparableQuarter`. Both lift on their own as filings arrive.
+
+### IRDM11 → IRIM11 (reorganization, not a rename)
+
+- **IRDM11** — Fundo de Investimento Imobiliário Iridium Recebíveis
+  Imobiliários RL, CNPJ 28.830.325/0001-10, ISIN BRIRDMCTF004; CVM-FI
+  *Cancelado* 2025-11-28; last informe mensal 2025-10. Historical
+  (`reorganized`, successor IRIM11, `new_issuer`). Its `available:true` cache
+  stays on disk as historical data, routes as `unavailable` and is excluded
+  from `FII_CACHE_COUNT`.
+- **IRIM11** — Iridium Fundo de Investimento Imobiliário RL (informe name
+  "IRIDIUM CRI FII RL"), CNPJ 41.076.564/0001-95, ISIN BRIRIMCTF003; CVM-FI
+  *Em Funcionamento Normal*. FNET's structured distribution notices link
+  `CodNegociacao` IRIM11 to this CNPJ. Cotas went from 1,920,000 to
+  35,225,778 in 2025-11 (portfolio received). Own exact override and cache
+  (21 months, 2025-01 → 2026-09) — no alias to IRDM11. `analysis_limited`
+  under the FII rule: the informe mensal percentage fields are 0 in every
+  month except 2025-06, although FNET shows monthly distributions.
+
+### Former cache-pending successors (resolved 2026-11-03)
+
+All three are covered under their **current** code; none uses a fundamentals
+alias and none reads its predecessor's cache. Quotes always use the requested
+code.
+
+- **BRAV3** — Brava Energia S.A., CD_CVM 25291, CNPJ 12.091.809/0001-55
+  (CVM-REG ATIVO). FCA 2023 lists RRRP3 and FCA 2024–2026 BRAV3 under the same
+  CNPJ: one issuer, renamed (it incorporated Enauta in 2024). No RRRP3 cache or
+  company-map entry ever existed, so an alias had nothing to point at: BRAV3
+  has its own `company-map` entry and caches. This is **issuer-level**
+  financial-statement continuity (DFP 2020–2025 are the same entity's filings),
+  not ticker continuity — RRRP3 stays historical. The 2023 Polo Potiguar
+  acquisition and 2024 Enauta incorporation change scale, like AZZA3/MBRF3,
+  but not issuer identity. Readiness: `analysis_ready` (6 fiscal years +
+  26 quarters), derived from the cache.
+- **AUAU3** — União Pet Participações S.A., CD_CVM 27766, CNPJ
+  53.153.938/0001-08 (CVM-REG ATIVO, registered 2025-01-21). A **new issuer**
+  relative to Petz (CD_CVM 25089, cancelled 2026-05-14): FCA 2024–2025 name this
+  CNPJ *Cobasi Comércio de Produtos Básicos e Industrializados S.A.*; it was
+  renamed União Pet, incorporated Petz's shares and AUAU3 trades from
+  2026-01-05. DFP 2023–2025 are therefore **Cobasi standalone**; Petz appears
+  only from ITR 2026Q1 (revenue R$1.69bn vs R$0.80bn in 2025Q4). No PETZ3
+  data is aliased or backfilled and no pro forma is synthesised. The
+  industrial model fits the business (pet retail), but no fiscal year reflects
+  it yet → `analysis_limited` until the FY2026 DFP, with a comparability
+  break (last pre-break year 2025, first comparable quarter 2026Q1): market
+  multiples return with the FY2026 DFP, forecasts after 8 combined quarters
+  (2027Q4). The baseline forecast cache is still generated by the pipeline;
+  the API withholds it. CVM's DFP 2023 CSV repeats
+  every União Pet line three times; `dfp-parser` now drops verbatim duplicate
+  source rows (FY2023 revenue R$2.58bn, not R$7.75bn).
+- **BTHF11** — BTG Pactual Real Estate Hedge Fund FII, CNPJ
+  45.188.176/0001-57 (CVM-FI class *Em Funcionamento Normal*; informe mensal
+  name "BTGP HEDGE FUND FII"). This is the fund B3's "Edital – Incorporação –
+  BTHF11" names; BCFF11 (CNPJ 11.026.627/0001-38) was cancelled 2024-12-23 and
+  keeps its `available:false` placeholder. Exact CNPJ added to
+  `FII_CNPJ_OVERRIDES`; 21 monthly records (2025-01 → 2026-09).
+  The fund filed 0 in every percentage field (incl. dividend yield) from
+  2026-04, so those months' distributions are null (not zero) and the panel
+  shows "6 de 12 meses" for DY 12m. Readiness: `analysis_limited` by the FII
+  distribution-coverage rule (6 of 12 months).
 
 ### Annual-year counts
 
@@ -165,8 +257,11 @@ because its label was hard-coded for any cache under two years.
 
 - Re-key industrial caches under current codes (AXIA3, EMBJ3, ISAE4, SAUD3,
   AZZA3, MBRF3, AZUL3, NATU3) and retire the transitional aliases.
-- Add verified CVM mappings + caches for BRAV3 (CD_CVM 25291) and AUAU3
-  (CD_CVM 27766); BTHF11 needs a verified FII CNPJ before `fii:precompute`.
+- Re-assess AUAU3 after the FY2026 DFP (first combined fiscal year).
+- BTHF11: watch whether the fund resumes filing `Percentual_Dividend_Yield_Mes`.
+- FII distributions: the informe mensal DY field is unreliable for BTHF11 and
+  IRIM11 while FNET carries structured "Rendimentos e Amortizações" notices —
+  consider ingesting FNET distributions (would lift both automatically).
 - Investigate why CGAS3/SAPR11 produce empty annual caches and ASAI3 a
   single year.
 
@@ -175,18 +270,18 @@ because its label was hard-coded for any cache under two years.
 <!-- BEGIN GENERATED: npm run coverage:audit:readiness -- --write-doc -->
 
 ```text
-Total assets: 183 (curated universe — see curation exclusions below)
+Total assets: 184 (curated universe — see curation exclusions below)
 
 Analysis ready                        128
-Analysis limited                      3
+Analysis limited                      6
 Informational ready                   14
 Intentionally limited                 1
 Manual review                         5
 Model pending                         5
-Cache pending (model exists)          3
-Historical/unavailable                24
+Cache pending (model exists)          0
+Historical/unavailable                25
 Current successor missing (curated)   0
-Sum of buckets                        183 (= total)
+Sum of buckets                        184 (= total)
 
 Distinct issuers analysis-ready: 123
 
@@ -218,6 +313,7 @@ Distinct issuers analysis-ready: 123
 - EMBR3    renamed       → EMBJ3  (2025-11-03)
 - ENBR3    delisted      (no B3 successor)  (2023-07-11)
 - GOLL4    cancelled     (no B3 successor)  (2026-04-01)
+- IRDM11   reorganized   → IRIM11  (2025-11-28)
 - JBSS3    converted     → JBSS32
 - MRFG3    renamed       → MBRF3  (2025-09-23)
 - NTCO3    incorporated  → NATU3  (2025-07-01)  [1 NATU3 per NTCO3]
@@ -284,15 +380,7 @@ Distinct issuers analysis-ready: 123
     next:   Build the holding model
 
 ## CACHE PENDING (MODEL EXISTS)
-- BRAV3 — Brava Energia S.A. — active — route=quote_only
-    reason: operating company without a verified CVM mapping/cache under this code
-    next:   Verify CVM identity, add company-map entry and run cvm:precompute
-- AUAU3 — União Pet Participações S.A. — active — route=quote_only
-    reason: operating company without a verified CVM mapping/cache under this code
-    next:   Verify CVM identity, add company-map entry and run cvm:precompute
-- BTHF11 — BTG Pactual Real Estate Hedge Fund FII — active — route=sector_specific_pending
-    reason: fii model exists but no available:true cache for this ticker
-    next:   Verify identity and run fii:precompute
+- none
 
 ## ANALYSIS LIMITED
 - CGAS3 — Comgás – Companhia de Gás de São Paulo — active — route=industrial
@@ -304,6 +392,15 @@ Distinct issuers analysis-ready: 123
 - ASAI3 — Assaí Atacadista S.A. — active — route=industrial
     reason: annual CVM cache has 1 fiscal year(s)
     next:   Investigate missing DFP history
+- AUAU3 — União Pet Participações S.A. — active — route=industrial
+    reason: New issuer (former Cobasi, CNPJ 53.153.938/0001-08): FY2023–2025 DFPs are Cobasi standalone; Petz is consolidated only from 2026Q1 — no fiscal year reflects the combined business
+    next:   Re-assess after the FY2026 DFP (first combined fiscal year)
+- BTHF11 — BTG Pactual Real Estate Hedge Fund FII — active — route=fii
+    reason: FII cache has usable distributions in 6 of the latest 12 months (needs 12)
+    next:   Re-run fii:precompute once the fund reports distribution yield again
+- IRIM11 — Iridium FII Responsabilidade Limitada — active — route=fii
+    reason: FII cache has usable distributions in 0 of the latest 12 months (needs 12)
+    next:   Re-run fii:precompute once the fund reports distribution yield again
 
 ## INDUSTRIAL MODEL REVIEW CANDIDATES (flagged, not reclassified)
 - CSAN3 — Holding model: Holding with equity-accounted (Raízen) and consolidated stakes; part of value sits outside consolidated DFP
@@ -319,9 +416,9 @@ Distinct issuers analysis-ready: 123
 - SAPR11: declared cvm_analysis but the annual CVM cache has 0 fiscal year(s) — readiness reports analysis_limited
 
 ## READY / INFORMATIONAL / HISTORICAL (tickers)
-- Analysis ready (128): WEGE3 EMBJ3→EMBR3 TUPY3 FRAS3 MYPK3 ROMI3 RAPT4 KEPL3 POMO4 TASA4 LEVE3 AERI3 PETR4 PETR3 PRIO3 VBBR3 RAIZ4 RECV3 CSAN3 UGPA3 VALE3 CMIN3 GGBR4 GGBR3 GOAU4 CSNA3 USIM5 FESA4 BRKM5 UNIP6 SUZB3 KLBN11 DXCO3 EGIE3 CPFE3 AXIA3→ELET3 EQTL3 ENEV3 CMIG4 CMIG3 CPLE3 ALUP11 TAEE11 ISAE4→TRPL4 AURE3 ENGI11 SBSP3 CSMG3 VIVT3 TIMS3 ABEV3 MBRF3→MRFG3 BEEF3 SMTO3 MDIA3 SLCE3 AGRO3 RENT3 RAIL3 MOVI3 TGMA3 SIMH3 LOGN3 LREN3 MGLU3 PCAR3 SBFG3 AZZA3→ARZZ3 GRND3 VULC3 GMAT3 ALPA4 LJQQ3 PTBL3 CYRE3 MRVE3 CURY3 PLPL3 EVEN3 DIRR3 TEND3 GFSA3 MTRE3 MULT3 IGTI11 JHSF3 ITUB4 ITUB3→ITUB4 BBDC4 BBDC3→BBDC4 BBAS3 BPAC11 SANB11 BRSR6 BBSE3 PSSA3 IRBR3 CXSE3 HAPV3 RDOR3 RADL3 HYPE3 FLRY3 SAUD3→ODPV3 QUAL3 BLAU3 COGN3 YDUQ3 SEER3 CSED3 ANIM3 NATU3→NTCO3 SMFT3 CVCB3 VLID3 PRNR3 TOTS3 INTB3 LWSA3 POSI3 MXRF11 XPML11 HGLG11 KNRI11 VISC11 IRDM11 KNCR11 HGRE11
+- Analysis ready (128): WEGE3 EMBJ3→EMBR3 TUPY3 FRAS3 MYPK3 ROMI3 RAPT4 KEPL3 POMO4 TASA4 LEVE3 AERI3 PETR4 PETR3 PRIO3 VBBR3 RAIZ4 RECV3 BRAV3 CSAN3 UGPA3 VALE3 CMIN3 GGBR4 GGBR3 GOAU4 CSNA3 USIM5 FESA4 BRKM5 UNIP6 SUZB3 KLBN11 DXCO3 EGIE3 CPFE3 AXIA3→ELET3 EQTL3 ENEV3 CMIG4 CMIG3 CPLE3 ALUP11 TAEE11 ISAE4→TRPL4 AURE3 ENGI11 SBSP3 CSMG3 VIVT3 TIMS3 ABEV3 MBRF3→MRFG3 BEEF3 SMTO3 MDIA3 SLCE3 AGRO3 RENT3 RAIL3 MOVI3 TGMA3 SIMH3 LOGN3 LREN3 MGLU3 PCAR3 SBFG3 AZZA3→ARZZ3 GRND3 VULC3 GMAT3 ALPA4 LJQQ3 PTBL3 CYRE3 MRVE3 CURY3 PLPL3 EVEN3 DIRR3 TEND3 GFSA3 MTRE3 MULT3 IGTI11 JHSF3 ITUB4 ITUB3→ITUB4 BBDC4 BBDC3→BBDC4 BBAS3 BPAC11 SANB11 BRSR6 BBSE3 PSSA3 IRBR3 CXSE3 HAPV3 RDOR3 RADL3 HYPE3 FLRY3 SAUD3→ODPV3 QUAL3 BLAU3 COGN3 YDUQ3 SEER3 CSED3 ANIM3 NATU3→NTCO3 SMFT3 CVCB3 VLID3 PRNR3 TOTS3 INTB3 LWSA3 POSI3 MXRF11 XPML11 HGLG11 KNRI11 VISC11 KNCR11 HGRE11
 - Informational ready (14): BOVA11 IVVB11 SMAL11 HASH11 SPXI11 GOLD11 AAPL34 MSFT34 TSLA34 AMZO34 GOGL34 GOGL35 NVDC34 JBSS32
-- Historical/unavailable (24): EMBR3⇒EMBJ3 RRRP3⇒BRAV3 ELET3⇒AXIA3 ELET6⇒AXIA3 CPLE6⇒CPLE3 TRPL4⇒ISAE4 CESP6⇒AURE3 ENBR3 BRFS3⇒MBRF3 JBSS3⇒JBSS32 MRFG3⇒MBRF3 AZUL4⇒AZUL3 GOLL4 STBP3 CRFB3 SOMA3⇒AZZA3 ARZZ3⇒AZZA3 PETZ3⇒AUAU3 VVAR3⇒BHIA3 BRPR3 SULA11⇒RDOR3 ODPV3⇒SAUD3 NTCO3⇒NATU3 BCFF11⇒BTHF11
+- Historical/unavailable (25): EMBR3⇒EMBJ3 RRRP3⇒BRAV3 ELET3⇒AXIA3 ELET6⇒AXIA3 CPLE6⇒CPLE3 TRPL4⇒ISAE4 CESP6⇒AURE3 ENBR3 BRFS3⇒MBRF3 JBSS3⇒JBSS32 MRFG3⇒MBRF3 AZUL4⇒AZUL3 GOLL4 STBP3 CRFB3 SOMA3⇒AZZA3 ARZZ3⇒AZZA3 PETZ3⇒AUAU3 VVAR3⇒BHIA3 BRPR3 SULA11⇒RDOR3 ODPV3⇒SAUD3 NTCO3⇒NATU3 BCFF11⇒BTHF11 IRDM11⇒IRIM11
 ```
 
 <!-- END GENERATED -->

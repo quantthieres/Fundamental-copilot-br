@@ -17,6 +17,8 @@ import FundamentalDiagnosis from "@/components/dashboard/FundamentalDiagnosis";
 import CvmValidationStrip from "@/components/dashboard/CvmValidationStrip";
 import type { CvmStripStatus } from "@/components/dashboard/CvmValidationStrip";
 import ForecastPanel from "@/components/dashboard/ForecastPanel";
+import ComparabilityNotice from "@/components/dashboard/ComparabilityNotice";
+import { getComparabilityBreak } from "@/lib/coverage/comparability";
 import BankAnalysisPanel from "@/components/dashboard/BankAnalysisPanel";
 import FiiAnalysisPanel from "@/components/dashboard/FiiAnalysisPanel";
 import InsuranceAnalysisPanel from "@/components/dashboard/InsuranceAnalysisPanel";
@@ -471,6 +473,7 @@ export default function DashboardPageClient() {
   }, [companyData, cvmFinancials, marketQuote, b3Entry]);
 
   const effectiveCompanyData = companyData ?? cvmAnalysisData;
+  const comparabilityNote    = getComparabilityBreak(selectedTicker)?.notePt ?? null;
   const isCvmAnalysis        = !companyData && cvmAnalysisData !== null;
 
   // True for tickers that can produce a CVM-driven analysis dashboard.
@@ -730,6 +733,9 @@ export default function DashboardPageClient() {
           />
           <MetricsRow metrics={effectiveCompanyData.metrics} />
           <SourceBanner variant={fullDashboardBanner} cvmLoading={cvmLoading} />
+          {comparabilityNote && (
+            <div style={{ padding: "0 24px" }}><ComparabilityNotice note={comparabilityNote} /></div>
+          )}
           <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
           <div className="dash-content" style={{ padding: "18px 24px" }}>
@@ -812,7 +818,7 @@ export default function DashboardPageClient() {
 
             {activeTab === "Indicadores" && (
               <div style={{ maxWidth: 760 }}>
-                <FundamentalIndicators financials={indicatorFinancials} marketQuote={marketQuote} />
+                <FundamentalIndicators ticker={selectedTicker} financials={indicatorFinancials} marketQuote={marketQuote} />
                 {indicatorFinancials.length === 0 && companyData && (
                   <div style={{
                     background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,

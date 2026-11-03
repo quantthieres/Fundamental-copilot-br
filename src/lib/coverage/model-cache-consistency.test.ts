@@ -38,8 +38,8 @@ describe("sector model cache sets match available:true cache files", () => {
   }
 
   for (const { name, dir, count } of MODELS) {
-    it(`${name}: every registered ticker has an available:true cache file (no registry-only entries)`, () => {
-      const available = readAvailability(dir).filter(f => f.available).length;
+    it(`${name}: count = available:true cache files of current (non-historical) tickers`, () => {
+      const available = readAvailability(dir).filter(f => f.available && !getTickerLifecycle(f.ticker)).length;
       expect(count, name).toBe(available);
     });
   }

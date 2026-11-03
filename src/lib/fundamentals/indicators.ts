@@ -1,5 +1,6 @@
 import type { NormalizedFinancials } from "@/lib/cvm/types";
 import type { MarketDataQuote } from "@/lib/market-data/types";
+import { marketMultiplesSuppression } from "@/lib/coverage/comparability";
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
@@ -55,6 +56,11 @@ export interface MarketIndicators {
   pe:           number | null;
   evOverEbit:   number | null;
   evOverRevenue: number | null;
+  /**
+   * Set when market multiples are withheld because the latest fiscal year
+   * predates the issuer's current business (see coverage/comparability.ts).
+   */
+  comparabilityNote: string | null;
 }
 
 export interface FundamentalIndicators {
@@ -70,6 +76,7 @@ export interface FundamentalIndicators {
 export function buildFundamentalIndicators(
   financials: NormalizedFinancials[],
   marketQuote: MarketDataQuote | null,
+  ticker?: string,
 ): FundamentalIndicators {
   const sorted = [...financials].sort((a, b) => b.fiscalYear - a.fiscalYear);
   const latest = sorted[0];
@@ -83,7 +90,11 @@ export function buildFundamentalIndicators(
   const price        = marketQuote?.price;
   const marketCapB   = marketCapRaw ? marketCapRaw / 1_000_000_000 : null;
   const netDebtVal   = latest?.netDebt ?? null;
-  const evB          = marketCapB !== null && netDebtVal !== null ? marketCapB + netDebtVal : null;
+  // Today's market value over pre-combination fundamentals would mislead: keep
+  // the market cap, drop every ratio (and EV) that mixes the two.
+  const comparabilityNote = marketMultiplesSuppression(ticker ?? latest?.ticker, financials);
+  const mixesBases   = comparabilityNote !== null;
+  const evB          = !mixesBases && marketCapB !== null && netDebtVal !== null ? marketCapB + netDebtVal : null;
 
   // Growth
   const revenueGrowthYoY   = calculateGrowth(latest?.revenue, prev?.revenue);
@@ -102,7 +113,7 @@ export function buildFundamentalIndicators(
   const cfoOverNetIncome = safeDivide(latest?.operatingCashFlow, latest?.netIncome);
   const fcfOverNetIncome = safeDivide(latest?.freeCashFlow, latest?.netIncome);
   const capexOverRevenue = safeDivide(latest?.capex, latest?.revenue);
-  const fcfYield = (latest?.freeCashFlow !== undefined && marketCapB)
+  const fcfYield = (!mixesBases && latest?.freeCashFlow !== undefined && marketCapB)
     ? safeDivide(latest.freeCashFlow, marketCapB)
     : null;
 
@@ -113,7 +124,7 @@ export function buildFundamentalIndicators(
   const cashOverTotalDebt = safeDivide(latest?.cash, latest?.totalDebt);
 
   // Market multiples
-  const pe           = (latest?.netIncome && latest.netIncome > 0 && marketCapB)
+  const pe           = (!mixesBases && latest?.netIncome && latest.netIncome > 0 && marketCapB)
     ? safeDivide(marketCapB, latest.netIncome)
     : null;
   const evOverEbit   = (evB !== null && latest?.ebit && latest.ebit > 0)
@@ -128,6 +139,6 @@ export function buildFundamentalIndicators(
     margins: { ebitMargin, netMargin, cfoMargin, fcfMargin },
     cashConversion: { cfoOverNetIncome, fcfOverNetIncome, capexOverRevenue, fcfYield },
     debt: { netDebt, netDebtOverEbit, netDebtOverFcf, cashOverTotalDebt },
-    market: { marketCapB, enterpriseValueB: evB, pe, evOverEbit, evOverRevenue },
+    market: { marketCapB, enterpriseValueB: evB, pe, evOverEbit, evOverRevenue, comparabilityNote },
   };
 }

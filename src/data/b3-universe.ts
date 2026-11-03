@@ -64,7 +64,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("RAIZ4",  "Raízen S.A.",                                         "Raízen",         "Petróleo e Gás",         "Biocombustíveis",                CA,  false, true),
   stock("RECV3",  "PetroRecôncavo S.A.",                                 "PetroRecôncavo", "Petróleo e Gás",         "Exploração e Produção",          CA, false, true),
   stock("RRRP3",  "3R Petroleum Óleo e Gás S.A.",                       "3R Petroleum",   "Petróleo e Gás",         "Exploração e Produção",          "unavailable"), // historical — see TICKER_LIFECYCLE
-  stock("BRAV3", "Brava Energia S.A.",                                                 "Brava",          "Petróleo e Gás",         "Exploração e Produção",          QO, false, false), // current code (added 2026-11-03)
+  stock("BRAV3", "Brava Energia S.A.",                                                 "Brava",          "Petróleo e Gás",         "Exploração e Produção",          CA, false, true), // current code (added 2026-11-03)
   stock("CSAN3",  "Cosan S.A.",                                          "Cosan",          "Petróleo e Gás",         "Distribuição e Energia",         CA, false, true),
   stock("UGPA3",  "Ultrapar Participações S.A.",                         "Ultrapar",       "Petróleo e Gás",         "Distribuição de Combustíveis",   CA, false, true),
 
@@ -162,7 +162,7 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("GRND3",  "Grendene S.A.",                                       "Grendene",       "Varejo",                 "Calçados",                       CA, false, true),
   stock("VULC3",  "Vulcabras S.A.",                                      "Vulcabras",      "Varejo",                 "Calçados",                       CA, false, true),
   stock("PETZ3",  "Petz S.A.",                                           "Petz",           "Varejo",                 "Pet e Animais",                  "unavailable"), // historical — see TICKER_LIFECYCLE
-  stock("AUAU3", "União Pet Participações S.A.",                                       "União Pet",      "Varejo",                 "Pet e Animais",                  QO, false, false), // current code (added 2026-11-03)
+  stock("AUAU3", "União Pet Participações S.A.",                                       "União Pet",      "Varejo",                 "Pet e Animais",                  CA, false, true), // current code (added 2026-11-03)
   stock("GMAT3",  "Grupo Mateus S.A.",                                   "Grupo Mateus",   "Varejo",                 "Supermercados",                  CA, false, true),
   stock("VVAR3",  "Casas Bahia S.A.",                                    "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        "unavailable"), // historical — see TICKER_LIFECYCLE
   stock("BHIA3", "Grupo Casas Bahia S.A.",                                             "Casas Bahia",    "Varejo",                 "Varejo Eletroeletrônico",        QO, false, false), // current code (added 2026-11-03)
@@ -254,7 +254,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   stock("VISC11", "Vinci Shopping Centers FII",                          "VISC11",         "FII",                    "Shopping Centers",               SS, false, false, "fii"),
   stock("BCFF11", "BTG Pactual Fundo de Fundos FII",                     "BCFF11",         "FII",                    "Fundo de Fundos", "unavailable", false, false, "fii"), // historical — see TICKER_LIFECYCLE (current: BTHF11)
   stock("BTHF11","BTG Pactual Real Estate Hedge Fund FII",                             "BTG RE Hedge",   "FII",                    "Multiestratégia",                SS, false, false, "fii"), // current code (added 2026-11-03)
-  stock("IRDM11", "Iridium Recebíveis Imobiliários FII",                 "IRDM11",         "FII",                    "Papel (CRI)",                    SS, false, false, "fii"),
+  stock("IRDM11", "Iridium Recebíveis Imobiliários FII",                 "IRDM11",         "FII",                    "Papel (CRI)",       "unavailable", false, false, "fii"), // historical — see TICKER_LIFECYCLE (current: IRIM11)
+  stock("IRIM11","Iridium FII Responsabilidade Limitada",                              "Iridium",        "FII",                    "Papel (CRI)",                    SS, false, false, "fii"), // current code (added 2026-11-03)
   stock("KNCR11", "Kinea CRI Imobiliários FII",                          "KNCR11",         "FII",                    "Papel (CRI)",                    SS, false, false, "fii"),
   stock("HGRE11", "CSHG Real Estate FII",                                "HGRE11",         "FII",                    "Lajes Corporativas",             SS, false, false, "fii"),
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { B3_UNIVERSE } from "@/data/b3-universe";
 import {
+  FII_MIN_DISTRIBUTION_MONTHS,
   READINESS_DECISIONS,
   classifyAssetReadiness,
   groupModelProjects,
@@ -58,6 +59,38 @@ describe("classifyAssetReadiness — bucket assignment", () => {
     expect(holding).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
   });
 
+  it("FII distribution coverage: below 12 of 12 months → limited, at 12 → ready (automatic)", () => {
+    expect(FII_MIN_DISTRIBUTION_MONTHS).toBe(12);
+    const fii = (n: number | null) => classifyAssetReadiness(input({ richType: "fii", route: "fii", fiiDistributionMonths: n }));
+    expect(fii(6)).toMatchObject({ readiness: "analysis_limited", nextAction: expect.stringContaining("fii:precompute") });
+    expect(fii(11).readiness).toBe("analysis_limited");
+    expect(fii(0).readiness).toBe("analysis_limited");
+    expect(fii(12).readiness).toBe("analysis_ready");
+    expect(fii(null).readiness).toBe("analysis_ready");
+  });
+
+  it("FII rule measures availability, not positivity: a stored zero distribution counts", async () => {
+    const { computeFiiIndicators } = await import("@/lib/fiis/fii-indicators");
+    const rec = (m: number, d: number | null) => ({
+      ticker: "TEST11", referenceDate: `2025-${String(m).padStart(2, "0")}-01`, netAssetValue: 1,
+      quotaCount: 1, netAssetValuePerShare: 10, monthlyDistributionPerShare: d, source: "fii_cvm_cache" as const,
+    });
+    const months = Array.from({ length: 12 }, (_, i) => rec(i + 1, i === 0 ? 0 : 0.1));
+    expect(computeFiiIndicators(months, null)!.distributionCoverageMonths).toBe(12);
+    months[0] = rec(1, null);
+    expect(computeFiiIndicators(months, null)!.distributionCoverageMonths).toBe(11);
+    // The rule never turns an existing cache into cache_pending, and banks are unaffected.
+    expect(classifyAssetReadiness(input({ richType: "bank", route: "bank", fiiDistributionMonths: 0 })).readiness).toBe("analysis_ready");
+  });
+
+  it("an analysis_limited decision qualifies an existing industrial cache only", () => {
+    const d = READINESS_DECISIONS.AUAU3;
+    expect(classifyAssetReadiness(input({ decision: d }))).toMatchObject({ readiness: "analysis_limited", nextAction: d.nextAction });
+    // Without data the decision cannot hide a missing cache.
+    expect(classifyAssetReadiness(input({ decision: d, annualYears: null })).readiness).toBe("cache_pending");
+    expect(classifyAssetReadiness(input({ decision: d, route: "quote_only", annualYears: null })).readiness).toBe("cache_pending");
+  });
+
   it("historical ticker → historical_or_unavailable, even with a cache or a decision", () => {
     const lifecycle = { ticker: "OLD3", status: "renamed" as const, successorTicker: "NEW3", verification: "verified" as const, evidence: "x".repeat(30) };
     const r = classifyAssetReadiness(input({ coverageStatus: "unavailable", route: "unavailable", lifecycle, successorInUniverse: true, decision: READINESS_DECISIONS.VAMO3 }));
@@ -105,9 +138,16 @@ describe("current universe (stable, decision/lifecycle-driven expectations)", ()
     expect(r("ITSA4")).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
   });
 
-  it("BCFF11 placeholder is historical; BTHF11 is pending a cache", () => {
+  it("BCFF11 placeholder is historical; BTHF11 is limited by its distribution coverage", () => {
     expect(r("BCFF11")).toMatchObject({ readiness: "historical_or_unavailable", successorTicker: "BTHF11" });
-    expect(r("BTHF11").readiness).toBe("cache_pending");
+    expect(r("BTHF11")).toMatchObject({ readiness: "analysis_limited", reason: "FII cache has usable distributions in 6 of the latest 12 months (needs 12)" });
+    expect(r("BTHF11").fundamentalsTicker).toBeUndefined();
+  });
+
+  it("FIIs with 12/12 distribution months stay analysis_ready", () => {
+    for (const t of ["MXRF11", "XPML11", "HGLG11", "KNRI11", "VISC11", "KNCR11", "HGRE11"]) {
+      expect(r(t).readiness, t).toBe("analysis_ready");
+    }
   });
 
   it("decision-driven buckets", () => {

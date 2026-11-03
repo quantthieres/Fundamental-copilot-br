@@ -16,6 +16,7 @@ import { hasBankAnalysisCache } from "../src/lib/banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../src/lib/fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../src/lib/insurance/insurance-coverage";
 import { resolveFundamentalsTicker } from "../src/lib/coverage/fundamentals-alias";
+import { getTickerLifecycle } from "../src/lib/coverage/ticker-lifecycle";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,18 +67,20 @@ function buildGroups(): Map<ModelRoute, RouteGroup> {
       );
     }
 
-    // Cache available but not using that model route.
-    if (type === "bank" && hasBankAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "bank") {
+    // Cache available but not using that model route. Historical codes keep
+    // their cache as history (e.g. IRDM11) and must route as unavailable.
+    const historical = getTickerLifecycle(asset.ticker) !== null;
+    if (!historical && type === "bank" && hasBankAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "bank") {
       group.suspicious.push(
         `${asset.ticker}: bank cache available but routed to "${route}"`,
       );
     }
-    if (type === "fii" && hasFiiAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "fii") {
+    if (!historical && type === "fii" && hasFiiAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "fii") {
       group.suspicious.push(
         `${asset.ticker}: FII cache available but routed to "${route}"`,
       );
     }
-    if (type === "insurance" && hasInsuranceAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "insurance") {
+    if (!historical && type === "insurance" && hasInsuranceAnalysisCache(resolveFundamentalsTicker(asset.ticker)) && route !== "insurance") {
       group.suspicious.push(
         `${asset.ticker}: insurance cache available but routed to "${route}"`,
       );

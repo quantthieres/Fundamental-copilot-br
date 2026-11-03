@@ -25,6 +25,7 @@ export type TickerLifecycleStatus =
   | "renamed"        // same issuer, new trading code
   | "converted"      // same issuer, share class converted into another class
   | "incorporated"   // issuer absorbed by another company (new issuer/ticker)
+  | "reorganized"    // vehicle wound up after its portfolio moved to another, pre-existing vehicle (different CNPJ)
   | "delisted"       // no longer traded on B3 (tender offer / category change)
   | "cancelled";     // CVM registration cancelled, no successor on B3
 
@@ -123,6 +124,10 @@ export const TICKER_LIFECYCLE: Readonly<Record<string, TickerLifecycle>> = Objec
       verification: "verified",
       evidence: "B3 auction notice 'Edital – Incorporação – BTHF11' (auction 2025-01-09): residual fractions from the incorporation of BCFF11 into BTG Pactual Real Estate Hedge Fund FII (BTHF11), material fact 2024-12-11; CVM-FI: BTHF11 fund class em funcionamento normal",
       note: "fii-cache/BCFF11.json is an available:false placeholder — never counted as coverage" }),
+  L({ ticker: "IRDM11", status: "reorganized", successorTicker: "IRIM11", successorRelation: "new_issuer",
+      effectiveDate: "2025-11-28", verification: "verified",
+      evidence: "CVM-FI registro_fundo: FII Iridium Recebíveis Imobiliários (CNPJ 28.830.325/0001-10) Cancelado 2025-11-28; Iridium FII RL (CNPJ 41.076.564/0001-95, ISIN BRIRIMCTF003) Em Funcionamento Normal; CVM informe mensal: IRDM11 (ISIN BRIRDMCTF004) last filed 2025-10, IRIM11 quotas 1,920,000 → 35,225,778 in 2025-11",
+      note: "Portfolio transferred into a different, pre-existing fund; not a rename and not an alias — fii-cache/IRDM11.json stays as historical data" }),
 
   // ── No successor on B3 ─────────────────────────────────────────────────────
   L({ ticker: "ENBR3", status: "delisted", effectiveDate: "2023-07-11", verification: "verified",
@@ -157,6 +162,7 @@ export const LIFECYCLE_STATUS_LABEL_PT: Readonly<Record<TickerLifecycleStatus, s
   renamed: "Código alterado",
   converted: "Classe convertida",
   incorporated: "Incorporada",
+  reorganized: "Reorganizado (carteira transferida)",
   delisted: "Saiu da bolsa",
   cancelled: "Registro cancelado",
 };

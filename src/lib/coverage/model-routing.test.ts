@@ -45,16 +45,20 @@ describe("resolveModelRoute", () => {
     expect(resolveModelRoute(fromUniverse("MXRF11"))).toBe<ModelRoute>("fii");
   });
 
-  it("IRDM11 → fii", () => {
-    expect(resolveModelRoute(fromUniverse("IRDM11"))).toBe<ModelRoute>("fii");
+  it("IRDM11 → unavailable (wound up; its historical cache does not route)", () => {
+    expect(resolveModelRoute(fromUniverse("IRDM11"))).toBe<ModelRoute>("unavailable");
+  });
+
+  it("IRIM11 → fii (current fund with its own cache)", () => {
+    expect(resolveModelRoute(fromUniverse("IRIM11"))).toBe<ModelRoute>("fii");
   });
 
   it("BCFF11 → unavailable (incorporated into BTHF11; placeholder cache is not coverage)", () => {
     expect(resolveModelRoute(fromUniverse("BCFF11"))).toBe<ModelRoute>("unavailable");
   });
 
-  it("BTHF11 → sector_specific_pending (current FII without model cache)", () => {
-    expect(resolveModelRoute(fromUniverse("BTHF11"))).toBe<ModelRoute>("sector_specific_pending");
+  it("BTHF11 → fii (current FII with its own available:true cache)", () => {
+    expect(resolveModelRoute(fromUniverse("BTHF11"))).toBe<ModelRoute>("fii");
   });
 
   it("ITUB3/BBDC3 → bank via same-issuer fundamentals alias", () => {

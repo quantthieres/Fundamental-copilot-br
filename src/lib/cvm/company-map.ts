@@ -33,6 +33,19 @@ const CVM_COMPANY_MAP: Record<string, CvmCompany> = {
     sector: "Petróleo, Gás e Biocombustíveis",
     hasCvmMapping: true,
   },
+  // Current code of the former 3R Petroleum (RRRP3): same CNPJ/CD_CVM (renamed
+  // Brava Energia S.A. in 2024, after incorporating Enauta). Verified 2026-11-03
+  // against cad_cia_aberta.csv (ATIVO) and FCA valor_mobiliario 2023 (RRRP3) /
+  // 2024–2026 (BRAV3). Keyed by the current code — no RRRP3 cache exists.
+  BRAV3: {
+    ticker: "BRAV3",
+    tradingName: "BRAVA",
+    companyName: "Brava Energia S.A.",
+    cvmCode: "25291",
+    cnpj: "12.091.809/0001-55",
+    sector: "Petróleo, Gás e Biocombustíveis",
+    hasCvmMapping: true,
+  },
   VBBR3: {
     ticker: "VBBR3",
     tradingName: "VIBRA",
@@ -1175,6 +1188,20 @@ const CVM_COMPANY_MAP: Record<string, CvmCompany> = {
     cvmCode: "13773",
     cnpj: "83.475.913/0001-91",
     sector: "Materiais Básicos",
+    hasCvmMapping: true,
+  },
+  // New issuer, NOT Petz: CNPJ 53.153.938/0001-08 is the former Cobasi Comércio
+  // de Produtos Básicos e Industrializados S.A. (FCA 2024–2025), renamed União
+  // Pet Participações S.A. (FCA 2026); AUAU3 trades from 2026-01-05. Petz
+  // (PETZ3, CD_CVM 25089) was incorporated and its registration cancelled
+  // 2026-05-14 — its history is never read under AUAU3. Verified 2026-11-03.
+  AUAU3: {
+    ticker: "AUAU3",
+    tradingName: "UNIAO PET",
+    companyName: "União Pet Participações S.A.",
+    cvmCode: "27766",
+    cnpj: "53.153.938/0001-08",
+    sector: "Consumo Cíclico",
     hasCvmMapping: true,
   },
 };

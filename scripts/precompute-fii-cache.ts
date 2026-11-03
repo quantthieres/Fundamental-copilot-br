@@ -48,6 +48,15 @@ const FII_CNPJ_OVERRIDES: Record<string, string> = {
   IRDM11: "28.830.325/0001-10", // Registry name: IRIDIUM REC IMOB FII
   KNCR11: "16.706.958/0001-32", // Renamed: Kinea CRI → Kinea Rendimentos Imob FII
   HGRE11: "09.072.017/0001-29", // Renamed: CSHG Real Estate → Pátria Escritórios FII
+  // Informe mensal name "BTGP HEDGE FUND FII"; CVM-FI registry: BTG PACTUAL REAL
+  // ESTATE HEDGE FUND FII (em funcionamento normal), the fund named in B3's
+  // "Edital – Incorporação – BTHF11". Not BCFF11 (CNPJ 11.026.627/0001-38,
+  // cancelled 2024-12-23 after incorporation). Verified 2026-11-03.
+  BTHF11: "45.188.176/0001-57",
+  // Informe mensal name "IRIDIUM CRI FII RL" (ISIN BRIRIMCTF003); CVM-FI: IRIDIUM
+  // FUNDO DE INVESTIMENTO IMOBILIÁRIO RESPONSABILIDADE LIMITADA, em funcionamento
+  // normal. Received IRDM11's portfolio (IRDM11 cancelled 2025-11-28). Verified 2026-11-03.
+  IRIM11: "41.076.564/0001-95",
 };
 
 // ─── Per-ticker processing ────────────────────────────────────────────────────

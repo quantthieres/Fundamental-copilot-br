@@ -7,8 +7,10 @@ import { readInsuranceCache } from "@/lib/insurance/insurance-cache";
 import { getInstrumentInfo } from "@/lib/instruments/instrument-info";
 import { getPrecomputedFinancials } from "@/lib/cvm/precomputed-cache";
 import { buildFundamentalIndicators } from "@/lib/fundamentals/indicators";
+import { getComparabilityBreak } from "@/lib/coverage/comparability";
 import { getBrapiQuote } from "@/lib/market-data/brapi";
 import ReportPageClient from "./ReportPageClient";
+import ComparabilityNotice from "@/components/dashboard/ComparabilityNotice";
 import ReportShell from "@/components/report/ReportShell";
 import ReportSection from "@/components/report/ReportSection";
 import ReportMetricGrid from "@/components/report/ReportMetricGrid";
@@ -220,7 +222,9 @@ function IndustrialReport({
 }) {
   const companyName = b3Asset.companyName;
   const hasSufficient = financials.length >= 2;
-  const ind = hasSufficient ? buildFundamentalIndicators(financials, quote) : null;
+  const ind = hasSufficient ? buildFundamentalIndicators(financials, quote, ticker) : null;
+  const comparabilityNote = getComparabilityBreak(ticker)?.notePt ?? null;
+  const marketNote = ind?.market.comparabilityNote ? "Suspenso — comparabilidade" : quote ? "Com cotação brapi" : "Cotação indisponível";
 
   const indicatorItems = ind ? [
     { label: "CAGR Receita",         value: fmtPct(ind.growth.revenueCAGR),            note: "Crescimento composto" },
@@ -230,8 +234,8 @@ function IndustrialReport({
     { label: "Margem FCL",           value: fmtPct(ind.margins.fcfMargin),              note: "FCL / Receita" },
     { label: "Conversão CFO/Lucro",  value: fmtX(ind.cashConversion.cfoOverNetIncome), note: "Qualidade do caixa" },
     { label: "Dívida Líq./EBIT",     value: fmtX(ind.debt.netDebtOverEbit),            note: "Alavancagem" },
-    { label: "P/L",                  value: fmtX(ind.market.pe),                       note: quote ? "Com cotação brapi" : "Cotação indisponível" },
-    { label: "EV/EBIT",              value: fmtX(ind.market.evOverEbit),               note: quote ? "Com cotação brapi" : "Cotação indisponível" },
+    { label: "P/L",                  value: fmtX(ind.market.pe),                       note: marketNote },
+    { label: "EV/EBIT",              value: fmtX(ind.market.evOverEbit),               note: marketNote },
   ] : [];
 
   return (
@@ -263,6 +267,8 @@ function IndustrialReport({
           Dados financeiros da CVM não disponíveis para este ticker no cache local.
         </div>
       )}
+
+      {comparabilityNote && <ComparabilityNotice note={comparabilityNote} />}
 
       <QuoteBlock quote={quote} />
 

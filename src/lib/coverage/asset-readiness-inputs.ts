@@ -9,6 +9,8 @@ import type { B3Asset } from "../../data/b3-universe";
 import { B3_UNIVERSE } from "../../data/b3-universe";
 import { classifyAsset } from "./asset-classifier";
 import { countUsableAnnualYears } from "../cvm/annual-years";
+import { computeFiiIndicators } from "../fiis/fii-indicators";
+import type { FiiAnalysisResponse } from "../fiis/fii-types";
 import { resolveModelRoute } from "./model-routing";
 import { getTickerLifecycle } from "./ticker-lifecycle";
 import { getFundamentalsAlias, resolveFundamentalsTicker } from "./fundamentals-alias";
@@ -37,6 +39,19 @@ export function hasQuarterlyCache(ticker: string): boolean {
   return existsSync(join(CVM_ROOT, "quarterly", `${resolveFundamentalsTicker(ticker)}.json`));
 }
 
+/** Usable distribution months in the latest 12 records of an available FII cache; null otherwise. */
+export function fiiDistributionMonths(ticker: string): number | null {
+  const p = join(process.cwd(), "src/data/fii-cache/monthly", `${resolveFundamentalsTicker(ticker)}.json`);
+  if (!existsSync(p)) return null;
+  try {
+    const cache = JSON.parse(readFileSync(p, "utf-8")) as FiiAnalysisResponse;
+    if (!cache.available) return null;
+    return computeFiiIndicators(cache.records ?? [], null)?.distributionCoverageMonths ?? 0;
+  } catch {
+    return null;
+  }
+}
+
 export function buildReadinessInput(asset: B3Asset, universe: readonly B3Asset[] = B3_UNIVERSE): ReadinessInput {
   const lifecycle = getTickerLifecycle(asset.ticker);
   const successor = lifecycle?.successorTicker;
@@ -55,6 +70,7 @@ export function buildReadinessInput(asset: B3Asset, universe: readonly B3Asset[]
     alias: getFundamentalsAlias(asset.ticker),
     annualYears: annualCacheYears(asset.ticker),
     hasQuarterly: hasQuarterlyCache(asset.ticker),
+    fiiDistributionMonths: fiiDistributionMonths(asset.ticker),
     decision: READINESS_DECISIONS[asset.ticker] ?? null,
   };
 }

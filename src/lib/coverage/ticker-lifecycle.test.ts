@@ -64,6 +64,7 @@ describe("ticker lifecycle — verified corporate actions (regression)", () => {
     ["SULA11", "incorporated", "RDOR3", "new_issuer"],
     ["CESP6", "incorporated", "AURE3", "new_issuer"],
     ["BCFF11", "incorporated", "BTHF11", "new_issuer"],
+    ["IRDM11", "reorganized", "IRIM11", "new_issuer"],
   ])("%s %s → %s (%s)", (ticker, status, successor, relation) => {
     const lc = getTickerLifecycle(ticker)!;
     expect(lc.status).toBe(status);

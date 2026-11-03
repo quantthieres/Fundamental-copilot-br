@@ -8,7 +8,7 @@ import {
 
 describe("hasFiiAnalysisCache", () => {
   it("returns true for known cached FII tickers", () => {
-    for (const t of ["MXRF11", "XPML11", "HGLG11", "KNRI11", "VISC11", "IRDM11", "KNCR11", "HGRE11"]) {
+    for (const t of ["MXRF11", "XPML11", "HGLG11", "KNRI11", "VISC11", "IRDM11", "KNCR11", "HGRE11", "BTHF11", "IRIM11"]) {
       expect(hasFiiAnalysisCache(t), t).toBe(true);
     }
   });
@@ -30,9 +30,9 @@ describe("hasFiiAnalysisCache", () => {
 });
 
 describe("FII_CACHE_COUNT", () => {
-  it("does not include BCFF11", () => {
-    // BCFF11 has available:false — must not count as a model-covered ticker
-    expect(FII_CACHE_COUNT).toBe(8);
+  it("counts current FIIs only: not BCFF11 (placeholder) nor IRDM11 (historical)", () => {
+    // BCFF11 has available:false; IRDM11's cache is real but the fund is wound up
+    expect(FII_CACHE_COUNT).toBe(9);
   });
 });
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import SectionCard from "./SectionCard";
+import ComparabilityNotice from "./ComparabilityNotice";
 import type {
   BaselineForecastCache,
   MetricForecastResult,
@@ -538,13 +539,14 @@ function NoForecastForMetric() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type PanelState = "loading" | "done" | "error" | "unavailable";
+type PanelState = "loading" | "done" | "error" | "unavailable" | "suppressed";
 
 export default function ForecastPanel({ ticker }: { ticker: string }) {
   const [panelState, setPanelState]     = useState<PanelState>("loading");
   const [forecastData, setForecastData] = useState<BaselineForecastCache | null>(null);
   const [tsData, setTsData]             = useState<TickerTimeSeriesCache | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<ForecastMetric>("revenue");
+  const [suppressedNote, setSuppressedNote] = useState<string | null>(null);
 
   // Fetch both endpoints in parallel.
   useEffect(() => {
@@ -555,9 +557,20 @@ export default function ForecastPanel({ ticker }: { ticker: string }) {
     setPanelState("loading");
     setForecastData(null);
     setTsData(null);
+    setSuppressedNote(null);
 
+    // 409 = forecasts withheld by the comparability guard (body carries the note).
     const baselineReq = fetch(`/api/forecasting/baseline/${encodeURIComponent(ticker)}`, { signal: controller.signal })
-      .then(res => res.ok ? res.json() : Promise.reject(res.status));
+      .then(res => {
+        if (res.ok) return res.json();
+        if (res.status === 409) {
+          return res.json().then((body: { message?: string }) => {
+            if (active) setSuppressedNote(body.message ?? null);
+            return Promise.reject(409);
+          });
+        }
+        return Promise.reject(res.status);
+      });
 
     const tsReq = fetch(`/api/forecasting/time-series/${encodeURIComponent(ticker)}`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
@@ -575,7 +588,7 @@ export default function ForecastPanel({ ticker }: { ticker: string }) {
       .catch((err) => {
         if (!active) return;
         // 404 = no forecast cache for this ticker → unavailable state
-        setPanelState(err === 404 ? "unavailable" : "error");
+        setPanelState(err === 404 ? "unavailable" : err === 409 ? "suppressed" : "error");
       });
 
     return () => { active = false; controller.abort(); };
@@ -621,6 +634,10 @@ export default function ForecastPanel({ ticker }: { ticker: string }) {
       )}
 
       {panelState === "unavailable" && <UnavailableState />}
+
+      {panelState === "suppressed" && (
+        <ComparabilityNotice note={suppressedNote ?? "Projeções suspensas: o histórico disponível não representa a companhia atual."} />
+      )}
 
       {panelState === "done" && forecastData && (
         <>

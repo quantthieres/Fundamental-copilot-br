@@ -8,6 +8,7 @@ import type {
   MetricItem,
 } from "@/data/companies/types";
 import { cvmFinancialsToDashboardFinancials } from "./transformers";
+import { marketMultiplesSuppression } from "@/lib/coverage/comparability";
 
 export interface AnalysisBuilderParams {
   b3Entry:       B3Asset;
@@ -100,7 +101,9 @@ export function buildCompanyAnalysisDataFromCvm(
   const marketCapB   = marketCapRaw ? marketCapRaw / 1_000_000_000 : null;
   const sharesOut    = marketCapB !== null && price > 0 ? marketCapB / price : 0;
   const netDebt      = latest.netDebt ?? 0;
-  const evB          = marketCapB !== null ? marketCapB + netDebt : null;
+  // Pre-combination net debt + today's market cap is not an EV (comparability.ts).
+  const mixesBases   = marketMultiplesSuppression(b3Entry.ticker, cvmFinancials) !== null;
+  const evB          = marketCapB !== null && !mixesBases ? marketCapB + netDebt : null;
 
   // ── Company profile ──────────────────────────────────────────────────────────
   const company: CompanyProfile = {
@@ -138,7 +141,7 @@ export function buildCompanyAnalysisDataFromCvm(
   // Market-cap-dependent metrics: only included when marketCap is available.
   if (marketCapB !== null) {
     metrics.push({ label: "Valor de Mercado", value: fmtB(marketCapB),        trend: 0, suffix: "brapi"      });
-    if (latest.netIncome && latest.netIncome > 0) {
+    if (!mixesBases && latest.netIncome && latest.netIncome > 0) {
       const pe = (marketCapB / latest.netIncome).toFixed(1);
       metrics.push({ label: "P/L",            value: `${pe}x`,                trend: 0, suffix: "estimado"   });
     }

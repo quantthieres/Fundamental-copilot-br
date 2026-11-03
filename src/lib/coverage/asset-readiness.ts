@@ -17,7 +17,8 @@ import type { FundamentalsAlias } from "./fundamentals-alias";
 export type AssetReadiness =
   /** Operational model with sufficient data. */
   | "analysis_ready"
-  /** Model works but data/history is insufficient (≤ 1 fiscal year). */
+  /** Model works but data/history is insufficient (≤ 1 fiscal year, or no
+   *  fiscal year that reflects the current business — explicit decision). */
   | "analysis_limited"
   /** ETF/BDR informational layer by design (not a corporate model). */
   | "informational_ready"
@@ -54,10 +55,26 @@ export const MODEL_PROJECT_LABEL: Readonly<Record<ModelProject, string>> = {
   market_infrastructure: "Market-infrastructure model",
 };
 
+/**
+ * The issuer's history predates its current business (e.g. a combination
+ * consolidated after the last DFP). Consumed by coverage/comparability.ts.
+ */
+export interface ComparabilityBreak {
+  /** Last fiscal year whose annual statements predate the current business. */
+  lastPreBreakFiscalYear: number;
+  /** First quarter that reflects the current business. */
+  firstComparableQuarter: { fiscalYear: number; quarter: number };
+  /** User-facing explanation (Portuguese). */
+  notePt: string;
+}
+
 export interface ReadinessDecision {
-  readiness: Extract<AssetReadiness, "manual_review" | "intentionally_limited" | "model_pending">;
+  readiness: Extract<AssetReadiness, "manual_review" | "intentionally_limited" | "model_pending" | "analysis_limited">;
   modelProject?: ModelProject;
   reason: string;
+  /** Overrides the default next action for the bucket. */
+  nextAction?: string;
+  comparabilityBreak?: ComparabilityBreak;
   /** Re-verified on 2026-11-03 unless stated otherwise in the reason. */
   evidence: string;
 }
@@ -97,6 +114,15 @@ export const READINESS_DECISIONS: Readonly<Record<string, ReadinessDecision>> = 
   AZUL3: { readiness: "manual_review",
     reason: "Chapter 11 restructuring: all PN converted into ON (Jan/2026) and new equity issued — per-share history is not comparable",
     evidence: "CVM 24112 ATIVO; FCA 2026 lists only AZUL3; B3 AZUL3 only" },
+  AUAU3: { readiness: "analysis_limited",
+    reason: "New issuer (former Cobasi, CNPJ 53.153.938/0001-08): FY2023–2025 DFPs are Cobasi standalone; Petz is consolidated only from 2026Q1 — no fiscal year reflects the combined business",
+    nextAction: "Re-assess after the FY2026 DFP (first combined fiscal year)",
+    comparabilityBreak: {
+      lastPreBreakFiscalYear: 2025,
+      firstComparableQuarter: { fiscalYear: 2026, quarter: 1 },
+      notePt: "Os dados anuais anteriores a 2026 referem-se à Cobasi antes da combinação com a Petz. A Petz é consolidada apenas a partir do 1º trimestre de 2026, enquanto a cotação e o valor de mercado de AUAU3 refletem a União Pet combinada. Múltiplos de mercado e projeções ficam suspensos até haver histórico suficiente da companhia combinada (reavaliação após a DFP de 2026).",
+    },
+    evidence: "CVM 27766 ATIVO; FCA 2024–2025 name Cobasi Comércio de Produtos Básicos e Industrializados S.A., FCA 2026 União Pet Participações S.A., AUAU3 from 2026-01-05; ITR 2026Q1 revenue R$1.69bn vs R$0.80bn in 2025Q4" },
   CASH3: { readiness: "intentionally_limited",
     reason: "Business model pivoted to a Bitcoin treasury strategy (2025–2026) — industrial metrics would mislead",
     evidence: "CVM 25232 ATIVO; B3 CASH3; material facts recorded in docs/coverage-audit-quote-only.md (2026 review)" },
@@ -127,8 +153,19 @@ export interface ReadinessInput {
   /** Fiscal years in the (alias-resolved) annual CVM cache; null = no cache file. */
   annualYears: number | null;
   hasQuarterly: boolean;
+  /**
+   * FII only: months with a usable distribution among the latest 12 monthly
+   * records (computeFiiIndicators' distributionCoverageMonths); null = no FII cache.
+   */
+  fiiDistributionMonths?: number | null;
   decision: ReadinessDecision | null;
 }
+
+/**
+ * Distribution is a material FII metric: the 12-month yield is only complete
+ * (the panel stops warning "DY 12m pode estar subestimado") with all 12 months.
+ */
+export const FII_MIN_DISTRIBUTION_MONTHS = 12;
 
 export interface ReadinessResult {
   ticker: string;
@@ -169,21 +206,30 @@ export function classifyAssetReadiness(input: ReadinessInput): ReadinessResult {
   const reviewFlag = INDUSTRIAL_REVIEW_CANDIDATES[input.ticker];
   const flag = reviewFlag && input.route === "industrial" ? { reviewFlag } : {};
 
-  // 2. Explicit methodological decisions.
-  if (input.decision) {
+  // 2. Explicit methodological decisions. An analysis_limited decision only
+  // qualifies data that exists — without an industrial cache it falls through.
+  const limitedWithoutData = input.decision?.readiness === "analysis_limited"
+    && (input.route !== "industrial" || input.annualYears === null);
+  if (input.decision && !limitedWithoutData) {
     const d = input.decision;
     return { ...base, readiness: d.readiness, reason: d.reason,
       ...(d.modelProject ? { modelProject: d.modelProject } : {}),
-      nextAction: d.readiness === "model_pending" ? `Build the ${MODEL_PROJECT_LABEL[d.modelProject!].toLowerCase()}`
-        : d.readiness === "manual_review" ? "Re-assess comparability before enabling a model" : null };
+      nextAction: d.nextAction ?? (d.readiness === "model_pending" ? `Build the ${MODEL_PROJECT_LABEL[d.modelProject!].toLowerCase()}`
+        : d.readiness === "manual_review" ? "Re-assess comparability before enabling a model" : null) };
   }
 
   // 3. Route-derived readiness.
   switch (input.route) {
     case "informational_instrument":
       return { ...base, readiness: "informational_ready", reason: "ETF/BDR informational layer by design", nextAction: null };
-    case "bank":
     case "fii":
+      if (input.fiiDistributionMonths != null && input.fiiDistributionMonths < FII_MIN_DISTRIBUTION_MONTHS) {
+        return { ...base, readiness: "analysis_limited",
+          reason: `FII cache has usable distributions in ${input.fiiDistributionMonths} of the latest 12 months (needs ${FII_MIN_DISTRIBUTION_MONTHS})`,
+          nextAction: "Re-run fii:precompute once the fund reports distribution yield again" };
+      }
+    // falls through
+    case "bank":
     case "insurance":
       return { ...base, readiness: "analysis_ready",
         reason: input.alias ? `${input.route} model via same-issuer alias ${input.alias.fundamentalsTicker}` : `${input.route} model cache available`,

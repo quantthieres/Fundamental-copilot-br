@@ -1,5 +1,6 @@
 import React from "react";
 import SectionCard from "./SectionCard";
+import ComparabilityNotice from "./ComparabilityNotice";
 import type { NormalizedFinancials } from "@/lib/cvm/types";
 import type { MarketDataQuote } from "@/lib/market-data/types";
 import { buildFundamentalIndicators } from "@/lib/fundamentals/indicators";
@@ -7,6 +8,7 @@ import { buildFundamentalIndicators } from "@/lib/fundamentals/indicators";
 interface Props {
   financials: NormalizedFinancials[];
   marketQuote: MarketDataQuote | null;
+  ticker?: string;
 }
 
 function pct(v: number | null, decimals = 1): string {
@@ -76,7 +78,7 @@ function GroupHeader({ title }: { title: string }) {
   );
 }
 
-export default function FundamentalIndicators({ financials, marketQuote }: Props) {
+export default function FundamentalIndicators({ ticker, financials, marketQuote }: Props) {
   if (!financials || financials.length === 0) {
     return (
       <SectionCard title="Indicadores Fundamentalistas" subtitle="Calculados com dados CVM e cotação brapi">
@@ -87,7 +89,7 @@ export default function FundamentalIndicators({ financials, marketQuote }: Props
     );
   }
 
-  const ind = buildFundamentalIndicators(financials, marketQuote);
+  const ind = buildFundamentalIndicators(financials, marketQuote, ticker);
 
   return (
     <SectionCard title="Indicadores Fundamentalistas" subtitle="Calculados com dados CVM e cotação brapi">
@@ -180,6 +182,7 @@ export default function FundamentalIndicators({ financials, marketQuote }: Props
       />
 
       <GroupHeader title="Mercado" />
+      {ind.market.comparabilityNote && <ComparabilityNotice note={ind.market.comparabilityNote} />}
       <IndicatorRow
         label="Valor de Mercado"
         value={brl(ind.market.marketCapB)}

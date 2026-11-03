@@ -6,13 +6,13 @@ _Gerado em 2026-11-03 por `npm run coverage:audit:quote-only`._
 
 | Categoria | Total |
 |---|---|
-| Candidato mapeamento CVM | 2 |
-| Modelo setorial disponível | 20 |
+| Candidato mapeamento CVM | 0 |
+| Modelo setorial disponível | 21 |
 | Camada informativa (ETF/BDR) | 14 |
-| Modelo setorial pendente | 6 |
+| Modelo setorial pendente | 5 |
 | Manter quote-only | 1 |
 | Revisão manual | 4 |
-| Marcar descontinuado | 24 |
+| Marcar descontinuado | 25 |
 | Mismatch cache/status | 0 |
 
 ## Candidatos a Mapeamento CVM
@@ -21,8 +21,6 @@ Empresas operacionais com `quote_only` que provavelmente têm CNPJ ativo na CVM 
 
 | Ticker | Empresa | Setor | Notas |
 |---|---|---|---|
-| BRAV3 | Brava Energia S.A. | Petróleo e Gás | — |
-| AUAU3 | União Pet Participações S.A. | Varejo | — |
 
 ## Modelo Setorial Pendente
 
@@ -35,7 +33,6 @@ Ativos ativos que exigem um modelo ainda inexistente ou sem cache para este cód
 | B3SA3 | B3 S.A. – Brasil, Bolsa, Balcão | quote_only | financial | quote_only | Revisado: Exchange/clearing operator — revenue and balance sheet (collateral, clearing) need a market-infrastructure model |
 | ITSA4 | Itaúsa S.A. | sector_specific_model_required | financial | sector_specific_pending | Revisado: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company |
 | ITSA3 | Itaúsa S.A. | sector_specific_model_required | financial | sector_specific_pending | Revisado: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company |
-| BTHF11 | BTG Pactual Real Estate Hedge Fund FII | sector_specific_model_required | fii | sector_specific_pending | — |
 
 ## Prováveis Descontinuados
 
@@ -65,6 +62,7 @@ Códigos históricos verificados (`TICKER_LIFECYCLE`): renomeados, convertidos, 
 - **ODPV3** — Odontoprev S.A. (status atual: `unavailable`)
 - **NTCO3** — Natura & Co Holding S.A. (status atual: `unavailable`)
 - **BCFF11** — BTG Pactual Fundo de Fundos FII (status atual: `unavailable`)
+- **IRDM11** — Iridium Recebíveis Imobiliários FII (status atual: `unavailable`)
 
 ## Manter Quote-Only
 

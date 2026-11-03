@@ -191,8 +191,8 @@ export default function ReportPageClient({ ticker, source }: Props) {
   }, [ticker, sourceMode, companyData]);
 
   const indicators = useMemo(
-    () => buildFundamentalIndicators(cvmFinancials ?? [], marketQuote),
-    [cvmFinancials, marketQuote]
+    () => buildFundamentalIndicators(cvmFinancials ?? [], marketQuote, ticker),
+    [cvmFinancials, marketQuote, ticker]
   );
 
   // ── early returns (after all hooks) ──────────────────────────────────────────

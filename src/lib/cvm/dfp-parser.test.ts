@@ -208,3 +208,25 @@ describe("parseDfpCsv — Q3 YTD value is correct (enabling non-negative Q4)", (
     expect(result[0].value).toBe(15_000_000_000);
   });
 });
+
+describe("dfp-parser — verbatim duplicate source rows", () => {
+  // CVM's DFP 2023 CSV repeats every União Pet (CD_CVM 27766) line three
+  // times; summing them tripled FY2023 revenue.
+  const row = csvRow({ cdCvm: "027766", dtIni: "2023-01-01", dtFim: "2023-12-31", vlConta: "2582827" });
+
+  it("parseDfpCsv keeps one copy of a row repeated verbatim", () => {
+    const result = parseDfpCsv(csv(row, row, row), "27766", "DRE");
+    expect(result).toHaveLength(1);
+    expect(result[0].value).toBe(2_582_827_000);
+  });
+
+  it("parseDfpCsvForCompanies keeps one copy of a row repeated verbatim", () => {
+    const result = parseDfpCsvForCompanies(csv(row, row, row), new Set(["27766"]), "DRE");
+    expect(result.get("027766")).toHaveLength(1);
+  });
+
+  it("keeps rows for the same account when their values differ", () => {
+    const other = csvRow({ cdCvm: "027766", dtIni: "2023-01-01", dtFim: "2023-12-31", vlConta: "100" });
+    expect(parseDfpCsv(csv(row, other), "27766", "DRE")).toHaveLength(2);
+  });
+});

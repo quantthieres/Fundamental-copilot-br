@@ -28,6 +28,23 @@ function padCvmCode(code: string): string {
 }
 
 /**
+ * Keeps only the first of several identical source rows (same period, account,
+ * statement and value). CVM's published CSVs occasionally repeat a filing's
+ * lines verbatim — e.g. DFP 2023 lists every União Pet (CD_CVM 27766) row
+ * three times — and summing them would triple the account. Rows that differ in
+ * value are left untouched.
+ */
+function isFirstOccurrence<T extends { dtIni: string; dtFim: string; statementType: string; accountCode: string; value: number }>(
+  seen: Set<string>,
+  row: T,
+): boolean {
+  const key = `${row.dtFim}\0${row.dtIni}\0${row.statementType}\0${row.accountCode}\0${row.value}`;
+  if (seen.has(key)) return false;
+  seen.add(key);
+  return true;
+}
+
+/**
  * Parses a raw DFP/ITR CSV string (Latin-1 decoded) and returns rows for the
  * given company (matched by cvmCode). The `stmtLabel` parameter is the
  * short statement identifier ("DRE", "BPA", "BPP", "DFC_MI", "DFC_MD")
@@ -165,10 +182,11 @@ export function parseDfpCsv(
     }
   }
 
+  const seen = new Set<string>();
   return afterVersionFilter
     .filter(row => {
       const key = `${row.dtFim}\0${row.statementType}\0${row.accountCode}`;
-      return row.dtIni === earliestDtIniByKey.get(key);
+      return row.dtIni === earliestDtIniByKey.get(key) && isFirstOccurrence(seen, row);
     })
     .map(row => ({
       cvmCode:       targetCode,
@@ -299,12 +317,13 @@ export function parseDfpCsvForCompanies(
       }
     }
 
+    const seen = new Set<string>();
     result.set(
       code,
       afterVersionFilter
         .filter(row => {
           const key = `${row.dtFim}\0${row.statementType}\0${row.accountCode}`;
-          return row.dtIni === earliestDtIniByKey.get(key);
+          return row.dtIni === earliestDtIniByKey.get(key) && isFirstOccurrence(seen, row);
         })
         .map(row => ({
           cvmCode:       code,

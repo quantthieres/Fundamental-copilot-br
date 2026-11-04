@@ -22,6 +22,7 @@ describe("path guard — accepted generated caches", () => {
     "src/data/bank-cache/annual/ITUB4.json",
     "src/data/fii-cache/monthly/MXRF11.json",
     "src/data/insurance-cache/annual/BBSE3.json",
+    "src/data/holding-cache/ITSA4.json",
   ])("accepts %s", path => {
     expect(isAllowedRefreshPath(path, opts)).toBe(true);
   });
@@ -195,5 +196,42 @@ describe("detectCacheRegression", () => {
     const rolled = { available: true, records: [rec("2026-09-01", "fnet_structured"), rec("2026-10-01", null)] };
     expect(detectCacheRegression(p, s(old), s(failed))).toEqual(["Fundos.Net distribution lost for 2026-08-01, 2026-09-01"]);
     expect(detectCacheRegression(p, s(old), s(rolled))).toEqual([]);
+  });
+
+  describe("holding cache", () => {
+    const p = "src/data/holding-cache/ITSA4.json";
+    const issuer = { canonicalTicker: "ITSA4", cvmCode: "7617", cnpj: "61.532.644/0001-15" };
+    const portfolio = { portfolioReferenceDate: "2026-09-30", components: [1, 2, 3] };
+    const base = { issuer, statements: [1, 2], latestStatement: { periodEnd: "2026-06-30" }, portfolio };
+
+    it("accepts statements and portfolio advancing", () => {
+      const next = { ...base, statements: [1, 2, 3], latestStatement: { periodEnd: "2026-09-30" },
+        portfolio: { ...portfolio, portfolioReferenceDate: "2026-10-31" } };
+      expect(detectCacheRegression(p, s(base), s(next))).toEqual([]);
+      expect(detectCacheRegression(p, s(base), s(base))).toEqual([]);
+    });
+
+    it("rejects an identity change", () => {
+      const next = { ...base, issuer: { ...issuer, cvmCode: "19348" } };
+      expect(detectCacheRegression(p, s(base), s(next))).toEqual(["issuer.cvmCode changed from 7617 to 19348"]);
+    });
+
+    it("rejects the latest statement period going backwards or history shrinking", () => {
+      expect(detectCacheRegression(p, s(base), s({ ...base, latestStatement: { periodEnd: "2026-03-31" } })))
+        .toEqual(["latest statement period went from 2026-06-30 to 2026-03-31"]);
+      expect(detectCacheRegression(p, s(base), s({ ...base, statements: [1] }))).toEqual(['"statements" shrank from 2 to 1 entries']);
+    });
+
+    it("rejects the portfolio going backwards, disappearing or emptying", () => {
+      expect(detectCacheRegression(p, s(base), s({ ...base, portfolio: { ...portfolio, portfolioReferenceDate: "2026-08-31" } })))
+        .toEqual(["portfolio reference date went from 2026-09-30 to 2026-08-31"]);
+      expect(detectCacheRegression(p, s(base), s({ ...base, portfolio: null }))).toEqual(["validated portfolio snapshot disappeared"]);
+      expect(detectCacheRegression(p, s(base), s({ ...base, portfolio: { ...portfolio, components: [] } })))
+        .toEqual(["portfolio components went from 3 to 0"]);
+    });
+
+    it("a first portfolio after none is fine", () => {
+      expect(detectCacheRegression(p, s({ ...base, portfolio: null }), s(base))).toEqual([]);
+    });
   });
 });

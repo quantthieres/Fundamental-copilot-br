@@ -22,6 +22,9 @@ export const ALLOWED_CACHE_DIRS = [
   "src/data/bank-cache/",
   "src/data/fii-cache/",
   "src/data/insurance-cache/",
+  // Not refreshed by the workflow yet (holding model Phase 1); the regression
+  // rules below already apply to it.
+  "src/data/holding-cache/",
 ] as const;
 
 export const AUDIT_DOC_PATH = "docs/coverage-audit-quote-only.md";
@@ -182,6 +185,45 @@ function checkFnetMonthsKept(problems: string[], oldJson: Json, newJson: Json): 
   if (lost.length > 0) problems.push(`Fundos.Net distribution lost for ${lost.sort().join(", ")}`);
 }
 
+function str(v: unknown): string | null {
+  return typeof v === "string" && v ? v : null;
+}
+
+function obj(v: unknown): Json | null {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Json) : null;
+}
+
+// A holding cache is one issuer: its identity never changes, its statement
+// period and portfolio snapshot never move backwards, and a validated
+// portfolio never disappears (see docs/holding-model.md).
+function checkHoldingCache(problems: string[], oldJson: Json, newJson: Json): void {
+  const oldIssuer = obj(oldJson.issuer);
+  const newIssuer = obj(newJson.issuer);
+  for (const key of ["cvmCode", "cnpj", "canonicalTicker"]) {
+    if (oldIssuer && str(oldIssuer[key]) !== str(newIssuer?.[key])) {
+      problems.push(`issuer.${key} changed from ${str(oldIssuer[key])} to ${str(newIssuer?.[key]) ?? "none"}`);
+    }
+  }
+  checkNotShorter(problems, oldJson, newJson, "statements");
+  const oldPeriod = str(obj(oldJson.latestStatement)?.periodEnd);
+  const newPeriod = str(obj(newJson.latestStatement)?.periodEnd);
+  if (oldPeriod && (!newPeriod || newPeriod < oldPeriod)) {
+    problems.push(`latest statement period went from ${oldPeriod} to ${newPeriod ?? "none"}`);
+  }
+  const oldPortfolio = obj(oldJson.portfolio);
+  const newPortfolio = obj(newJson.portfolio);
+  if (oldPortfolio && !newPortfolio) {
+    problems.push("validated portfolio snapshot disappeared");
+  } else if (oldPortfolio && newPortfolio) {
+    const before = str(oldPortfolio.portfolioReferenceDate);
+    const after = str(newPortfolio.portfolioReferenceDate);
+    if (before && (!after || after < before)) problems.push(`portfolio reference date went from ${before} to ${after ?? "none"}`);
+    if (arrayLength(oldPortfolio, "components") > 0 && arrayLength(newPortfolio, "components") === 0) {
+      problems.push(`portfolio components went from ${arrayLength(oldPortfolio, "components")} to 0`);
+    }
+  }
+}
+
 function checkStillAvailable(problems: string[], oldJson: Json, newJson: Json): void {
   if (oldJson.available !== false && newJson.available === false) {
     problems.push(`"available" flipped from true to false`);
@@ -243,6 +285,8 @@ export function detectCacheRegression(
     checkStillAvailable(problems, oldJson, newJson);
     checkLatestNotOlder(problems, oldJson, newJson, "records", "referenceDate");
     checkFnetMonthsKept(problems, oldJson, newJson);
+  } else if (p.startsWith("src/data/holding-cache/")) {
+    checkHoldingCache(problems, oldJson, newJson);
   }
 
   return problems;

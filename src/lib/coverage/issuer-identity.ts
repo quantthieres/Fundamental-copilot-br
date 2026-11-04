@@ -38,6 +38,7 @@ export const ISSUER_CVM_CODE: Readonly<Record<string, string>> = {
   BHIA3: "6505",
   BLAU3: "24627",
   BPAC11: "22616",
+  BRAP3: "18724",
   BRAP4: "18724",
   BRAV3: "25291",
   BRFS3: "16292",

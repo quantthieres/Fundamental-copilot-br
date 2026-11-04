@@ -4,6 +4,7 @@ import { hasBankAnalysisCache } from "../banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../insurance/insurance-coverage";
 import { resolveFundamentalsTicker } from "./fundamentals-alias";
+import { isHoldingIssuerTicker } from "../holdings/holding-identities";
 
 export type ModelRoute =
   | "industrial"
@@ -28,6 +29,7 @@ function richType(asset: B3Asset) {
  *
  * Priority:
  *   1. coverageStatus === "unavailable"  → unavailable (handles discontinued tickers)
+ *   1b. holding issuer (ITSA3/4, BRAP3/4) → quote_only or sector_specific_pending
  *   2. bank with cache                   → bank
  *   3. fii with cache                    → fii
  *   4. insurance with cache              → insurance
@@ -42,6 +44,13 @@ export function resolveModelRoute(asset: B3Asset): ModelRoute {
 
   // Discontinued / explicitly unavailable wins unconditionally.
   if (coverageStatus === "unavailable") return "unavailable";
+
+  // Holding issuers are never analysed by the bank or industrial models,
+  // whatever the ticker suffix or sector heuristics say. The holding route is
+  // not active yet (Phase 1: caches only), so they keep their pre-model route.
+  if (isHoldingIssuerTicker(ticker)) {
+    return coverageStatus === "quote_only" ? "quote_only" : "sector_specific_pending";
+  }
 
   const type = richType(asset);
 

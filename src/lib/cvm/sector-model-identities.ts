@@ -90,11 +90,12 @@ function normalizeCnpj(cnpj: string): string {
 
 /**
  * Confirms the live CVM registry still describes the verified issuer: an
- * ATIVO record with the verified CD_CVM and CNPJ. Returns a problem
+ * ATIVO record with the verified CD_CVM and CNPJ. Also used for the holding
+ * identities (holdings/holding-identities.ts). Returns a problem
  * description, or null when the identity is confirmed.
  */
 export function checkRegistryIdentity(
-  identity: VerifiedSectorIdentity,
+  identity: Pick<VerifiedSectorIdentity, "cvmCode" | "cnpj">,
   registry: readonly { cvmCode: string; cnpj: string; status: string }[],
 ): string | null {
   const records = registry.filter(r => normalizeCvmCode(r.cvmCode) === normalizeCvmCode(identity.cvmCode));

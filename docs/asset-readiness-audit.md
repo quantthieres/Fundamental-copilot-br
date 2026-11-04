@@ -144,7 +144,7 @@ NATU3's issuer — a regression test fails if that stops being true.
 
 - **ITSA3/ITSA4** — holding model pending; one issuer (Itaúsa, CD_CVM 7617).
   Never aliased to Itaú Unibanco.
-- **BRAP4** — holding model pending (Bradespar).
+- **BRAP3/BRAP4** — holding model pending; one issuer (Bradespar, CD_CVM 18724). BRAP3 added to the universe on 2026-11-03 (FCA 2026 and B3 list it as current).
 - **ALOS3** — real-estate model pending; MULT3/IGTI11/JHSF3 flagged for review.
 - **B3SA3** — market-infrastructure model pending.
 - **VAMO3, SEQL3** — manual review (2024 reorganisation / ongoing restructuring).
@@ -269,24 +269,24 @@ because its label was hard-coded for any cache under two years.
 <!-- BEGIN GENERATED: npm run coverage:audit:readiness -- --write-doc -->
 
 ```text
-Total assets: 184 (curated universe — see curation exclusions below)
+Total assets: 185 (curated universe — see curation exclusions below)
 
 Analysis ready                        130
 Analysis limited                      4
 Informational ready                   14
 Intentionally limited                 1
 Manual review                         5
-Model pending                         5
+Model pending                         6
 Cache pending (model exists)          0
 Historical/unavailable                25
 Current successor missing (curated)   0
-Sum of buckets                        184 (= total)
+Sum of buckets                        185 (= total)
 
 Distinct issuers analysis-ready: 125
 
 ## MODEL DEVELOPMENT PROJECTS (grouped by issuer)
 - Holding model: 2 issuer(s) pending, 2 industrial review candidate(s)
-    pending  Bradespar S.A. — BRAP4
+    pending  Bradespar S.A. — BRAP3, BRAP4
     pending  Itaúsa S.A. — ITSA3, ITSA4
     review   Cosan S.A. — CSAN3 (currently industrial)
     review   Metalúrgica Gerdau S.A. — GOAU4 (currently industrial)
@@ -363,6 +363,9 @@ Distinct issuers analysis-ready: 125
 
 ## MODEL PENDING
 - BRAP4 — Bradespar S.A. — active — route=quote_only
+    reason: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it
+    next:   Build the holding model
+- BRAP3 — Bradespar S.A. — active — route=quote_only
     reason: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it
     next:   Build the holding model
 - ALOS3 — Allos S.A. — active — route=quote_only

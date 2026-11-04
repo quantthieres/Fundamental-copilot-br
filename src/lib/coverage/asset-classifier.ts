@@ -1,4 +1,5 @@
 import type { AssetType } from "./coverage-types";
+import { HOLDING_SHARE_CLASS_TICKERS } from "../holdings/holding-identities";
 
 // ─── Explicit ticker → AssetType map ─────────────────────────────────────────
 //
@@ -17,10 +18,14 @@ const EXPLICIT_TICKER_MAP: Record<string, AssetType> = {
   BPAC11: "bank",  // BTG Pactual — bank unit
   BRSR6:  "bank",
 
-  // ── Financial holdings / exchange infrastructure ──────────────────────────
-  ITSA4:  "financial",
-  ITSA3:  "financial",
+  // ── Exchange infrastructure ───────────────────────────────────────────────
   B3SA3:  "financial",
+
+  // ── Listed holdings (holding model) ───────────────────────────────────────
+  // Every share class of a verified holding issuer (holdings/holding-identities.ts):
+  // ITSA3, ITSA4, BRAP3, BRAP4. Never inferred from sector names such as
+  // "Holding Financeira"/"Holding Industrial" (CSAN3, GOAU4 stay outside).
+  ...Object.fromEntries(HOLDING_SHARE_CLASS_TICKERS.map(t => [t, "holding" as const])),
 
   // ── Insurance ────────────────────────────────────────────────────────────
   BBSE3:  "insurance",

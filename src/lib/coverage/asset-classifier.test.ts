@@ -26,6 +26,15 @@ describe("normalizeTicker", () => {
 // ─── inferAssetTypeFromTicker — explicit map ──────────────────────────────────
 
 describe("inferAssetTypeFromTicker — explicit map", () => {
+  it("verified holding share classes are holding, from the issuer registry (not sector or suffix)", () => {
+    for (const t of ["ITSA3", "ITSA4", "BRAP3", "BRAP4"]) {
+      expect(inferAssetTypeFromTicker(t), t).toBe("holding");
+      expect(classifyAsset(t, { b3AssetType: "stock", sector: "Mineração" }), t).toBe("holding");
+    }
+    // Sector names alone never make a holding (CSAN3, GOAU4 stay outside the model).
+    expect(classifyAsset("GOAU4", { b3AssetType: "stock", sector: "Siderurgia" })).toBe("preferred_stock");
+    expect(inferAssetTypeFromKnownMappings("XPTO3", undefined, "Holding Industrial")).toBe("common_stock");
+  });
   it("KLBN11 is unit (not FII)", () => {
     expect(inferAssetTypeFromTicker("KLBN11")).toBe("unit");
   });

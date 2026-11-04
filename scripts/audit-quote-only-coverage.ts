@@ -28,6 +28,9 @@ import { classifyAsset } from "../src/lib/coverage/asset-classifier";
 import { hasBankAnalysisCache } from "../src/lib/banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../src/lib/fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../src/lib/insurance/insurance-coverage";
+import { hasHoldingAnalysisCache } from "../src/lib/holdings/holding-coverage";
+import { holdingCachePath } from "../src/lib/holdings/holding-cache";
+import { resolveHoldingCacheTicker } from "../src/lib/holdings/holding-identities";
 import { getCvmCompanyByTicker } from "../src/lib/cvm/company-map";
 import { parseFinancialsCache } from "../src/lib/cvm/precomputed-cache";
 
@@ -76,6 +79,12 @@ function hasInsuranceCacheFile(ticker: string): boolean {
   return modelCacheState(INS_CACHE_DIR, ticker) === "implemented";
 }
 
+// Holding caches are keyed by the issuer's canonical ticker (ITSA3 → ITSA4).
+function hasHoldingCacheFile(ticker: string): boolean {
+  const canonical = resolveHoldingCacheTicker(ticker);
+  return canonical !== null && existsSync(holdingCachePath(canonical));
+}
+
 function hasPlaceholderModelCache(ticker: string): boolean {
   return [FII_CACHE_DIR, BANK_CACHE_DIR, INS_CACHE_DIR]
     .some(dir => modelCacheState(dir, ticker) === "placeholder");
@@ -118,7 +127,7 @@ interface AuditEntry {
   hasCvmMapping:    boolean;
   hasCvmCache:      boolean;
   cvmCacheYears:    number;
-  hasModelCache:    boolean; // bank/FII/insurance cache
+  hasModelCache:    boolean; // bank/FII/insurance/holding cache
   richType:         string;
   suggestedAction:  SuggestedAction;
   notes:            string;
@@ -138,7 +147,8 @@ function getModelCache(asset: B3Asset): boolean {
   return (
     hasBankAnalysisCache(asset.ticker) ||
     hasFiiAnalysisCache(asset.ticker)  ||
-    hasInsuranceAnalysisCache(asset.ticker)
+    hasInsuranceAnalysisCache(asset.ticker) ||
+    hasHoldingAnalysisCache(asset.ticker)
   );
 }
 
@@ -146,7 +156,8 @@ function getModelCacheFile(asset: B3Asset): boolean {
   return (
     hasBankCacheFile(asset.ticker)     ||
     hasFiiCacheFile(asset.ticker)      ||
-    hasInsuranceCacheFile(asset.ticker)
+    hasInsuranceCacheFile(asset.ticker) ||
+    hasHoldingCacheFile(asset.ticker)
   );
 }
 
@@ -163,7 +174,7 @@ function suggestAction(asset: B3Asset, hasCvmCache: boolean, hasCvmMapping: bool
   if (decided) return decided;
 
   const route = resolveModelRoute(asset);
-  if (route === "bank" || route === "fii" || route === "insurance") return "sector_model_available";
+  if (route === "bank" || route === "fii" || route === "insurance" || route === "holding") return "sector_model_available";
   if (route === "informational_instrument") return "informational_layer";
 
   const richType = getRichType(asset);
@@ -196,7 +207,7 @@ function buildNotes(asset: B3Asset, entry: Omit<AuditEntry, "notes">): string {
     notes.push(`CVM financials cache exists (${entry.cvmCacheYears} year(s)) but coverageStatus is still "${asset.coverageStatus}"`);
   }
   if (entry.hasModelCache && !getModelCache(asset)) {
-    notes.push("Has implemented sector-specific cache file (bank/FII/insurance) but not registered in coverage set");
+    notes.push("Has implemented sector-specific cache file (bank/FII/insurance/holding) but not registered in coverage set");
   }
   if (hasPlaceholderModelCache(asset.ticker)) {
     notes.push("Sector cache file is an available:false placeholder — not model coverage");
@@ -261,6 +272,9 @@ function detectSuspicious(entries: AuditEntry[]): SuspiciousCase[] {
     if (hasBankCacheFile(e.ticker) && !hasBankAnalysisCache(e.ticker)) {
       cases.push({ ticker: e.ticker, reason: "Bank cache file on disk not registered in bank-coverage.ts" });
     }
+    if (hasHoldingCacheFile(e.ticker) && !hasHoldingAnalysisCache(e.ticker)) {
+      cases.push({ ticker: e.ticker, reason: "Holding cache file on disk not registered in holding-coverage.ts" });
+    }
     if (hasInsuranceCacheFile(e.ticker) && !hasInsuranceAnalysisCache(e.ticker)) {
       cases.push({ ticker: e.ticker, reason: "Insurance cache file on disk not registered in insurance-coverage.ts" });
     }
@@ -309,10 +323,10 @@ function main(): void {
 
   const ACTION_LABEL: Record<SuggestedAction, string> = {
     candidate_for_cvm_mapping:           "Candidate for CVM mapping",
-    sector_model_available:              "Sector model available (bank/FII/insurer cache)",
+    sector_model_available:              "Sector model available (bank/FII/insurer/holding cache)",
     informational_layer:                 "Informational layer (ETF/BDR — by design)",
     needs_sector_specific_model:         "Needs sector-specific model",
-    keep_quote_only:                     "Keep quote-only (holding/financial/not industrial)",
+    keep_quote_only:                     "Keep quote-only (financial/not industrial)",
     manual_review:                       "Manual review (identity OK, restructuring/fit pending)",
     mark_unavailable_or_discontinued:    "Mark unavailable / discontinued",
     already_has_cache_but_status_mismatch: "⚠ Cache exists but status mismatch",
@@ -357,7 +371,7 @@ function main(): void {
   console.log(`    Informational layer (ETF/BDR):          ${(byAction.get("informational_layer") ?? []).length}`);
   console.log(`    Sector-specific model pending:          ${ssNeedsModel.length}`);
   console.log(`    Historical codes (lifecycle):           ${discontinued.length}`);
-  console.log(`    Keep quote-only (holding/financial):    ${(byAction.get("keep_quote_only") ?? []).length}`);
+  console.log(`    Keep quote-only (financial):            ${(byAction.get("keep_quote_only") ?? []).length}`);
   console.log(`    Manual review:                          ${(byAction.get("manual_review") ?? []).length}`);
   console.log(`    Status mismatch (cache exists):         ${(byAction.get("already_has_cache_but_status_mismatch") ?? []).length}`);
   console.log("──────────────────────────────────────────────────────────────────\n");

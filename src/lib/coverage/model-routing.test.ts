@@ -71,22 +71,35 @@ describe("resolveModelRoute", () => {
     expect(resolveModelRoute(fromUniverse("ITSA4"))).not.toBe<ModelRoute>("bank");
   });
 
-  // ── Holdings (Phase 1: caches only, no holding route yet) ─────────────────
+  // ── Holdings ──────────────────────────────────────────────────────────────
 
-  it("holding share classes keep their pre-model routes", () => {
-    expect(resolveModelRoute(fromUniverse("ITSA3"))).toBe<ModelRoute>("sector_specific_pending");
-    expect(resolveModelRoute(fromUniverse("ITSA4"))).toBe<ModelRoute>("sector_specific_pending");
-    expect(resolveModelRoute(fromUniverse("BRAP3"))).toBe<ModelRoute>("quote_only");
-    expect(resolveModelRoute(fromUniverse("BRAP4"))).toBe<ModelRoute>("quote_only");
+  it("ITSA3, ITSA4, BRAP3 and BRAP4 → holding", () => {
+    for (const t of ["ITSA3", "ITSA4", "BRAP3", "BRAP4"]) {
+      expect(resolveModelRoute(fromUniverse(t)), t).toBe<ModelRoute>("holding");
+    }
   });
 
-  it("BRAP3/BRAP4 never reach the industrial model, whatever their status or suffix", () => {
+  it("holding routing ignores declared status, ticker suffix and sector names — never industrial or quote-only", () => {
     for (const ticker of ["BRAP3", "BRAP4", "ITSA3", "ITSA4"]) {
-      for (const coverageStatus of ["cvm_analysis", "cvm_financials", "full_analysis"] as const) {
-        const route = resolveModelRoute({ ...fromUniverse(ticker), coverageStatus, hasCvmMapping: true });
-        expect(route, `${ticker} ${coverageStatus}`).toBe<ModelRoute>("sector_specific_pending");
+      for (const coverageStatus of ["cvm_analysis", "cvm_financials", "full_analysis", "quote_only", "sector_specific_model_required"] as const) {
+        for (const sector of ["Holding Financeira", "Holding Industrial", "Mineração", "Bancário"]) {
+          const route = resolveModelRoute({ ...fromUniverse(ticker), coverageStatus, sector, hasCvmMapping: true });
+          expect(route, `${ticker} ${coverageStatus} ${sector}`).toBe<ModelRoute>("holding");
+        }
       }
     }
+  });
+
+  it("only verified holding issuers use the holding route (CSAN3, GOAU4, ITUB4, VALE3 do not)", () => {
+    for (const t of ["CSAN3", "GOAU4", "ITUB4", "VALE3"]) {
+      expect(resolveModelRoute(fromUniverse(t)), t).not.toBe<ModelRoute>("holding");
+    }
+    const holdingRouted = B3_UNIVERSE.filter(a => resolveModelRoute(a) === "holding").map(a => a.ticker).sort();
+    expect(holdingRouted).toEqual(["BRAP3", "BRAP4", "ITSA3", "ITSA4"]);
+  });
+
+  it("a discontinued holding code is still unavailable", () => {
+    expect(resolveModelRoute({ ...fromUniverse("ITSA3"), coverageStatus: "unavailable" })).toBe<ModelRoute>("unavailable");
   });
 
   it("a holding in the 'Holding Financeira' sector is never routed to the bank model", () => {

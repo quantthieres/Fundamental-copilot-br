@@ -173,8 +173,19 @@ describe("sector_specific_model_required", () => {
     expect(p.isIndustrialModelEligible).toBe(false);
   });
 
+  it("holding → HOLDING_MODEL_REQUIRED, never industrial-eligible, even with CVM caches", () => {
+    for (const ticker of ["ITSA3", "ITSA4", "BRAP3", "BRAP4"]) {
+      const p = resolveAssetCoverage({ ticker, assetType: "holding", ...ALL_CACHES });
+      expect(p.coverageLevel, ticker).toBe("sector_specific_model_required");
+      expect(p.reasonCode, ticker).toBe("HOLDING_MODEL_REQUIRED");
+      expect(p.displayMessage, ticker).toContain("modelo de holdings");
+      expect(p.isIndustrialModelEligible, ticker).toBe(false);
+      expect(p.isForecastEligible, ticker).toBe(false);
+    }
+  });
+
   it("financial → UNKNOWN_ASSET_TYPE → sector_specific_model_required", () => {
-    const p = resolveAssetCoverage({ ticker: "ITSA4", assetType: "financial", ...MARKET_ONLY });
+    const p = resolveAssetCoverage({ ticker: "B3SA3", assetType: "financial", ...MARKET_ONLY });
     expect(p.coverageLevel).toBe("sector_specific_model_required");
     expect(p.reasonCode).toBe("UNKNOWN_ASSET_TYPE");
   });

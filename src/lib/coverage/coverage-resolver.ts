@@ -29,8 +29,8 @@ export type CoverageResolverInput = {
 // ─── Industrial model eligibility ─────────────────────────────────────────────
 
 // Only operating companies (stocks and operating-company units) can use the
-// standard industrial metrics pipeline. Banks, insurance, FIIs, ETFs, BDRs
-// and financial holdings require sector-specific models.
+// standard industrial metrics pipeline. Banks, insurance, FIIs, ETFs, BDRs,
+// listed holdings and financial infrastructure require sector-specific models.
 const INDUSTRIAL_TYPES = new Set<AssetType>([
   "common_stock",
   "preferred_stock",
@@ -58,6 +58,8 @@ function buildDisplayMessage(reasonCode: CoverageReasonCode): string {
       return "Este ativo exige modelo específico para instituições financeiras.";
     case "INSURANCE_MODEL_REQUIRED":
       return "Este ativo exige modelo específico para seguradoras.";
+    case "HOLDING_MODEL_REQUIRED":
+      return "Holding analisada pelo modelo de holdings: portfólio de investidas, posição financeira da controladora e desconto oficial publicado.";
     case "FII_MODEL_REQUIRED":
       return "Este ativo exige modelo específico para fundos imobiliários.";
     case "ETF_MODEL_REQUIRED":
@@ -83,6 +85,8 @@ function resolveForNonIndustrial(
       return { coverageLevel: "sector_specific_model_required", reasonCode: "BANK_MODEL_REQUIRED" };
     case "insurance":
       return { coverageLevel: "sector_specific_model_required", reasonCode: "INSURANCE_MODEL_REQUIRED" };
+    case "holding":
+      return { coverageLevel: "sector_specific_model_required", reasonCode: "HOLDING_MODEL_REQUIRED" };
     case "fii":
       return { coverageLevel: "sector_specific_model_required", reasonCode: "FII_MODEL_REQUIRED" };
     case "etf":

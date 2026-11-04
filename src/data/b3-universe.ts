@@ -71,8 +71,8 @@ export const B3_UNIVERSE: B3Asset[] = [
   // ── Mineração ────────────────────────────────────────────────────────────────
   stock("VALE3",  "Vale S.A.",                                           "Vale",           "Mineração",              "Minério de Ferro",               CA,  false, true),
   stock("CMIN3",  "CSN Mineração S.A.",                                  "CSN Mineração",  "Mineração",              "Minério de Ferro",               CA, false, true),
-  stock("BRAP4",  "Bradespar S.A.",                                      "Bradespar",      "Mineração",              "Holding Industrial",             QO),
-  stock("BRAP3",  "Bradespar S.A.",                                      "Bradespar ON",   "Mineração",              "Holding Industrial",             QO),
+  stock("BRAP4",  "Bradespar S.A.",                                      "Bradespar",      "Mineração",              "Holding Industrial",             SS),
+  stock("BRAP3",  "Bradespar S.A.",                                      "Bradespar ON",   "Mineração",              "Holding Industrial",             SS),
 
   // ── Siderurgia e Metalurgia ──────────────────────────────────────────────────
   stock("GGBR4",  "Gerdau S.A.",                                         "Gerdau",         "Siderurgia",             "Aços Longos",                    CA,  false, true),

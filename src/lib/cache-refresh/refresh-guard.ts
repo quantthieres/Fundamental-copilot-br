@@ -22,10 +22,21 @@ export const ALLOWED_CACHE_DIRS = [
   "src/data/bank-cache/",
   "src/data/fii-cache/",
   "src/data/insurance-cache/",
-  // Not refreshed by the workflow yet (holding model Phase 1); the regression
-  // rules below already apply to it.
+  // Refreshed by `npm run holding:precompute` (sector-models scope); one JSON
+  // per issuer, checked by the holding regression rules below.
   "src/data/holding-cache/",
 ] as const;
+
+const HOLDING_CACHE_DIR = "src/data/holding-cache/";
+
+/**
+ * The only holding-cache files the refresh may stage: one canonical issuer
+ * cache each (ITSA3 → ITSA4, BRAP3 → BRAP4 are read-time aliases, never files).
+ */
+export const ALLOWED_HOLDING_CACHE_PATHS: ReadonlySet<string> = new Set([
+  "src/data/holding-cache/ITSA4.json",
+  "src/data/holding-cache/BRAP4.json",
+]);
 
 export const AUDIT_DOC_PATH = "docs/coverage-audit-quote-only.md";
 
@@ -55,6 +66,8 @@ export function isAllowedRefreshPath(path: string, options: PathGuardOptions = {
   if (options.allowAuditDoc && p === AUDIT_DOC_PATH) return true;
   // Only JSON cache files — rejects raw .zip/.csv, temp files and READMEs.
   if (!p.endsWith(".json")) return false;
+  // Holding caches: exact canonical issuer files only (no other names, no nesting).
+  if (p.startsWith(HOLDING_CACHE_DIR)) return ALLOWED_HOLDING_CACHE_PATHS.has(p);
   return ALLOWED_CACHE_DIRS.some(dir => p.startsWith(dir));
 }
 

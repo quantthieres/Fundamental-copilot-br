@@ -131,3 +131,11 @@ button:hover { opacity: 0.88; }
 
 /* Defensive only: never let the root be wider than the viewport. */
 html, body { max-width: 100%; }
+
+/* Holding analysis: the portfolio table becomes stacked cards on phones
+   (columns are not squeezed); print always uses the table. */
+.holding-portfolio-cards { display: none; }
+@media screen and (max-width: 640px) {
+  .holding-portfolio-table { display: none; }
+  .holding-portfolio-cards { display: grid; }
+}

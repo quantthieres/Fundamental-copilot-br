@@ -12,6 +12,9 @@ import { countUsableAnnualYears } from "../cvm/annual-years";
 import { computeFiiIndicators, distributionLagMonths } from "../fiis/fii-indicators";
 import type { FiiAnalysisResponse, FiiFinancialRecord } from "../fiis/fii-types";
 import { resolveModelRoute } from "./model-routing";
+import { readHoldingCache } from "../holdings/holding-cache";
+import { assessHoldingCache, type HoldingCacheAssessment } from "../holdings/holding-readiness";
+import { isHoldingIssuerTicker } from "../holdings/holding-identities";
 import { getTickerLifecycle } from "./ticker-lifecycle";
 import { getFundamentalsAlias, resolveFundamentalsTicker } from "./fundamentals-alias";
 import {
@@ -63,6 +66,11 @@ export function fiiDistributionLagMonths(ticker: string): number | null {
   return records === null ? null : distributionLagMonths(records);
 }
 
+/** Assessment of the issuer's canonical holding cache; null for non-holding tickers. */
+export function holdingCacheAssessment(ticker: string): HoldingCacheAssessment | null {
+  return isHoldingIssuerTicker(ticker) ? assessHoldingCache(ticker, readHoldingCache(ticker)) : null;
+}
+
 export function buildReadinessInput(asset: B3Asset, universe: readonly B3Asset[] = B3_UNIVERSE): ReadinessInput {
   const lifecycle = getTickerLifecycle(asset.ticker);
   const successor = lifecycle?.successorTicker;
@@ -83,6 +91,7 @@ export function buildReadinessInput(asset: B3Asset, universe: readonly B3Asset[]
     hasQuarterly: hasQuarterlyCache(asset.ticker),
     fiiDistributionMonths: fiiDistributionMonths(asset.ticker),
     fiiDistributionLagMonths: fiiDistributionLagMonths(asset.ticker),
+    holdingCache: holdingCacheAssessment(asset.ticker),
     decision: READINESS_DECISIONS[asset.ticker] ?? null,
   };
 }

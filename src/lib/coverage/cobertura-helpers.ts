@@ -4,6 +4,7 @@ import type { AssetType as RichAssetType } from "./coverage-types";
 import { getBankCoverageReason } from "@/lib/banks/bank-coverage";
 import { getFiiCoverageReason } from "@/lib/fiis/fii-coverage";
 import { getInsuranceCoverageReason } from "@/lib/insurance/insurance-coverage";
+import { getHoldingCoverageReason } from "@/lib/holdings/holding-coverage";
 
 export type { RichAssetType };
 
@@ -23,6 +24,7 @@ export function getAssetTypeLabel(richType: RichAssetType): string {
     unit:            "Unit",
     bank:            "Banco",
     insurance:       "Seguradora",
+    holding:         "Holding",
     financial:       "Financeiro",
     fii:             "FII",
     etf:             "ETF",
@@ -49,7 +51,8 @@ export function getCoverageReason(asset: B3Asset): string {
       switch (richType) {
         case "bank":      return getBankCoverageReason(asset.ticker);
         case "insurance": return getInsuranceCoverageReason(asset.ticker);
-        case "financial": return "Holding ou infraestrutura financeira — modelo específico.";
+        case "holding":   return getHoldingCoverageReason(asset.ticker);
+        case "financial": return "Infraestrutura financeira — modelo específico.";
         case "fii":       return getFiiCoverageReason(asset.ticker);
         case "etf":       return "Fundo/índice — não usa demonstrações corporativas tradicionais.";
         case "bdr":       return "Recibo de ativo estrangeiro — exige tratamento específico.";

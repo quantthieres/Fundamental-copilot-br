@@ -271,23 +271,21 @@ because its label was hard-coded for any cache under two years.
 ```text
 Total assets: 185 (curated universe — see curation exclusions below)
 
-Analysis ready                        130
+Analysis ready                        134
 Analysis limited                      4
 Informational ready                   14
 Intentionally limited                 1
 Manual review                         5
-Model pending                         6
+Model pending                         2
 Cache pending (model exists)          0
 Historical/unavailable                25
 Current successor missing (curated)   0
 Sum of buckets                        185 (= total)
 
-Distinct issuers analysis-ready: 125
+Distinct issuers analysis-ready: 127
 
 ## MODEL DEVELOPMENT PROJECTS (grouped by issuer)
-- Holding model: 2 issuer(s) pending, 2 industrial review candidate(s)
-    pending  Bradespar S.A. — BRAP3, BRAP4
-    pending  Itaúsa S.A. — ITSA3, ITSA4
+- Holding model: 0 issuer(s) pending, 2 industrial review candidate(s)
     review   Cosan S.A. — CSAN3 (currently industrial)
     review   Metalúrgica Gerdau S.A. — GOAU4 (currently industrial)
 - Market-infrastructure model: 1 issuer(s) pending
@@ -362,24 +360,12 @@ Distinct issuers analysis-ready: 125
     reason: Business model pivoted to a Bitcoin treasury strategy (2025–2026) — industrial metrics would mislead
 
 ## MODEL PENDING
-- BRAP4 — Bradespar S.A. — active — route=quote_only
-    reason: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it
-    next:   Build the holding model
-- BRAP3 — Bradespar S.A. — active — route=quote_only
-    reason: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it
-    next:   Build the holding model
 - ALOS3 — Allos S.A. — active — route=quote_only
     reason: Shopping-center owner: needs NOI/FFO/NAV metrics; extracted DFP showed total debt = 0 and 2023 EBIT ≈ 2× revenue (combination gain)
     next:   Build the real estate / shopping-center model
 - B3SA3 — B3 S.A. – Brasil, Bolsa, Balcão — active — route=quote_only
     reason: Exchange/clearing operator — revenue and balance sheet (collateral, clearing) need a market-infrastructure model
     next:   Build the market-infrastructure model
-- ITSA4 — Itaúsa S.A. — active — route=sector_specific_pending
-    reason: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company
-    next:   Build the holding model
-- ITSA3 — Itaúsa S.A. — active — route=sector_specific_pending
-    reason: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company
-    next:   Build the holding model
 
 ## CACHE PENDING (MODEL EXISTS)
 - none
@@ -412,7 +398,7 @@ Distinct issuers analysis-ready: 125
 - SAPR11: declared cvm_analysis but the annual CVM cache has 0 fiscal year(s) — readiness reports analysis_limited
 
 ## READY / INFORMATIONAL / HISTORICAL (tickers)
-- Analysis ready (130): WEGE3 EMBJ3→EMBR3 TUPY3 FRAS3 MYPK3 ROMI3 RAPT4 KEPL3 POMO4 TASA4 LEVE3 AERI3 PETR4 PETR3 PRIO3 VBBR3 RAIZ4 RECV3 BRAV3 CSAN3 UGPA3 VALE3 CMIN3 GGBR4 GGBR3 GOAU4 CSNA3 USIM5 FESA4 BRKM5 UNIP6 SUZB3 KLBN11 DXCO3 EGIE3 CPFE3 AXIA3→ELET3 EQTL3 ENEV3 CMIG4 CMIG3 CPLE3 ALUP11 TAEE11 ISAE4→TRPL4 AURE3 ENGI11 SBSP3 CSMG3 VIVT3 TIMS3 ABEV3 MBRF3→MRFG3 BEEF3 SMTO3 MDIA3 SLCE3 AGRO3 RENT3 RAIL3 MOVI3 TGMA3 SIMH3 LOGN3 LREN3 MGLU3 PCAR3 SBFG3 AZZA3→ARZZ3 GRND3 VULC3 GMAT3 ALPA4 LJQQ3 PTBL3 CYRE3 MRVE3 CURY3 PLPL3 EVEN3 DIRR3 TEND3 GFSA3 MTRE3 MULT3 IGTI11 JHSF3 ITUB4 ITUB3→ITUB4 BBDC4 BBDC3→BBDC4 BBAS3 BPAC11 SANB11 BRSR6 BBSE3 PSSA3 IRBR3 CXSE3 HAPV3 RDOR3 RADL3 HYPE3 FLRY3 SAUD3→ODPV3 QUAL3 BLAU3 COGN3 YDUQ3 SEER3 CSED3 ANIM3 NATU3→NTCO3 SMFT3 CVCB3 VLID3 PRNR3 TOTS3 INTB3 LWSA3 POSI3 MXRF11 XPML11 HGLG11 KNRI11 VISC11 BTHF11 IRIM11 KNCR11 HGRE11
+- Analysis ready (134): WEGE3 EMBJ3→EMBR3 TUPY3 FRAS3 MYPK3 ROMI3 RAPT4 KEPL3 POMO4 TASA4 LEVE3 AERI3 PETR4 PETR3 PRIO3 VBBR3 RAIZ4 RECV3 BRAV3 CSAN3 UGPA3 VALE3 CMIN3 BRAP4 BRAP3→BRAP4 GGBR4 GGBR3 GOAU4 CSNA3 USIM5 FESA4 BRKM5 UNIP6 SUZB3 KLBN11 DXCO3 EGIE3 CPFE3 AXIA3→ELET3 EQTL3 ENEV3 CMIG4 CMIG3 CPLE3 ALUP11 TAEE11 ISAE4→TRPL4 AURE3 ENGI11 SBSP3 CSMG3 VIVT3 TIMS3 ABEV3 MBRF3→MRFG3 BEEF3 SMTO3 MDIA3 SLCE3 AGRO3 RENT3 RAIL3 MOVI3 TGMA3 SIMH3 LOGN3 LREN3 MGLU3 PCAR3 SBFG3 AZZA3→ARZZ3 GRND3 VULC3 GMAT3 ALPA4 LJQQ3 PTBL3 CYRE3 MRVE3 CURY3 PLPL3 EVEN3 DIRR3 TEND3 GFSA3 MTRE3 MULT3 IGTI11 JHSF3 ITUB4 ITUB3→ITUB4 BBDC4 BBDC3→BBDC4 BBAS3 BPAC11 SANB11 BRSR6 BBSE3 PSSA3 IRBR3 CXSE3 ITSA4 ITSA3→ITSA4 HAPV3 RDOR3 RADL3 HYPE3 FLRY3 SAUD3→ODPV3 QUAL3 BLAU3 COGN3 YDUQ3 SEER3 CSED3 ANIM3 NATU3→NTCO3 SMFT3 CVCB3 VLID3 PRNR3 TOTS3 INTB3 LWSA3 POSI3 MXRF11 XPML11 HGLG11 KNRI11 VISC11 BTHF11 IRIM11 KNCR11 HGRE11
 - Informational ready (14): BOVA11 IVVB11 SMAL11 HASH11 SPXI11 GOLD11 AAPL34 MSFT34 TSLA34 AMZO34 GOGL34 GOGL35 NVDC34 JBSS32
 - Historical/unavailable (25): EMBR3⇒EMBJ3 RRRP3⇒BRAV3 ELET3⇒AXIA3 ELET6⇒AXIA3 CPLE6⇒CPLE3 TRPL4⇒ISAE4 CESP6⇒AURE3 ENBR3 BRFS3⇒MBRF3 JBSS3⇒JBSS32 MRFG3⇒MBRF3 AZUL4⇒AZUL3 GOLL4 STBP3 CRFB3 SOMA3⇒AZZA3 ARZZ3⇒AZZA3 PETZ3⇒AUAU3 VVAR3⇒BHIA3 BRPR3 SULA11⇒RDOR3 ODPV3⇒SAUD3 NTCO3⇒NATU3 BCFF11⇒BTHF11 IRDM11⇒IRIM11
 ```

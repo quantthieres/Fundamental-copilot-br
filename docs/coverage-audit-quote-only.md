@@ -1,15 +1,15 @@
 # Coverage Audit — Quote-Only e Cobertura Incompleta
 
-_Gerado em 2026-11-03 por `npm run coverage:audit:quote-only`._
+_Gerado em 2026-11-04 por `npm run coverage:audit:quote-only`._
 
 ## Resumo
 
 | Categoria | Total |
 |---|---|
 | Candidato mapeamento CVM | 0 |
-| Modelo setorial disponível | 21 |
+| Modelo setorial disponível | 25 |
 | Camada informativa (ETF/BDR) | 14 |
-| Modelo setorial pendente | 6 |
+| Modelo setorial pendente | 2 |
 | Manter quote-only | 1 |
 | Revisão manual | 4 |
 | Marcar descontinuado | 25 |
@@ -28,12 +28,8 @@ Ativos ativos que exigem um modelo ainda inexistente ou sem cache para este cód
 
 | Ticker | Empresa | Status | Tipo | Rota | Notas |
 |---|---|---|---|---|---|
-| BRAP4 | Bradespar S.A. | quote_only | preferred_stock | quote_only | Revisado: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it |
-| BRAP3 | Bradespar S.A. | quote_only | common_stock | quote_only | Revisado: Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it |
 | ALOS3 | Allos S.A. | quote_only | common_stock | quote_only | Revisado: Shopping-center owner: needs NOI/FFO/NAV metrics; extracted DFP showed total debt = 0 and 2023 EBIT ≈ 2× revenue (combination gain) |
 | B3SA3 | B3 S.A. – Brasil, Bolsa, Balcão | quote_only | financial | quote_only | Revisado: Exchange/clearing operator — revenue and balance sheet (collateral, clearing) need a market-infrastructure model |
-| ITSA4 | Itaúsa S.A. | sector_specific_model_required | financial | sector_specific_pending | Revisado: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company |
-| ITSA3 | Itaúsa S.A. | sector_specific_model_required | financial | sector_specific_pending | Revisado: Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company |
 
 ## Prováveis Descontinuados
 

@@ -102,6 +102,13 @@ jobs:
           INSURANCE_PRECOMPUTE_CONCURRENCY: "1"
         run: npm run insurance:precompute
 
+      # Itaúsa RI page and Bradespar bulletin PDF (network) + CVM parent-only
+      # statements. A failing portfolio source keeps the last validated
+      # snapshot; holding:audit runs inside validate below.
+      - name: Holding model cache
+        if: env.SCOPE == 'all' || env.SCOPE == 'sector-models'
+        run: npm run holding:precompute
+
       # ── Derived data (local only, reads cvm-cache/quarterly) ───────────────
 
       - name: Normalized time series

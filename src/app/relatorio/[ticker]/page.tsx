@@ -5,6 +5,10 @@ import { readBankCache } from "@/lib/banks/bank-cache";
 import { readFiiCache } from "@/lib/fiis/fii-cache";
 import { fiiDisplayIndicators, fiiSourceLabel } from "@/lib/fiis/fii-indicators";
 import { readInsuranceCache } from "@/lib/insurance/insurance-cache";
+import { readHoldingCache } from "@/lib/holdings/holding-cache";
+import { buildHoldingAnalysisResponse, type HoldingAnalysisResponse } from "@/lib/holdings/holding-analysis";
+import { isHoldingIssuerTicker } from "@/lib/holdings/holding-identities";
+import HoldingAnalysisPanel from "@/components/dashboard/HoldingAnalysisPanel";
 import { getInstrumentInfo } from "@/lib/instruments/instrument-info";
 import { getPrecomputedFinancials } from "@/lib/cvm/precomputed-cache";
 import { buildFundamentalIndicators } from "@/lib/fundamentals/indicators";
@@ -465,6 +469,36 @@ function InsuranceReport({ data, quote }: { data: InsuranceAnalysisResponse; quo
   );
 }
 
+// ─── Holding report ───────────────────────────────────────────────────────────
+
+function HoldingReport({ ticker, b3Asset, data, quote }: {
+  ticker:  string;
+  b3Asset: B3Asset;
+  data:    HoldingAnalysisResponse;
+  quote:   MarketDataQuote | null;
+}) {
+  const sourceLabel = data.available && data.portfolio
+    ? data.portfolio.sourceKind === "itausa_portfolio_page" ? "CVM · Itaúsa RI" : "CVM · Bradespar RI"
+    : "CVM — demonstrações individuais";
+  return (
+    <ReportShell ticker={ticker} modelLabel="Modelo de Holding" sourceLabel={sourceLabel}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+          {b3Asset.companyName} ({ticker})
+        </div>
+        <div style={{ fontSize: 13, color: "#64748b" }}>
+          Relatório de holding — portfólio oficial e demonstrações individuais (controladora)
+        </div>
+      </div>
+
+      {/* Quote of the requested share class only; fundamentals are issuer-wide. */}
+      <QuoteBlock quote={quote} />
+
+      <HoldingAnalysisPanel data={data} variant="report" />
+    </ReportShell>
+  );
+}
+
 // ─── Informational report (ETF / BDR / fund) ──────────────────────────────────
 
 function InformationalReport({ ticker, quote }: { ticker: string; quote: MarketDataQuote | null }) {
@@ -606,6 +640,14 @@ export default async function ReportPage({ params, searchParams }: Props) {
     const data = readInsuranceCache(upper);
     if (!data) return <UnavailableReport ticker={upper} />;
     return <InsuranceReport data={data} quote={quote} />;
+  }
+
+  // Holding share classes (ITSA3/ITSA4, BRAP3/BRAP4) never fall through to the
+  // industrial or fallback reports — a missing cache renders the holding
+  // unavailable state. Committed cache only; no source access at request time.
+  if (modelRoute === "holding" || (b3Entry && modelRoute !== "unavailable" && isHoldingIssuerTicker(upper))) {
+    const data = buildHoldingAnalysisResponse(upper, readHoldingCache(upper));
+    return <HoldingReport ticker={upper} b3Asset={b3Entry!} data={data} quote={quote} />;
   }
 
   if (modelRoute === "informational_instrument") {

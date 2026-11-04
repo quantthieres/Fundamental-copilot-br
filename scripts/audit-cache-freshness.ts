@@ -9,7 +9,7 @@
  * than a per-family threshold.
  *
  * Timestamps come only from the JSON content (generatedAt for CVM/forecast
- * caches, updatedAt for bank/FII/insurance caches). Filesystem mtime is NOT
+ * caches, updatedAt for bank/FII/insurance/holding caches). Filesystem mtime is NOT
  * used: in a git checkout it reflects the clone time, not the data.
  *
  * Note: the scheduled refresh restores files whose only change is the
@@ -41,6 +41,7 @@ const FAMILIES: Family[] = [
   { name: "Banks",                 dir: "bank-cache/annual",                 fields: ["updatedAt"],   thresholdDays: 400 },
   { name: "FIIs",                  dir: "fii-cache/monthly",                 fields: ["updatedAt"],   thresholdDays: 90 },
   { name: "Insurance",             dir: "insurance-cache/annual",            fields: ["updatedAt"],   thresholdDays: 400 },
+  { name: "Holdings",              dir: "holding-cache",                     fields: ["updatedAt"],   thresholdDays: 120 },
 ];
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;

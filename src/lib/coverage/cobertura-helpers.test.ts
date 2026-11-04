@@ -49,8 +49,10 @@ describe("classifyB3Asset", () => {
     expect(classifyB3Asset(find("BBSE3"))).toBe("insurance");
   });
 
-  it("ITSA4 is financial", () => {
-    expect(classifyB3Asset(find("ITSA4"))).toBe("financial");
+  it("ITSA3/ITSA4/BRAP3/BRAP4 are holdings; B3SA3 stays financial; CSAN3/GOAU4 are not holdings", () => {
+    for (const t of ["ITSA3", "ITSA4", "BRAP3", "BRAP4"]) expect(classifyB3Asset(find(t)), t).toBe("holding");
+    expect(classifyB3Asset(find("B3SA3"))).toBe("financial");
+    for (const t of ["CSAN3", "GOAU4"]) expect(classifyB3Asset(find(t)), t).not.toBe("holding");
   });
 
   it("MXRF11 is fii", () => {
@@ -75,6 +77,7 @@ describe("getAssetTypeLabel", () => {
     ["unit",            "Unit"],
     ["bank",            "Banco"],
     ["insurance",       "Seguradora"],
+    ["holding",         "Holding"],
     ["financial",       "Financeiro"],
     ["fii",             "FII"],
     ["etf",             "ETF"],
@@ -123,13 +126,16 @@ describe("getCoverageReason", () => {
     expect(reason).toContain("Fundo/índice");
   });
 
-  it("ITSA4 (financial, sector_specific) → financial model message", () => {
-    const reason = getCoverageReason(find("ITSA4"));
-    expect(reason).toContain("infraestrutura financeira");
+  it("holding share classes → holding model message (all four, no quote-only text)", () => {
+    for (const t of ["ITSA3", "ITSA4", "BRAP3", "BRAP4"]) {
+      const reason = getCoverageReason(find(t));
+      expect(reason, t).toContain("Modelo de holdings disponível");
+      expect(reason, t).not.toContain("dados de mercado");
+    }
   });
 
   it("quote_only asset → cotação message", () => {
-    const reason = getCoverageReason(find("BRAP4")); // quote_only (holding, intentionally kept)
+    const reason = getCoverageReason(find("ALOS3")); // quote_only (real-estate model pending)
     expect(reason).toContain("dados de mercado");
   });
 

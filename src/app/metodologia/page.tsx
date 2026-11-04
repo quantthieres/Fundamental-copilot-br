@@ -177,6 +177,16 @@ const MODEL_MINI_CARDS: ModelMiniCard[] = [
     ],
   },
   {
+    label: "Holdings",
+    color: "#0e7490", bg: "#ecfeff",
+    items: [
+      "Portfólio oficial publicado pela companhia",
+      "Demonstrações individuais (controladora) — CVM",
+      "Desconto oficial como métrica descritiva",
+      "Sem valor justo, preço-alvo ou recomendação",
+    ],
+  },
+  {
     label: "ETFs e BDRs",
     color: "#0369a1", bg: "#f0f9ff",
     items: [
@@ -271,6 +281,12 @@ const ROUTING_ROWS: RoutingRow[] = [
     camada:      "Modelo de seguradoras",
     dados:       "Ativos, patrimônio, lucro, ROE, ROA e campos específicos",
     naoAplicado: "Receita industrial, FCL, múltiplos de EBITDA",
+  },
+  {
+    tipo:        "Holding",
+    camada:      "Modelo de holdings",
+    dados:       "Portfólio oficial, desconto oficial, caixa e dívida da controladora, dividendos recebidos",
+    naoAplicado: "Receita industrial, EBIT, FCL, indicadores bancários, valuation",
   },
   {
     tipo:        "ETF / BDR",
@@ -463,6 +479,7 @@ export default function MetodologiaPage() {
               "Bancos → modelo bancário específico com ativos, patrimônio, ROE e ROA extraídos da DFP CVM.",
               "FIIs → modelo de fundos imobiliários com Informe Mensal CVM — patrimônio, P/VP e DY 12m.",
               "Seguradoras → modelo específico com ativos, patrimônio, lucro e campos de seguro da DFP CVM.",
+              "Holdings (Itaúsa, Bradespar) → modelo de holdings com portfólio oficial publicado pela companhia e demonstrações individuais CVM.",
               "ETFs e BDRs → camada informativa — sem análise fundamentalista corporativa.",
               "Ativos descontinuados ou sem cobertura → estado indisponível, sem dados exibidos.",
             ]} />
@@ -617,9 +634,40 @@ export default function MetodologiaPage() {
           </Card>
         </Section>
 
-        {/* ── G. ETFs e BDRs ── */}
+        {/* ── G. Holdings ── */}
         <Section>
-          <Label>G · ETFs e BDRs</Label>
+          <Label>G · Holdings</Label>
+          <Card title="Modelo de holdings" accent="#0e7490">
+            <Prose>
+              Holdings como Itaúsa e Bradespar não operam um negócio próprio: seu patrimônio é
+              um portfólio de participações em outras empresas. Receita, EBIT ou margens não as
+              descrevem, por isso elas não usam o modelo industrial nem o bancário. O modelo de
+              holdings descreve o portfólio e a posição financeira da controladora.
+            </Prose>
+            <BulletList items={[
+              "Demonstrações individuais (controladora), não consolidadas: caixa, dívida, patrimônio, dividendos/JCP recebidos, despesas gerais e administrativas e resultado de equivalência patrimonial (DFP/ITR, CVM Dados Abertos).",
+              "Portfólio como soma das partes: valor de cada investida conforme publicado pela própria companhia, somado a caixa líquido e outros ativos e passivos quando a publicação os inclui.",
+              "Desconto oficial: valor de mercado oficial ÷ valor do portfólio − 1, como publicado pela companhia. É uma métrica estrutural descritiva — não indica valor justo, preço-alvo nem retorno esperado.",
+              "Bases de mensuração mistas: investidas listadas a preço de mercado; não listadas a preço de transação, valor contábil ou valor justo contabilizado. Nem tudo está marcado a mercado.",
+              "Itaúsa: portfólio da página \"Valor do Portfólio e Desconto\" (Itaúsa RI). O valor de mercado oficial usa o preço de ITSA4 × total de ações ON e PN ex-tesouraria. A participação na NTS (aplicação financeira a valor justo) é investimento, não caixa. \"Demais Ativos e Passivos\" é linha de reconciliação, não investida.",
+              "Bradespar: Boletim Quinzenal (Bradespar RI). Participação na Vale = ações detidas × preço de referência; valor do portfólio = participação + caixa líquido publicado; valor de mercado oficial = soma, por classe, de preço × ações. O percentual de participação é exibido como publicado e não entra em cálculos.",
+              "Datas distintas não são combinadas: a demonstração tem sua data de referência (ex.: 30/06) e o portfólio, a sua (ex.: 30/09 ou 30/10). O caixa líquido do boletim da Bradespar não substitui a dívida líquida da demonstração.",
+              "Concentração: maior investida ÷ soma das investidas com valor positivo (exclui caixa e outros ativos e passivos).",
+              "Fundamentos são da emissora e valem para as duas classes (ITSA3/ITSA4, BRAP3/BRAP4); a cotação é sempre a do ticker consultado.",
+            ]} />
+            <div style={{ marginTop: 14 }}>
+              <InfoBox color="blue">
+                O modelo de holdings é descritivo. A plataforma não calcula valor justo, preço-alvo,
+                upside ou recomendação para holdings. Documentação técnica: docs/holding-model.md
+                no repositório do projeto.
+              </InfoBox>
+            </div>
+          </Card>
+        </Section>
+
+        {/* ── H. ETFs e BDRs ── */}
+        <Section>
+          <Label>H · ETFs e BDRs</Label>
           <Card title="Camada informativa" accent="#0369a1">
             <Prose>
               ETFs (fundos de índice listados em bolsa) e BDRs (recibos de ativos estrangeiros)
@@ -646,7 +694,7 @@ export default function MetodologiaPage() {
 
         {/* ── H. Projeções ── */}
         <Section>
-          <Label>H · Projeções de fundamentos</Label>
+          <Label>I · Projeções de fundamentos</Label>
           <Card title="Baseline quantitativo de fundamentos" accent="#b45309">
             <Prose>
               A plataforma inclui um painel de projeções de fundamentos para empresas
@@ -659,7 +707,7 @@ export default function MetodologiaPage() {
               "O painel exibe o histórico observado, a projeção e uma banda de incerteza heurística.",
               "Diagnóstico de qualidade classifica a confiabilidade como Alta, Média, Baixa ou Insuficiente com score 0–100.",
               "O diagnóstico considera cobertura histórica, consistência dos dados e desempenho no retroteste walk-forward.",
-              "ETFs, BDRs, bancos, FIIs e seguradoras não recebem painel de projeções.",
+              "ETFs, BDRs, bancos, FIIs, seguradoras e holdings não recebem painel de projeções.",
             ]} />
             <div style={{ marginTop: 14 }}>
               <InfoBox color="yellow">
@@ -672,7 +720,7 @@ export default function MetodologiaPage() {
 
         {/* ── I. Fontes e cache ── */}
         <Section>
-          <Label>I · Fontes de dados e arquitetura de cache</Label>
+          <Label>J · Fontes de dados e arquitetura de cache</Label>
           <Card title="Cache-first — sem pipelines pesados em tempo real">
             <BulletList items={[
               "Dados CVM (DFP anual, Informe Mensal) são pré-processados offline e armazenados em cache local (src/data/*-cache/).",
@@ -686,7 +734,7 @@ export default function MetodologiaPage() {
 
         {/* ── J. Limitações ── */}
         <Section>
-          <Label>J · Limitações</Label>
+          <Label>K · Limitações</Label>
           <Card title="O que a plataforma não cobre ou garante">
             <BulletList items={[
               "Dados podem estar incompletos ou ausentes para alguns ativos — a cobertura depende da disponibilidade e padronização dos dados CVM.",

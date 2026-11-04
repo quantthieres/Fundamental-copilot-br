@@ -12,13 +12,14 @@ import {
   type RichAssetType,
 } from "@/lib/coverage/cobertura-helpers";
 import { hasBankAnalysisCache, BANK_BADGE } from "@/lib/banks/bank-coverage";
+import { hasHoldingAnalysisCache, HOLDING_BADGE } from "@/lib/holdings/holding-coverage";
 import { getInstrumentCoverageReason } from "@/lib/instruments/instrument-info";
 
 const INFORMATIONAL_BADGE = { label: "Informativo", bg: "#e0f2fe", color: "#0369a1" };
 
 // ── Filter option types ───────────────────────────────────────────────────────
 
-type TypeFilter = "" | "stock" | "unit" | "bank" | "insurance" | "financial" | "fii" | "etf" | "bdr";
+type TypeFilter = "" | "stock" | "unit" | "bank" | "insurance" | "holding" | "financial" | "fii" | "etf" | "bdr";
 
 const STATUS_OPTIONS: { value: CoverageStatus | ""; label: string }[] = [
   { value: "",                              label: "Todos os status"        },
@@ -36,6 +37,7 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: "unit",      label: "Units"          },
   { value: "bank",      label: "Bancos"         },
   { value: "insurance", label: "Seguradoras"    },
+  { value: "holding",   label: "Holdings"       },
   { value: "financial", label: "Financeiro"     },
   { value: "fii",       label: "FIIs"           },
   { value: "etf",       label: "ETFs"           },
@@ -148,9 +150,11 @@ export default function CoverageTable({ assets }: Props) {
             ) : (
               filtered.map(({ asset, richType, reason }) => {
                 const isBankCached          = richType === "bank"      && hasBankAnalysisCache(asset.ticker);
+                const isHoldingCached       = richType === "holding"   && hasHoldingAnalysisCache(asset.ticker) && asset.coverageStatus !== "unavailable";
                 const isInformational       = (richType === "etf" || richType === "bdr" || richType === "fund") && asset.coverageStatus !== "unavailable";
                 const badge =
                   isBankCached    ? BANK_BADGE :
+                  isHoldingCached ? HOLDING_BADGE :
                   isInformational ? INFORMATIONAL_BADGE :
                   COVERAGE_BADGE[asset.coverageStatus];
                 const displayReason = isInformational ? getInstrumentCoverageReason(asset.ticker) : reason;
@@ -159,6 +163,7 @@ export default function CoverageTable({ assets }: Props) {
                   asset.coverageStatus === "cvm_analysis"  ||
                   asset.coverageStatus === "cvm_financials" ||
                   isBankCached ||
+                  isHoldingCached ||
                   isInformational;
                 return (
                   <tr key={asset.ticker} style={S.row}>

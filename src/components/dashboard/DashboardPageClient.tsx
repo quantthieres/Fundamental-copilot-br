@@ -22,12 +22,15 @@ import { getComparabilityBreak } from "@/lib/coverage/comparability";
 import BankAnalysisPanel from "@/components/dashboard/BankAnalysisPanel";
 import FiiAnalysisPanel from "@/components/dashboard/FiiAnalysisPanel";
 import InsuranceAnalysisPanel from "@/components/dashboard/InsuranceAnalysisPanel";
+import HoldingAnalysisPanel from "@/components/dashboard/HoldingAnalysisPanel";
 import InstrumentInfoPanel from "@/components/dashboard/InstrumentInfoPanel";
 import type { InstrumentInfoResponse } from "@/lib/instruments/instrument-types";
 import { cvmFinancialsToDashboardFinancials } from "@/lib/cvm/transformers";
 import type { BankAnalysisResponse } from "@/lib/banks/bank-types";
 import type { FiiAnalysisResponse } from "@/lib/fiis/fii-types";
 import type { InsuranceAnalysisResponse } from "@/lib/insurance/insurance-types";
+import type { HoldingAnalysisResponse } from "@/lib/holdings/holding-analysis";
+import { isHoldingIssuerTicker } from "@/lib/holdings/holding-identities";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 import {
   buildCompanyAnalysisDataFromCvm,
@@ -431,6 +434,8 @@ export default function DashboardPageClient() {
   const [fiiLoading, setFiiLoading]         = useState(false);
   const [insuranceData, setInsuranceData]   = useState<InsuranceAnalysisResponse | null>(null);
   const [insuranceLoading, setInsuranceLoading] = useState(false);
+  const [holdingData, setHoldingData]       = useState<HoldingAnalysisResponse | null>(null);
+  const [holdingLoading, setHoldingLoading] = useState(false);
   const [instrumentData, setInstrumentData]     = useState<InstrumentInfoResponse | null>(null);
   const [instrumentLoading, setInstrumentLoading] = useState(false);
 
@@ -457,6 +462,13 @@ export default function DashboardPageClient() {
 
   const isInsurance = useMemo(
     () => b3Entry !== undefined && classifyB3Asset(b3Entry) === "insurance" && b3Entry.coverageStatus !== "unavailable",
+    [b3Entry],
+  );
+
+  // Holding share classes (ITSA3/ITSA4, BRAP3/BRAP4) — holding model only,
+  // never the industrial dashboard, whatever the cache state.
+  const isHolding = useMemo(
+    () => b3Entry !== undefined && b3Entry.coverageStatus !== "unavailable" && isHoldingIssuerTicker(b3Entry.ticker),
     [b3Entry],
   );
 
@@ -539,6 +551,7 @@ export default function DashboardPageClient() {
     setFinancialSource("cvm");
     setCvmError(false);
     setBankData(null);
+    setHoldingData(null);
     setInstrumentData(null);
   }, [selectedTicker]);
 
@@ -630,11 +643,34 @@ export default function DashboardPageClient() {
     return () => { active = false; controller.abort(); };
   }, [selectedTicker, isInsurance]);
 
+  // ── Holding analysis fetch ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedTicker || !isHolding) {
+      setHoldingData(null);
+      setHoldingLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    setHoldingData(null);
+    setHoldingLoading(true);
+
+    fetch(`/api/holdings/analysis/${encodeURIComponent(selectedTicker)}`, { signal: controller.signal })
+      .then(res => res.json())
+      .then((body: HoldingAnalysisResponse) => {
+        if (active) setHoldingData(body);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setHoldingLoading(false); });
+
+    return () => { active = false; controller.abort(); };
+  }, [selectedTicker, isHolding]);
+
   // ── CVM financials fetch ──────────────────────────────────────────────────
   useEffect(() => {
     // Historical codes (coverageStatus "unavailable") never render analysis, even
     // when a CVM cache is retained to back a same-issuer alias (e.g. ELET3 → AXIA3).
-    if (!selectedTicker || !b3Entry || b3Entry.coverageStatus === "unavailable" || isBank || isFii || isInsurance || isInformationalInstrument) {
+    if (!selectedTicker || !b3Entry || b3Entry.coverageStatus === "unavailable" || isBank || isFii || isInsurance || isHolding || isInformationalInstrument) {
       setCvmFinancials(null);
       setCvmLoading(false);
       return;
@@ -665,7 +701,7 @@ export default function DashboardPageClient() {
       .finally(() => { if (active) setCvmLoading(false); });
 
     return () => { active = false; controller.abort(); };
-  }, [selectedTicker, b3Entry, isInformationalInstrument]);
+  }, [selectedTicker, b3Entry, isInformationalInstrument, isHolding]);
 
   // ── Instrument info fetch (ETF / BDR / fund) ──────────────────────────────
   useEffect(() => {
@@ -721,6 +757,47 @@ export default function DashboardPageClient() {
       {/* ── State 1: no ticker ──────────────────────────────────────────────── */}
       {!selectedTicker ? (
         <NoTickerView onTicker={handleSelectCompany} />
+
+      /* ── State 1.5: holding dashboard (never industrial) ────────────────── */
+      ) : isHolding ? (
+        <>
+          <CompanyHeader
+            company={buildPreliminaryCompany(b3Entry!, marketQuote)}
+            quote={marketQuote}
+            quoteLoading={quoteLoading}
+            exportUrl={`/relatorio/${selectedTicker}`}
+          />
+          <div style={{
+            padding: "7px 24px", background: "#ecfeff",
+            borderBottom: "1px solid #a5f3fc",
+            display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.5px",
+              textTransform: "uppercase" as const,
+              color: "#0e7490", background: "#cffafe",
+              padding: "2px 7px", borderRadius: 4,
+            }}>
+              Modelo de Holding
+            </span>
+            <span style={{ fontSize: 12, color: "#155e75" }}>
+              Portfólio oficial da companhia e demonstrações individuais (CVM). Não constitui recomendação de investimento.
+            </span>
+          </div>
+          <div className="dash-content" style={{ padding: "18px 24px", maxWidth: 1000 }}>
+            {holdingLoading ? (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Carregando dados da holding...
+              </div>
+            ) : holdingData ? (
+              <HoldingAnalysisPanel data={holdingData} />
+            ) : (
+              <div style={{ fontSize: 13, color: "#94a3b8", padding: "24px 0" }}>
+                Dados da holding indisponíveis no momento.
+              </div>
+            )}
+          </div>
+        </>
 
       /* ── State 2: full dashboard (mock data or successful CVM analysis) ─── */
       ) : effectiveCompanyData ? (

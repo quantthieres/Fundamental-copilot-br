@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "fs";
+import { join } from "path";
 import {
   AUDIT_DOC_PATH,
   classifyRefreshPaths,
@@ -23,6 +25,7 @@ describe("path guard — accepted generated caches", () => {
     "src/data/fii-cache/monthly/MXRF11.json",
     "src/data/insurance-cache/annual/BBSE3.json",
     "src/data/holding-cache/ITSA4.json",
+    "src/data/holding-cache/BRAP4.json",
   ])("accepts %s", path => {
     expect(isAllowedRefreshPath(path, opts)).toBe(true);
   });
@@ -52,6 +55,27 @@ describe("path guard — rejected paths", () => {
     "src/data/fii-cache/monthly/MXRF11.json.tmp",
     "src/data/cvm-cache/../../lib/x.json",
     "docs/other-doc.md",
+    // Holding refresh: only the generated issuer JSON may be committed.
+    "src/lib/holdings/__fixtures__/bradespar-bq-2026-11-03.pdf",
+    "src/lib/holdings/__fixtures__/cvm-itr-2026.json",
+    "src/lib/holdings/__fixtures__/itausa-portfolio-2026-10-15.html",
+    "src/lib/holdings/holding-indicators.ts",
+    "src/data/holding-cache/BQ_2026_03.11.2026_PORT-1.pdf",
+    "src/data/holding-cache/itausa.html",
+    "src/data/holding-cache/README.md",
+    "docs/holding-model.md",
+    "docs/asset-readiness-audit.md",
+    // Holding cache: only the canonical issuer files ITSA4.json / BRAP4.json.
+    "src/data/holding-cache/FOO3.json",
+    "src/data/holding-cache/archive/ITSA4.json",
+    "src/data/holding-cache/ITSA3.json",
+    "src/data/holding-cache/BRAP3.json",
+    "src/data/holding-cache/cache.json",
+    "src/data/holding-cache/foo.tmp.json",
+    "src/data/holding-cache/ITSA4.json.tmp",
+    "src/data/holding-cache/cvm-itr-2026.json",
+    "src/data/holding-cache/bradespar-bq-listing.json",
+    "src/data/holding-cache/../holding-cache/ITSA4.json",
   ])("rejects %s", path => {
     expect(isAllowedRefreshPath(path, opts)).toBe(false);
   });
@@ -200,6 +224,20 @@ describe("detectCacheRegression", () => {
 
   describe("holding cache", () => {
     const p = "src/data/holding-cache/ITSA4.json";
+
+    it("the regression rules apply to both canonical files, which the path guard accepts", () => {
+      const brap = "src/data/holding-cache/BRAP4.json";
+      const brapIssuer = { canonicalTicker: "BRAP4", cvmCode: "18724", cnpj: "03.847.461/0001-92" };
+      const brapBase = { issuer: brapIssuer, statements: [1, 2], latestStatement: { periodEnd: "2026-06-30" },
+        portfolio: { portfolioReferenceDate: "2026-10-30", components: [1, 2] } };
+      expect(classifyRefreshPaths([p, brap], opts)).toEqual({ safe: [p, brap], unsafe: [] });
+      expect(detectCacheRegression(brap, s(brapBase), s(brapBase))).toEqual([]);
+      expect(detectCacheRegression(brap, s(brapBase), s({ ...brapBase, portfolio: null })))
+        .toEqual(["validated portfolio snapshot disappeared"]);
+      expect(detectCacheRegression(brap, s(brapBase), s({ ...brapBase, issuer: { ...brapIssuer, cnpj: "61.532.644/0001-15" } })))
+        .toEqual(["issuer.cnpj changed from 03.847.461/0001-92 to 61.532.644/0001-15"]);
+    });
+
     const issuer = { canonicalTicker: "ITSA4", cvmCode: "7617", cnpj: "61.532.644/0001-15" };
     const portfolio = { portfolioReferenceDate: "2026-09-30", components: [1, 2, 3] };
     const base = { issuer, statements: [1, 2], latestStatement: { periodEnd: "2026-06-30" }, portfolio };
@@ -233,5 +271,32 @@ describe("detectCacheRegression", () => {
     it("a first portfolio after none is fine", () => {
       expect(detectCacheRegression(p, s({ ...base, portfolio: null }), s(base))).toEqual([]);
     });
+  });
+});
+
+describe("cache-refresh workflow — holding model", () => {
+  const yml = readFileSync(join(process.cwd(), ".github/workflows/cache-refresh.yml"), "utf-8");
+  const steps = yml.split(/\n(?=      - name: )/);
+  const step = (name: string) => steps.find(s => s.startsWith(`      - name: ${name}`)) ?? "";
+
+  it("runs holding:precompute in the existing sector-models scope, next to bank/FII/insurance", () => {
+    const holding = step("Holding model cache");
+    expect(holding).toContain("run: npm run holding:precompute");
+    expect(holding).toContain("if: env.SCOPE == 'all' || env.SCOPE == 'sector-models'");
+    const order = ["Bank model cache", "FII model cache", "Insurance model cache", "Holding model cache", "Validate (typecheck, tests, audits, build)"]
+      .map(n => yml.indexOf(`- name: ${n}`));
+    expect(order.every(i => i > 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it("adds no new refresh scope", () => {
+    const options = yml.match(/options:\n((?:\s+- .+\n)+)/)![1].trim().split(/\n\s*/).map(o => o.replace(/^- /, ""));
+    expect(options).toEqual(["all", "industrial", "sector-models", "forecasts"]);
+  });
+
+  it("validate (the commit barrier) runs holding:audit", () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as { scripts: Record<string, string> };
+    expect(pkg.scripts.validate).toContain("npm run holding:audit");
+    expect(step("Validate (typecheck, tests, audits, build)")).toContain("run: npm run validate");
   });
 });

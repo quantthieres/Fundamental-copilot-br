@@ -25,6 +25,10 @@ import { countUsableAnnualYears } from "../src/lib/cvm/annual-years";
 import { hasBankAnalysisCache } from "../src/lib/banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../src/lib/fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../src/lib/insurance/insurance-coverage";
+import { hasHoldingAnalysisCache } from "../src/lib/holdings/holding-coverage";
+import { resolveHoldingCacheTicker } from "../src/lib/holdings/holding-identities";
+import { readHoldingCache } from "../src/lib/holdings/holding-cache";
+import { assessHoldingCache } from "../src/lib/holdings/holding-readiness";
 import { parseFinancialsCache } from "../src/lib/cvm/precomputed-cache";
 import { readFileSync } from "fs";
 
@@ -57,13 +61,15 @@ type ReportStatus =
   | "ok_bank"
   | "ok_fii"
   | "ok_insurance"
+  | "ok_holding"
   | "ok_informational"
   | "ok_unavailable"
   | "ok_fallback"               // quote_only / sector_specific_pending — fallback page
   | "fail_industrial_no_cache"  // industrial route, no CVM cache AND not in mock registry
   | "fail_bank_no_cache"
   | "fail_fii_no_cache"
-  | "fail_insurance_no_cache";
+  | "fail_insurance_no_cache"
+  | "fail_holding_no_cache";
 
 const MOCK_REGISTRY = new Set(["WEGE3", "EGIE3", "CPFE3", "ABEV3", "VIVT3"]);
 
@@ -124,6 +130,15 @@ function auditAsset(asset: B3Asset): AuditEntry {
         detail: hasInsuranceAnalysisCache(ft) ? undefined : "no insurance cache",
       };
 
+    case "holding": {
+      // ITSA3 → ITSA4, BRAP3 → BRAP4: the page reads the issuer cache.
+      const canonical = resolveHoldingCacheTicker(t);
+      const usable = hasHoldingAnalysisCache(t) && assessHoldingCache(t, readHoldingCache(t)).status !== "unusable";
+      return usable
+        ? { ticker: t, route, status: "ok_holding", detail: `issuer cache ${canonical}` }
+        : { ticker: t, route, status: "fail_holding_no_cache", detail: `no usable holding cache (${canonical ?? "no issuer"})` };
+    }
+
     case "informational_instrument":
       return { ticker: t, route, status: "ok_informational" };
 
@@ -148,6 +163,7 @@ const STATUS_LABEL: Record<ReportStatus, string> = {
   ok_bank:                  "✓ Banco",
   ok_fii:                   "✓ FII",
   ok_insurance:             "✓ Seguradora",
+  ok_holding:               "✓ Holding",
   ok_informational:         "✓ Informativo (ETF/BDR)",
   ok_unavailable:           "✓ Indisponível/descontinuado",
   ok_fallback:              "✓ Fallback seguro (renderiza; NÃO é cobertura)",
@@ -155,6 +171,7 @@ const STATUS_LABEL: Record<ReportStatus, string> = {
   fail_bank_no_cache:       "✗ FALHA — Banco sem cache",
   fail_fii_no_cache:        "✗ FALHA — FII sem cache",
   fail_insurance_no_cache:  "✗ FALHA — Seguradora sem cache",
+  fail_holding_no_cache:    "✗ FALHA — Holding sem cache utilizável",
 };
 
 const FAIL_STATUSES = new Set<ReportStatus>([
@@ -162,6 +179,7 @@ const FAIL_STATUSES = new Set<ReportStatus>([
   "fail_bank_no_cache",
   "fail_fii_no_cache",
   "fail_insurance_no_cache",
+  "fail_holding_no_cache",
 ]);
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -191,6 +209,7 @@ function main(): void {
     "ok_bank",
     "ok_fii",
     "ok_insurance",
+    "ok_holding",
     "ok_informational",
     "ok_unavailable",
     "ok_fallback",
@@ -198,6 +217,7 @@ function main(): void {
     "fail_bank_no_cache",
     "fail_fii_no_cache",
     "fail_insurance_no_cache",
+    "fail_holding_no_cache",
   ];
 
   for (const status of ORDER) {

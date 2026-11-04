@@ -39,7 +39,7 @@ export const COVERAGE_DESCRIPTION: Record<CoverageStatus, string> = {
   quote_only:
     "Cotação de mercado disponível. Demonstrações financeiras da CVM ainda não integradas para este ativo.",
   sector_specific_model_required:
-    "Este ativo exige metodologia específica. Bancos, seguradoras, FIIs, ETFs e BDRs utilizam métricas distintas das empresas industriais padrão.",
+    "Este ativo exige metodologia específica. Bancos, seguradoras, holdings, FIIs, ETFs e BDRs utilizam métricas distintas das empresas industriais padrão.",
   unavailable:
     "Ativo reconhecido no universo B3, mas ainda sem cobertura de dados financeiros.",
 };

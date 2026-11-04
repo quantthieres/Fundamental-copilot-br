@@ -16,7 +16,8 @@
  * snapshot while CVM statements still advance; a failing CVM download keeps
  * the previous statement history; when both fail nothing is written. Exits 1
  * on an identity mismatch or when an issuer could not be written at all and
- * has no committed cache. Not part of the scheduled workflow yet.
+ * has no committed cache. Runs in the scheduled cache refresh
+ * (.github/workflows/cache-refresh.yml, sector-models scope).
  *
  * Does NOT touch industrial, bank, FII or insurance caches.
  * Does NOT import @/ aliases — uses relative paths for tsx runtime compatibility.

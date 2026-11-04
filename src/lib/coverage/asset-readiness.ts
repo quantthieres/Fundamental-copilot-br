@@ -14,6 +14,7 @@ import type { AssetType } from "./coverage-types";
 import type { TickerLifecycle } from "./ticker-lifecycle";
 import type { FundamentalsAlias } from "./fundamentals-alias";
 import { FII_MAX_DISTRIBUTION_LAG_MONTHS } from "../fiis/fii-indicators";
+import type { HoldingCacheAssessment } from "../holdings/holding-readiness";
 
 export type AssetReadiness =
   /** Operational model with sufficient data. */
@@ -85,18 +86,6 @@ export interface ReadinessDecision {
  * readiness for active tickers (never for historical ones).
  */
 export const READINESS_DECISIONS: Readonly<Record<string, ReadinessDecision>> = {
-  ITSA3: { readiness: "model_pending", modelProject: "holding",
-    reason: "Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company",
-    evidence: "CVM 7617 ATIVO; B3 codes ITSA3, ITSA4 (same issuer)" },
-  ITSA4: { readiness: "model_pending", modelProject: "holding",
-    reason: "Itaúsa is a holding (equity-accounted stakes in Itaú Unibanco and non-financial companies) — not a bank and not an operating company",
-    evidence: "CVM 7617 ATIVO; B3 codes ITSA3, ITSA4 (same issuer)" },
-  BRAP3: { readiness: "model_pending", modelProject: "holding",
-    reason: "Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it",
-    evidence: "CVM 18724 ATIVO; B3 codes BRAP3, BRAP4 (same issuer); FCA 2026 lists BRAP3 ON under CNPJ 03.847.461/0001-92" },
-  BRAP4: { readiness: "model_pending", modelProject: "holding",
-    reason: "Bradespar is a pure holding whose main asset is a Vale stake — industrial DFP metrics do not describe it",
-    evidence: "CVM 18724 ATIVO; B3 codes BRAP3, BRAP4 (same issuer)" },
   ALOS3: { readiness: "model_pending", modelProject: "real_estate",
     reason: "Shopping-center owner: needs NOI/FFO/NAV metrics; extracted DFP showed total debt = 0 and 2023 EBIT ≈ 2× revenue (combination gain)",
     evidence: "CVM 22357 ATIVO; B3 ALOS3; DFP findings recorded in docs/coverage-audit-quote-only.md" },
@@ -164,6 +153,8 @@ export interface ReadinessInput {
   fiiDistributionMonths?: number | null;
   // Latest NAV month minus latest distribution month (FII caches only).
   fiiDistributionLagMonths?: number | null;
+  /** Holding issuers only: assessment of the issuer's canonical cache (holding-readiness.ts). */
+  holdingCache?: HoldingCacheAssessment | null;
   decision: ReadinessDecision | null;
 }
 
@@ -248,6 +239,24 @@ export function classifyAssetReadiness(input: ReadinessInput): ReadinessResult {
       return { ...base, readiness: "analysis_ready",
         reason: input.alias ? `${input.route} model via same-issuer alias ${input.alias.fundamentalsTicker}` : `${input.route} model cache available`,
         nextAction: null };
+    case "holding": {
+      const holding = input.holdingCache ?? null;
+      // Holding-specific issuer cache (ITSA3 → ITSA4); fundamentals only, never a quote alias.
+      const issuerCache = holding?.canonicalTicker && holding.canonicalTicker !== input.ticker
+        ? { fundamentalsTicker: holding.canonicalTicker } : {};
+      if (!holding || holding.status === "unusable") {
+        return { ...base, ...issuerCache, readiness: "cache_pending",
+          reason: `holding model without a usable issuer cache${holding?.reasons.length ? ` (${holding.reasons.join("; ")})` : ""}`,
+          nextAction: "Run holding:precompute and holding:audit" };
+      }
+      if (holding.status === "limited") {
+        return { ...base, ...issuerCache, readiness: "analysis_limited", reason: `holding cache usable but limited: ${holding.reasons.join("; ")}`,
+          nextAction: "Re-run holding:precompute once the issuer publishes a newer portfolio snapshot / filing" };
+      }
+      return { ...base, ...issuerCache, readiness: "analysis_ready",
+        reason: `holding model: parent-only statements + validated official portfolio${"fundamentalsTicker" in issuerCache ? ` (issuer cache ${issuerCache.fundamentalsTicker})` : ""}`,
+        nextAction: null };
+    }
     case "industrial": {
       if (input.annualYears === null) {
         return { ...base, ...flag, readiness: "cache_pending", reason: "industrial route without an annual CVM cache",
@@ -266,6 +275,10 @@ export function classifyAssetReadiness(input: ReadinessInput): ReadinessResult {
         return { ...base, readiness: "cache_pending",
           reason: `${input.richType} model exists but no available:true cache for this ticker`,
           nextAction: `Verify identity and run ${input.richType === "fii" ? "fii" : input.richType}:precompute` };
+      }
+      if (input.richType === "holding") {
+        return { ...base, readiness: "cache_pending", reason: "holding model exists but the issuer has no registered holding cache",
+          nextAction: "Run holding:precompute and register the issuer in holding-coverage.ts" };
       }
       return { ...base, readiness: "model_pending", reason: `no model for asset type ${input.richType}`,
         nextAction: "Classify and decide on a model" };

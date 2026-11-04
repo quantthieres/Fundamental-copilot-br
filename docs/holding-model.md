@@ -1,4 +1,4 @@
-# Holding model (Phase 1 — data, cache, audit)
+# Holding model
 
 Covers the two pure listed holdings in the curated universe:
 
@@ -13,11 +13,9 @@ BRAP3 was missing from `B3_UNIVERSE` and was added (same issuer as BRAP4).
 CSAN3 and GOAU4 are **not** in this model: they consolidate operating
 businesses.
 
-Phase 1 produces validated caches only. No dashboard, report or API route
-reads them yet; ITSA3/ITSA4 stay `sector_specific_pending` and BRAP3/BRAP4
-stay `quote_only`. `resolveModelRoute` sends every holding share class to
-those pre-model routes regardless of ticker suffix or sector heuristics, so
-none of them can reach the industrial or bank models.
+Phase 1 built the validated caches; Phase 2 made the model a production route
+(see "Product integration" below). All four share classes route to the
+`holding` model and are `analysis_ready`.
 
 ## Why the industrial model does not apply
 
@@ -170,7 +168,7 @@ are never presented as simultaneous.
 A portfolio is **fresh** when its reference period is at most one fiscal
 quarter older than the latest statement period (`quarterLag ≤ 1`), comparing
 source periods only — never the current date. A stale snapshot stays in the
-cache (Phase 2 will classify it `analysis_limited`).
+cache and makes the issuer `analysis_limited`.
 
 ## Cache design and failure semantics
 
@@ -201,8 +199,11 @@ Statement history is merged by period, so a refresh never shortens it. The
 refresh guard (`cache-refresh/refresh-guard.ts`) accepts
 `src/data/holding-cache/` and rejects an identity change, a latest statement
 period or portfolio date moving backwards, a validated portfolio disappearing
-and components becoming empty. The scheduled workflow does not run the
-holding precompute yet.
+and components becoming empty. The scheduled cache refresh runs
+`npm run holding:precompute` in the existing `sector-models` scope (after the
+bank, FII and insurance caches); `npm run validate` (which includes
+`holding:audit`) is the barrier, and only `src/data/holding-cache/*.json` can be
+committed by the bot.
 
 `npm run holding:audit` reports, per issuer, identity, share classes, latest
 statement, portfolio source/dates/total, official market value and discount,
@@ -227,3 +228,55 @@ Secondary: equity, TTM net income, TTM financial expenses, dividends /
 financial expenses (not meaningful without borrowings), gross debt /
 dividends, G&A / dividends, standardized class-weighted market cap. No revenue
 growth/CAGR, EBIT/FCF/CFO margins, EV multiples, capex ratios or headline P/L.
+
+## Product integration (Phase 2)
+
+**Routing.** `classifyAsset` returns the asset type `holding` for every share
+class of a verified issuer (`HOLDING_SHARE_CLASS_TICKERS`, derived from
+`VERIFIED_HOLDING_IDENTITIES` — never from sector names such as "Holding
+Financeira"/"Holding Industrial", the ticker suffix or the industrial CVM map).
+`resolveModelRoute` returns `holding` when the issuer is registered in
+`holding-coverage.ts`, else `sector_specific_pending`; a holding never routes
+to the industrial, bank or quote-only models. CSAN3 and GOAU4 are unchanged
+(industrial, flagged as holding review candidates).
+
+**Coverage.** ITSA3, ITSA4, BRAP3 and BRAP4 are `sector_specific_model_required`
+in `B3_UNIVERSE` (like the other sector-model assets) with the reason code
+`HOLDING_MODEL_REQUIRED`; the coverage page shows them with the "Modelo de
+Holding" badge and links them to the dashboard.
+
+**Readiness** (`holdings/holding-readiness.ts`, used by
+`coverage:audit:readiness`, `report:audit` and the API):
+
+| Cache state | Readiness |
+|---|---|
+| verified identity, latest parent-only statement with cash, gross debt, equity, stakes, equity-method income, net income and dividends received, share-class counts, validated and fresh portfolio, nothing preserved | `analysis_ready` |
+| usable, but portfolio stale/preserved/missing/unvalidated, statements preserved, a core account or share count missing | `analysis_limited` |
+| missing/unreadable, wrong schema, identity or statement basis, or neither statement nor portfolio | `cache_pending` |
+
+The Phase 1 `model_pending` decisions for ITSA3, ITSA4, BRAP3 and BRAP4 were
+removed; there is no ticker-specific readiness exception.
+
+**API.** `GET /api/holdings/analysis/[ticker]` (`holdings/holding-analysis.ts`)
+reads the committed cache only — no CVM, IR or PDF access and no `unpdf` in
+the request path. It returns `requestedTicker` and `canonicalTicker`
+separately, the issuer, the requested and all share classes, the latest
+statement (without raw accounts), the portfolio (investees, the "other assets
+and liabilities" reconciliation lines, `publishedNetCash`, positive-investee
+denominator, official totals, validation summary), indicators, reference
+dates, freshness, enrichment, `analysisStatus` (`ready`/`limited`), Portuguese
+user-facing `notices` and source names. Unsupported tickers return 404 with
+`available: false`; a missing or unusable cache returns `available: false`
+(`cache_unavailable`). Quotes are not part of the payload: the dashboard and
+the report fetch the requested ticker's own quote.
+
+**UI.** `HoldingAnalysisPanel` (dashboard and `/relatorio/[ticker]`) shows, in
+order: overview (8 headline figures), portfolio composition (composition bar
+over positive investee value, table/stacked cards with value basis and dates,
+"Demais Ativos e Passivos" as a reconciliation line, Bradespar's Vale stake
+detail with the 3.84% footnote, official market value by class and the
+official discount), parent-company financial position (statement date; the
+Bradespar bulletin net cash shown apart with its own date), cash generation
+(TTM), share classes (requested class highlighted) and dates/sources/notes.
+Nulls render as "N/D"; debt ratios of a holding without borrowings render
+"Não aplicável".

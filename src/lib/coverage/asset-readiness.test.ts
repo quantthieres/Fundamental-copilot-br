@@ -55,8 +55,21 @@ describe("classifyAssetReadiness — bucket assignment", () => {
   it("explicit decisions: manual review, intentionally limited, model pending", () => {
     expect(classifyAssetReadiness(input({ route: "quote_only", decision: READINESS_DECISIONS.VAMO3 })).readiness).toBe("manual_review");
     expect(classifyAssetReadiness(input({ route: "quote_only", decision: READINESS_DECISIONS.CASH3 })).readiness).toBe("intentionally_limited");
-    const holding = classifyAssetReadiness(input({ route: "sector_specific_pending", decision: READINESS_DECISIONS.ITSA4 }));
-    expect(holding).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
+    const realEstate = classifyAssetReadiness(input({ route: "quote_only", decision: READINESS_DECISIONS.ALOS3 }));
+    expect(realEstate).toMatchObject({ readiness: "model_pending", modelProject: "real_estate" });
+  });
+
+  it("holding route: ready / limited / unusable cache → analysis_ready / analysis_limited / cache_pending", () => {
+    const holding = (holdingCache: ReadinessInput["holdingCache"]) =>
+      classifyAssetReadiness(input({ ticker: "ITSA3", richType: "holding", route: "holding", annualYears: null, holdingCache }));
+    expect(holding({ status: "ready", canonicalTicker: "ITSA4", reasons: [] }))
+      .toMatchObject({ readiness: "analysis_ready", fundamentalsTicker: "ITSA4" });
+    expect(holding({ status: "limited", canonicalTicker: "ITSA4", reasons: ["portfolio stale (lag 2 quarter(s) behind the latest statement)"] }))
+      .toMatchObject({ readiness: "analysis_limited", reason: expect.stringContaining("stale") });
+    expect(holding({ status: "unusable", canonicalTicker: "ITSA4", reasons: ["holding cache ITSA4 missing or unreadable"] }).readiness).toBe("cache_pending");
+    expect(holding(null).readiness).toBe("cache_pending");
+    // A holding whose issuer cache is not registered routes as sector_specific_pending → cache_pending, never model_pending.
+    expect(classifyAssetReadiness(input({ richType: "holding", route: "sector_specific_pending" })).readiness).toBe("cache_pending");
   });
 
   it("FII distribution coverage: below 12 of 12 months → limited, at 12 → ready (automatic)", () => {
@@ -125,15 +138,14 @@ describe("classifyAssetReadiness — bucket assignment", () => {
 });
 
 describe("model projects are grouped by issuer, not ticker", () => {
-  it("Itaúsa ON/PN form one holding project", () => {
-    const results = ["ITSA3", "ITSA4", "BRAP4", "ALOS3", "B3SA3"].map(t =>
+  it("pending projects group by issuer; the holding project keeps only industrial review candidates", () => {
+    const results = ["ALOS3", "B3SA3", "VAMO3"].map(t =>
       classifyAssetReadiness(input({ ticker: t, route: "quote_only", decision: READINESS_DECISIONS[t] })));
+    results.push(classifyAssetReadiness(input({ ticker: "GOAU4" })));
     const projects = groupModelProjects(results, t => ({ key: getIssuerKey(t), name: t }));
-    const holding = [...projects.get("holding")!.values()];
-    expect(holding).toHaveLength(2);
-    expect(holding.find(e => e.tickers.includes("ITSA3"))!.tickers).toEqual(["ITSA3", "ITSA4"]);
     expect(projects.get("real_estate")!.size).toBe(1);
     expect(projects.get("market_infrastructure")!.size).toBe(1);
+    expect([...projects.get("holding")!.values()]).toEqual([{ name: "GOAU4", tickers: ["GOAU4"], reviewOnly: true }]);
   });
 });
 
@@ -146,9 +158,17 @@ describe("current universe (stable, decision/lifecycle-driven expectations)", ()
     expect(r("ITUB4").fundamentalsTicker).toBeUndefined();
   });
 
-  it("Itaúsa remains holding-model pending", () => {
-    expect(r("ITSA3")).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
-    expect(r("ITSA4")).toMatchObject({ readiness: "model_pending", modelProject: "holding" });
+  it("all four holding share classes are analysis_ready through their issuer cache", () => {
+    for (const t of ["ITSA3", "ITSA4", "BRAP3", "BRAP4"]) {
+      expect(r(t), t).toMatchObject({ readiness: "analysis_ready", reason: expect.stringContaining("holding model") });
+      expect(READINESS_DECISIONS[t], t).toBeUndefined();
+    }
+    expect(r("ITSA3").fundamentalsTicker).toBe("ITSA4");
+    expect(r("BRAP3").fundamentalsTicker).toBe("BRAP4");
+    expect(r("ITSA4").fundamentalsTicker).toBeUndefined();
+    // Holding issuer caches are not generic fundamentals aliases (no quote aliasing).
+    expect(getFundamentalsAlias("ITSA3")).toBeNull();
+    expect(getFundamentalsAlias("BRAP3")).toBeNull();
   });
 
   it("BCFF11 placeholder is historical; BTHF11 is ready once Fundos.Net fills its distributions", () => {
@@ -166,7 +186,7 @@ describe("current universe (stable, decision/lifecycle-driven expectations)", ()
   it("decision-driven buckets", () => {
     expect(r("CASH3").readiness).toBe("intentionally_limited");
     for (const t of ["VAMO3", "SEQL3", "AMBP3", "BHIA3", "AZUL3"]) expect(r(t).readiness, t).toBe("manual_review");
-    for (const t of ["BRAP4", "ALOS3", "B3SA3"]) expect(r(t).readiness, t).toBe("model_pending");
+    for (const t of ["ALOS3", "B3SA3"]) expect(r(t).readiness, t).toBe("model_pending");
   });
 
   it("ETFs/BDRs are informational_ready and every asset gets exactly one bucket", () => {

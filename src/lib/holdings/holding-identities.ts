@@ -120,6 +120,10 @@ export function isHoldingIssuerTicker(ticker: string): boolean {
   return resolveHoldingCacheTicker(ticker) !== null;
 }
 
+/** Every share class of every covered holding issuer (ITSA3, ITSA4, BRAP3, BRAP4). */
+export const HOLDING_SHARE_CLASS_TICKERS: readonly string[] = Object.values(VERIFIED_HOLDING_IDENTITIES)
+  .flatMap(id => id.shareClasses.map(c => c.ticker));
+
 /** Lowercase, accent-free, punctuation-free, without connective words. */
 export function normalizeAccountDescription(s: string): string {
   return s

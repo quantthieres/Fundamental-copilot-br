@@ -6,6 +6,7 @@ import { COVERAGE_BADGE, type CoverageStatus } from "@/data/coverage-types";
 import { BANK_BADGE, BANK_CACHE_COUNT, hasBankAnalysisCache } from "@/lib/banks/bank-coverage";
 import { FII_BADGE, FII_CACHE_COUNT, hasFiiAnalysisCache } from "@/lib/fiis/fii-coverage";
 import { INSURANCE_BADGE, INSURANCE_CACHE_COUNT, hasInsuranceAnalysisCache } from "@/lib/insurance/insurance-coverage";
+import { HOLDING_BADGE, hasHoldingAnalysisCache } from "@/lib/holdings/holding-coverage";
 import { classifyB3Asset } from "@/lib/coverage/cobertura-helpers";
 
 const INFORMATIONAL_BADGE = { label: "Informativo", bg: "#e0f2fe", color: "#0369a1" };
@@ -35,7 +36,7 @@ function countInformational(): number {
 }
 
 // Sector-specific assets that do not yet have an implemented specific model.
-// Excludes bank, FII, insurance tickers with cache AND ETF/BDR/fund (now informational).
+// Excludes bank, FII, insurance, holding tickers with cache AND ETF/BDR/fund (now informational).
 function countSectorSpecificPending(): number {
   return B3_UNIVERSE.filter(a => {
     if (a.coverageStatus !== "sector_specific_model_required") return false;
@@ -43,9 +44,17 @@ function countSectorSpecificPending(): number {
     if (t === "bank"      && hasBankAnalysisCache(a.ticker))      return false;
     if (t === "fii"       && hasFiiAnalysisCache(a.ticker))       return false;
     if (t === "insurance" && hasInsuranceAnalysisCache(a.ticker)) return false;
+    if (t === "holding"   && hasHoldingAnalysisCache(a.ticker))   return false;
     if (t === "etf" || t === "bdr" || t === "fund")               return false;
     return true;
   }).length;
+}
+
+// Share classes (tickers) covered by the holding model — ON and PN of each issuer.
+function countHoldingTickers(): number {
+  return B3_UNIVERSE.filter(a =>
+    a.coverageStatus !== "unavailable" && classifyB3Asset(a) === "holding" && hasHoldingAnalysisCache(a.ticker),
+  ).length;
 }
 
 // ── Layout primitives ─────────────────────────────────────────────────────────
@@ -129,7 +138,7 @@ const STATUS_EXPLANATIONS: { status: CoverageStatus; desc: string }[] = [
   },
   {
     status: "sector_specific_model_required",
-    desc:   "Bancos, seguradoras, FIIs, ETFs e BDRs exigem metodologia específica. O modelo fundamentalista industrial padrão não se aplica.",
+    desc:   "Bancos, seguradoras, holdings, FIIs, ETFs e BDRs exigem metodologia específica. O modelo fundamentalista industrial padrão não se aplica.",
   },
   {
     status: "unavailable",
@@ -167,6 +176,7 @@ export default function CoberturaPage() {
   const total  = B3_UNIVERSE.length;
   const sectorSpecificCount  = countSectorSpecificPending();
   const informationalCount   = countInformational();
+  const holdingCount         = countHoldingTickers();
 
   const summaryCards: SummaryItem[] = [
     {
@@ -192,7 +202,7 @@ export default function CoberturaPage() {
     {
       badge: COVERAGE_BADGE.sector_specific_model_required,
       count: sectorSpecificCount,
-      desc:  "Holdings financeiras e demais ativos sem modelo específico implementado.",
+      desc:  "Ativos que exigem metodologia específica ainda não implementada.",
     },
     {
       badge: BANK_BADGE,
@@ -208,6 +218,11 @@ export default function CoberturaPage() {
       badge: INSURANCE_BADGE,
       count: INSURANCE_CACHE_COUNT,
       desc:  "Seguradoras com modelo inicial disponível — indicadores anuais baseados na DFP CVM.",
+    },
+    {
+      badge: HOLDING_BADGE,
+      count: holdingCount,
+      desc:  "Holdings (Itaúsa e Bradespar, ações ON e PN) — portfólio oficial publicado pela companhia, demonstrações individuais CVM e desconto oficial.",
     },
   ];
 
@@ -239,7 +254,7 @@ export default function CoberturaPage() {
             podem receber análise fundamentalista completa.
           </p>
           <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.7, maxWidth: 680 }}>
-            Bancos, seguradoras, FIIs, ETFs e BDRs requerem modelos específicos e não são
+            Bancos, seguradoras, holdings, FIIs, ETFs e BDRs requerem modelos específicos e não são
             enquadrados no modelo industrial padrão. Um modelo bancário inicial está disponível
             para os principais bancos listados na B3, com indicadores específicos baseados em
             dados CVM. A cobertura é expandida gradualmente.
@@ -291,6 +306,7 @@ export default function CoberturaPage() {
               {[
                 { label: "Bancos",       desc: "Modelo bancário inicial disponível para os principais bancos. Indicadores específicos de instituições financeiras baseados em dados CVM." },
                 { label: "Seguradoras",  desc: "Modelo específico para seguradoras." },
+                { label: "Holdings",     desc: "Modelo de holdings para Itaúsa e Bradespar: portfólio oficial de investidas, posição financeira da controladora (demonstrações individuais CVM) e desconto oficial publicado. Fundamentos da emissora; cotação por classe de ação." },
                 { label: "FIIs",         desc: "Modelo de FII com patrimônio do informe mensal CVM e rendimentos dos avisos estruturados da B3 (Fundos.Net). Indicadores industriais não se aplicam." },
                 { label: "ETFs",         desc: "Fundo/índice listado em bolsa — exibição informativa disponível. Não utiliza demonstrações corporativas tradicionais." },
                 { label: "BDRs",         desc: "Recibo de ativo estrangeiro — exibição informativa disponível. A empresa subjacente não reporta pela estrutura CVM brasileira." },

@@ -15,6 +15,8 @@ import { classifyAsset } from "../src/lib/coverage/asset-classifier";
 import { hasBankAnalysisCache } from "../src/lib/banks/bank-coverage";
 import { hasFiiAnalysisCache } from "../src/lib/fiis/fii-coverage";
 import { hasInsuranceAnalysisCache } from "../src/lib/insurance/insurance-coverage";
+import { hasHoldingAnalysisCache } from "../src/lib/holdings/holding-coverage";
+import { isHoldingIssuerTicker } from "../src/lib/holdings/holding-identities";
 import { resolveFundamentalsTicker } from "../src/lib/coverage/fundamentals-alias";
 import { getTickerLifecycle } from "../src/lib/coverage/ticker-lifecycle";
 
@@ -33,6 +35,7 @@ const ALL_ROUTES: ModelRoute[] = [
   "bank",
   "fii",
   "insurance",
+  "holding",
   "informational_instrument",
   "quote_only",
   "sector_specific_pending",
@@ -84,6 +87,15 @@ function buildGroups(): Map<ModelRoute, RouteGroup> {
       group.suspicious.push(
         `${asset.ticker}: insurance cache available but routed to "${route}"`,
       );
+    }
+
+    // Holding share classes (ITSA3/4, BRAP3/4) route to the holding model when
+    // their issuer cache is registered; nothing else may use it.
+    if (!historical && isHoldingIssuerTicker(asset.ticker) && hasHoldingAnalysisCache(asset.ticker) && route !== "holding") {
+      group.suspicious.push(`${asset.ticker}: holding cache available but routed to "${route}"`);
+    }
+    if (route === "holding" && !isHoldingIssuerTicker(asset.ticker)) {
+      group.suspicious.push(`${asset.ticker}: not a verified holding issuer but routed to the holding model`);
     }
 
     // Unavailable coverageStatus in a live model route.
@@ -140,6 +152,7 @@ const ROUTE_LABEL: Record<ModelRoute, string> = {
   bank:                      "Banco",
   fii:                       "FII",
   insurance:                 "Seguradora",
+  holding:                   "Holding",
   informational_instrument:  "Camada informativa (ETF/BDR)",
   quote_only:                "Cotação apenas",
   sector_specific_pending:   "Modelo específico pendente",
